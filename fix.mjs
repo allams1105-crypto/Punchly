@@ -1,10 +1,8 @@
 import { writeFileSync } from "fs";
 
 const content = `"use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
 export default function NewEmployeePage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -13,8 +11,7 @@ export default function NewEmployeePage() {
   const [role, setRole] = useState("EMPLOYEE");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -31,12 +28,11 @@ export default function NewEmployeePage() {
     }
     router.push("/en/admin/dashboard");
   }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
         <span className="text-xl font-bold text-gray-900">Punchly</span>
-        <a href="/en/admin/dashboard" className="text-sm text-gray-500">← Volver</a>
+        <a href="/en/admin/dashboard" className="text-sm text-gray-500">Volver</a>
       </div>
       <div className="max-w-lg mx-auto p-8">
         <div className="bg-white rounded-2xl border border-gray-200 p-8">
@@ -71,3 +67,6 @@ export default function NewEmployeePage() {
     </div>
   );
 }`;
+
+writeFileSync("src/app/[locale]/admin/employees/new/page.tsx", content);
+console.log("Listo!");
