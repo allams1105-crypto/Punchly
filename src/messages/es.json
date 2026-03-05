@@ -1,0 +1,60 @@
+{
+  "common": {
+    "clockIn": "Registrar Entrada",
+    "clockOut": "Registrar Salida",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "loading": "Cargando...",
+    "logout": "Cerrar Sesión",
+    "back": "Volver"
+  },
+  "employee": {
+    "dashboard": {
+      "title": "Mi Asistencia",
+      "statusIn": "Has registrado tu entrada",
+      "statusOut": "No has registrado entrada",
+      "today": "Hoy",
+      "week": "Esta semana",
+      "history": "Historial Reciente",
+      "clockIn": "Registrar Entrada",
+      "clockOut": "Registrar Salida"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Resumen del Equipo",
+      "employees": "Empleados",
+      "activeNow": "Registrados ahora"
+    },
+    "employees": {
+      "title": "Empleados",
+      "add": "Agregar Empleado",
+      "deactivate": "Desactivar",
+      "exportCsv": "Exportar CSV",
+      "name": "Nombre",
+      "email": "Correo",
+      "role": "Rol",
+      "status": "Estado",
+      "active": "Activo",
+      "inactive": "Inactivo"
+    }
+  },
+  "kiosk": {
+    "welcome": "Bienvenido",
+    "searchEmployee": "Busca tu nombre...",
+    "exit": "Salir del Kiosk",
+    "enterPin": "Ingresa PIN para salir",
+    "pinError": "PIN incorrecto. Intenta de nuevo.",
+    "clockedIn": "¡Entrada registrada!",
+    "clockedOut": "¡Salida registrada!"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "noAccount": "¿No tienes cuenta?",
+    "register": "Crear cuenta",
+    "company": "Nombre de la empresa",
+    "name": "Nombre completo"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "common": {
+    "clockIn": "Clock In",
+    "clockOut": "Clock Out",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "logout": "Logout",
+    "back": "Back"
+  },
+  "employee": {
+    "dashboard": {
+      "title": "My Attendance",
+      "statusIn": "You are clocked in",
+      "statusOut": "You are clocked out",
+      "today": "Today",
+      "week": "This week",
+      "history": "Recent History",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Team Overview",
+      "employees": "Employees",
+      "activeNow": "Clocked in now"
+    },
+    "employees": {
+      "title": "Employees",
+      "add": "Add Employee",
+      "deactivate": "Deactivate",
+      "exportCsv": "Export CSV",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
+  "kiosk": {
+    "welcome": "Welcome",
+    "searchEmployee": "Search your name...",
+    "exit": "Exit Kiosk",
+    "enterPin": "Enter PIN to exit",
+    "pinError": "Incorrect PIN. Try again.",
+    "clockedIn": "Clocked in successfully!",
+    "clockedOut": "Clocked out successfully!"
+  },
+  "auth": {
+    "login": "Sign In",
+    "email": "Email address",
+    "password": "Password",
+    "noAccount": "Don't have an account?",
+    "register": "Create account",
+    "company": "Company name",
+    "name": "Full name"
+  }
+}
