@@ -70,12 +70,9 @@ export default async function EmployeeDashboard() {
 
       <div className="max-w-2xl mx-auto p-6 space-y-6">
         <ClockButton
-          userId={userId}
-          activeEntry={
-            activeEntry
-              ? { id: activeEntry.id, clockIn: activeEntry.clockIn.toISOString() }
-              : null
-          }
+          isActive={!!activeEntry}
+          entryId={activeEntry?.id}
+          clockInTime={activeEntry?.clockIn.toISOString()}
         />
         <WeeklyCalendar
           entries={serializedEntries}
