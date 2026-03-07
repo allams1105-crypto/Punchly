@@ -1,15 +1,15 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
         source: '/',
-        destination: '/es', // Cambia a /en si prefieres inglés por defecto
+        destination: '/es',
         permanent: true,
       },
-    ]
+    ];
   },
-  // ... el resto de tu configuración (i18n, etc)
 };
 
 export default nextConfig;
