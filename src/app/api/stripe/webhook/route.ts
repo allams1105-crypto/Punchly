@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
         create: {
           organizationId: orgId,
           status: "ACTIVE",
-          plan: "PRO",
           stripeCustomerId: session.customer as string,
           stripeSubscriptionId: session.subscription as string,
           currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
