@@ -1,15 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import createMiddleware from 'next-intl/middleware';
 
-export default function proxy(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-
-  if (pathname === "/") {
-    return NextResponse.redirect(new URL("/en/login", req.url));
-  }
-
-  return NextResponse.next();
-}
+export default createMiddleware({
+  // Idiomas para Punchly
+  locales: ['en', 'es'],
+  defaultLocale: 'es',
+  localePrefix: 'as-needed'
+});
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  // Este matcher permite que funcionen tus rutas de /api y archivos estáticos
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)', '/', '/(en|es)/:path*']
 };
