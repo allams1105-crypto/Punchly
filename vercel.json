@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/es"
+    },
+    {
+      "source": "/((?!api|_next|.*\\..*).*)",
+      "destination": "/es/$1"
+    }
+  ]
+}
