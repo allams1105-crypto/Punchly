@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === "customer.subscription.deleted") {
-    const subscription = event.data.object as Stripe.SubscriptionDeletedEvent["data"]["object"];
+    const subscription = event.data.object as Stripe.CustomerSubscriptionDeletedEvent["data"]["object"];
     await prisma.subscription.updateMany({
       where: { stripeSubscriptionId: subscription.id },
       data: { status: "CANCELED" },
