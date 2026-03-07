@@ -28,7 +28,15 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/en/admin/dashboard");
+    const res = await fetch("/api/auth/session");
+    const session = await res.json();
+    const role = session?.user?.role;
+
+    if (role === "OWNER" || role === "ADMIN") {
+      router.push("/en/admin/dashboard");
+    } else {
+      router.push("/en/employee/dashboard");
+    }
   }
 
   return (
