@@ -16,25 +16,18 @@ export async function POST(req: NextRequest) {
   }
 
   const orgId = (session.user as any).organizationId;
-  const { name, email, password, role: employeeRole } = await req.json();
+  const { name, email, password, role: employeeRole, hourlyRate, overtimeRate } = await req.json();
 
   if (!name || !email || !password) {
-    return NextResponse.json(
-      { error: "Todos los campos son requeridos" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Todos los campos son requeridos" }, { status: 400 });
   }
 
-  // Verificar si el email ya existe en la organización
   const existing = await prisma.user.findFirst({
     where: { organizationId: orgId, email },
   });
 
   if (existing) {
-    return NextResponse.json(
-      { error: "Este email ya está registrado" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Este email ya esta registrado" }, { status: 400 });
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -47,6 +40,8 @@ export async function POST(req: NextRequest) {
       pin: hashedPassword,
       role: employeeRole || "EMPLOYEE",
       isActive: true,
+      hourlyRate: hourlyRate || null,
+      overtimeRate: overtimeRate || null,
     },
   });
 

@@ -58,6 +58,8 @@ model User {
   pin            String?
   avatarUrl      String?
   locale         String?
+   hourlyRate     Float?   // salario por hora normal
+  overtimeRate   Float?   // salario por hora extra
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

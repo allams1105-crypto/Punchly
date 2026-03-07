@@ -1,113 +1,211 @@
-import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 
 export default async function AdminDashboard() {
   const session = await auth();
-
   if (!session) redirect("/en/login");
+
+  const role = (session.user as any).role;
+  if (role !== "OWNER" && role !== "ADMIN") redirect("/en/employee/dashboard");
 
   const orgId = (session.user as any).organizationId;
 
-  const [employees, activeEntries] = await Promise.all([
-    prisma.user.findMany({
-      where: { organizationId: orgId, isActive: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.timeEntry.findMany({
-      where: { organizationId: orgId, status: "CLOCKED_IN" },
-      include: { user: true },
-    }),
-  ]);
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
+
+  const employees = await prisma.user.findMany({
+    where: { organizationId: orgId, role: "EMPLOYEE", isActive: true },
+    include: {
+      timeEntries: {
+        where: { status: "CLOCKED_OUT" },
+        orderBy: { clockIn: "desc" },
+      },
+    },
+  });
+
+  const activeEntries = await prisma.timeEntry.findMany({
+    where: { user: { organizationId: orgId }, status: "CLOCKED_IN" },
+    include: { user: true },
+  });
+
+  const now = new Date();
+  const isFirstHalf = now.getDate() <= 15;
+  const periodStart = isFirstHalf
+    ? new Date(now.getFullYear(), now.getMonth(), 1)
+    : new Date(now.getFullYear(), now.getMonth(), 16);
+  const periodEnd = isFirstHalf
+    ? new Date(now.getFullYear(), now.getMonth(), 15, 23, 59, 59)
+    : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  const payrollData = employees.map((emp) => {
+    const periodEntries = emp.timeEntries.filter(
+      (e) => new Date(e.clockIn) >= periodStart && new Date(e.clockIn) <= periodEnd
+    );
+    const totalMinutes = periodEntries.reduce((acc, e) => acc + (e.durationMin || 0), 0);
+    const totalHours = totalMinutes / 60;
+    const regularHours = Math.min(totalHours, 8 * 15);
+    const overtimeHours = Math.max(0, totalHours - 8 * 15);
+    const regularPay = regularHours * (emp.hourlyRate || 0);
+    const overtimePay = overtimeHours * (emp.overtimeRate || 0);
+    const totalPay = regularPay + overtimePay;
+
+    return {
+      id: emp.id,
+      name: emp.name,
+      hourlyRate: emp.hourlyRate,
+      overtimeRate: emp.overtimeRate,
+      totalHours: Math.round(totalHours * 10) / 10,
+      regularHours: Math.round(regularHours * 10) / 10,
+      overtimeHours: Math.round(overtimeHours * 10) / 10,
+      totalPay: Math.round(totalPay * 100) / 100,
+    };
+  });
+
+  const totalPayroll = payrollData.reduce((acc, e) => acc + e.totalPay, 0);
+  const periodLabel = isFirstHalf
+    ? `1 — 15 ${now.toLocaleDateString("es", { month: "long" })}`
+    : `16 — ${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()} ${now.toLocaleDateString("es", { month: "long" })}`;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-xl font-bold text-gray-900">Punchly</span>
           <span className="text-gray-300">|</span>
-          <span className="text-gray-500 text-sm">Admin</span>
+          <span className="text-gray-500 text-sm">{org?.name}</span>
         </div>
-        <a href="/api/auth/signout" className="text-sm text-gray-500 hover:text-gray-900">
-          Cerrar sesión
-        </a>
+        <div className="flex items-center gap-3">
+          <a href="/en/admin/employees/new" className="bg-black text-white text-xs px-4 py-2 rounded-lg hover:bg-gray-800 transition">
+            + Empleado
+          </a>
+          <a href="/en/admin/kiosk" className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 px-4 py-2 rounded-lg">
+            Kiosk
+          </a>
+          <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">
+            Salir
+          </a>
+        </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <p className="text-sm text-gray-500">Total Empleados</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">{employees.length}</p>
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <p className="text-xs text-gray-400 mb-1">Empleados activos</p>
+            <p className="text-3xl font-bold text-gray-900">{employees.length}</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <p className="text-sm text-gray-500">Registrados Ahora</p>
-            <p className="text-3xl font-bold text-green-600 mt-1">{activeEntries.length}</p>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <p className="text-xs text-gray-400 mb-1">Trabajando ahora</p>
+            <p className="text-3xl font-bold text-green-600">{activeEntries.length}</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <p className="text-sm text-gray-500">Sin Registrar</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">{employees.length - activeEntries.length}</p>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <p className="text-xs text-gray-400 mb-1">Nómina estimada</p>
+            <p className="text-3xl font-bold text-gray-900">${totalPayroll.toLocaleString()}</p>
           </div>
         </div>
 
+        {/* Active now */}
         {activeEntries.length > 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-6">
-            <h2 className="text-sm font-semibold text-green-800 mb-3">✅ Registrados ahora</h2>
-            <div className="flex flex-wrap gap-2">
-              {activeEntries.map((entry) => (
-                <span key={entry.id} className="bg-white border border-green-200 text-green-800 text-sm px-3 py-1 rounded-full">
-                  {entry.user.name}
-                </span>
-              ))}
+          <div className="bg-white rounded-2xl border border-gray-200">
+            <div className="p-5 border-b border-gray-100 flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <h2 className="text-sm font-semibold text-gray-900">Trabajando ahora</h2>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {activeEntries.map((entry) => {
+                const clockIn = new Date(entry.clockIn);
+                const minutesWorked = Math.floor((now.getTime() - clockIn.getTime()) / 60000);
+                return (
+                  <div key={entry.id} className="px-5 py-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{entry.user.name}</p>
+                      <p className="text-xs text-gray-400">Desde {clockIn.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                    <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
+                      {Math.floor(minutesWorked / 60)}h {minutesWorked % 60}m
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
+        {/* Payroll */}
         <div className="bg-white rounded-2xl border border-gray-200">
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Empleados</h2>
-            <a href="/en/admin/kiosk" className="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition mr-2">
-  Configurar Kiosk
-</a>
-            <a href="/en/admin/employees/new" className="bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 transition">
-              + Agregar Empleado
-            </a>
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">Nómina quincenal</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Período: {periodLabel}</p>
+            </div>
+            <span className="text-sm font-bold text-gray-900">${totalPayroll.toLocaleString()} total</span>
           </div>
-
-          {employees.length === 0 ? (
-            <div className="p-8 text-center text-gray-400">
-              No hay empleados aún. Agrega el primero.
+          {payrollData.length === 0 ? (
+            <div className="p-6 text-center text-sm text-gray-400">
+              No hay empleados. <a href="/en/admin/employees/new" className="text-black font-medium">Agrega uno</a>
             </div>
           ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
-                  <th className="px-6 py-3">Nombre</th>
-                  <th className="px-6 py-3">Email</th>
-                  <th className="px-6 py-3">Rol</th>
-                  <th className="px-6 py-3">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((emp) => {
-                  const isActive = activeEntries.some((e) => e.userId === emp.id);
-                  return (
-                    <tr key={emp.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{emp.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{emp.email}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{emp.role}</td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                          {isActive ? "Registrado" : "Fuera"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="divide-y divide-gray-50">
+              {payrollData.map((emp) => (
+                <div key={emp.id} className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-gray-900">{emp.name}</p>
+                    <p className="text-sm font-bold text-gray-900">${emp.totalPay.toLocaleString()}</p>
+                  </div>
+                  <div className="flex gap-4 text-xs text-gray-400">
+                    <span>{emp.totalHours}h totales</span>
+                    <span>{emp.regularHours}h normales × ${emp.hourlyRate}/h</span>
+                    {emp.overtimeHours > 0 && (
+                      <span className="text-orange-500">{emp.overtimeHours}h extra × ${emp.overtimeRate}/h</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
+
+        {/* Employees list */}
+        <div className="bg-white rounded-2xl border border-gray-200">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-900">Empleados</h2>
+            <a href="/en/admin/employees/new" className="text-xs text-gray-500 hover:text-black">+ Agregar</a>
+          </div>
+          {employees.length === 0 ? (
+            <div className="p-6 text-center text-sm text-gray-400">
+              No hay empleados.{" "}
+              <a href="/en/admin/employees/new" className="text-black font-medium">Agrega el primero</a>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {employees.map((emp) => {
+                const isActive = activeEntries.some((e) => e.userId === emp.id);
+                return (
+                  <div key={emp.id} className="px-5 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-gray-300"}`}></div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{emp.name}</p>
+                        <p className="text-xs text-gray-400">{emp.email}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">${emp.hourlyRate}/h</p>
+                      <p className="text-xs text-gray-300">extra: ${emp.overtimeRate}/h</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
 }
+
