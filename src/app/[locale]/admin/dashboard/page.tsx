@@ -3,7 +3,6 @@ import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import UpgradeButton from "@/components/admin/UpgradeButton";
-import UpgradeButton from "@/components/admin/UpgradeButton";
 
 export default async function AdminDashboard() {
   const session = await auth();
