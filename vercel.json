@@ -1,12 +1,9 @@
 {
-  "rewrites": [
+  "redirects": [
     {
       "source": "/",
-      "destination": "/es"
-    },
-    {
-      "source": "/((?!api|_next|.*\\..*).*)",
-      "destination": "/es/$1"
+      "destination": "/es",
+      "permanent": false
     }
   ]
 }
