@@ -28,14 +28,15 @@ export default function LoginPage() {
       return;
     }
 
+    // Obtener sesión actualizada
     const res = await fetch("/api/auth/session");
     const session = await res.json();
     const role = session?.user?.role;
 
     if (role === "OWNER" || role === "ADMIN") {
-      router.push("/en/admin/dashboard");
+      window.location.href = "/en/admin/dashboard";
     } else {
-      router.push("/en/employee/dashboard");
+      window.location.href = "/en/employee/dashboard";
     }
   }
 
@@ -49,9 +50,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
               value={email}
@@ -63,9 +62,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contraseña
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <input
               type="password"
               value={password}
@@ -76,9 +73,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && (
-            <p className="text-red-500 text-sm">{error}</p>
-          )}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <button
             type="submit"
@@ -92,3 +87,6 @@ export default function LoginPage() {
     </div>
   );
 }
+
+
+
