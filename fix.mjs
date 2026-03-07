@@ -1,13 +1,32 @@
-import { writeFileSync, readFileSync } from "fs";
+import { writeFileSync } from "fs";
 
-let content = readFileSync("src/app/[locale]/admin/dashboard/page.tsx", "utf8");
+const content = `"use client";
+import { useState } from "react";
 
-// Remove duplicate import
-content = content.replace(
-  `import UpgradeButton from "@/components/admin/UpgradeButton";
-import UpgradeButton from "@/components/admin/UpgradeButton";`,
-  `import UpgradeButton from "@/components/admin/UpgradeButton";`
-);
+export default function UpgradeButton() {
+  const [loading, setLoading] = useState(false);
 
-writeFileSync("src/app/[locale]/admin/dashboard/page.tsx", content);
+  async function handleUpgrade() {
+    setLoading(true);
+    const res = await fetch("/api/stripe/checkout", { method: "POST" });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    }
+    setLoading(false);
+  }
+
+  return (
+    <button
+      onClick={handleUpgrade}
+      disabled={loading}
+      className="bg-gradient-to-r from-violet-600 to-blue-500 text-white text-xs px-4 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50 font-medium"
+    >
+      {loading ? "..." : "Upgrade Pro"}
+    </button>
+  );
+}`;
+
+writeFileSync("src/components/admin/UpgradeButton.tsx", content);
 console.log("Listo!");
+
