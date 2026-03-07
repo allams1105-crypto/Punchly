@@ -1,72 +1,92 @@
 import { writeFileSync } from "fs";
 
-const content = `"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-export default function NewEmployeePage() {
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("EMPLOYEE");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    const res = await fetch("/api/employees", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, role }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "Error al crear empleado");
-      setLoading(false);
-      return;
-    }
-    router.push("/en/admin/dashboard");
-  }
+const content = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+import ClockButton from "@/components/employee/ClockButton";
+import WeeklyCalendar from "@/components/employee/WeeklyCalendar";
+
+export default async function EmployeeDashboard() {
+  const session = await auth();
+  if (!session) redirect("/en/login");
+
+  const userId = (session.user as any).id;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { organization: true },
+  });
+
+  if (!user) redirect("/en/login");
+
+  const now = new Date();
+
+  const day = now.getDay();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+  weekStart.setHours(0, 0, 0, 0);
+
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const entries = await prisma.timeEntry.findMany({
+    where: { userId },
+    orderBy: { clockIn: "desc" },
+    take: 50,
+  });
+
+  const weeklyMinutes = entries
+    .filter((e) => new Date(e.clockIn) >= weekStart)
+    .reduce((acc, e) => acc + (e.durationMin || 0), 0);
+
+  const monthlyMinutes = entries
+    .filter((e) => new Date(e.clockIn) >= monthStart)
+    .reduce((acc, e) => acc + (e.durationMin || 0), 0);
+
+  const activeEntry = entries.find((e) => e.status === "CLOCKED_IN") || null;
+
+  const serializedEntries = entries.map((e) => ({
+    id: e.id,
+    clockIn: e.clockIn.toISOString(),
+    clockOut: e.clockOut ? e.clockOut.toISOString() : null,
+    durationMin: e.durationMin,
+    status: e.status,
+  }));
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-        <span className="text-xl font-bold text-gray-900">Punchly</span>
-        <a href="/en/admin/dashboard" className="text-sm text-gray-500">Volver</a>
-      </div>
-      <div className="max-w-lg mx-auto p-8">
-        <div className="bg-white rounded-2xl border border-gray-200 p-8">
-          <h1 className="text-xl font-bold text-gray-900 mb-6">Nuevo Empleado</h1>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contrasena</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <option value="EMPLOYEE">Empleado</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <button type="submit" disabled={loading} className="w-full bg-black text-white py-2 rounded-lg text-sm font-medium">
-              {loading ? "Creando..." : "Crear Empleado"}
-            </button>
-          </form>
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-xl font-bold text-gray-900">Punchly</span>
+          <span className="text-gray-300">|</span>
+          <span className="text-gray-500 text-sm">{user.organization.name}</span>
         </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-600">{user.name}</span>
+          <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">
+            Salir
+          </a>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto p-6 space-y-6">
+        <ClockButton
+          userId={userId}
+          activeEntry={
+            activeEntry
+              ? { id: activeEntry.id, clockIn: activeEntry.clockIn.toISOString() }
+              : null
+          }
+        />
+        <WeeklyCalendar
+          entries={serializedEntries}
+          weeklyMinutes={weeklyMinutes}
+          monthlyMinutes={monthlyMinutes}
+        />
       </div>
     </div>
   );
 }`;
 
-writeFileSync("src/app/[locale]/admin/employees/new/page.tsx", content);
+writeFileSync("src/app/[locale]/employee/dashboard/page.tsx", content);
 console.log("Listo!");
+
