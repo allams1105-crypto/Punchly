@@ -12,26 +12,28 @@ export default async function AdminDashboard() {
   if (role !== "OWNER" && role !== "ADMIN") redirect("/en/employee/dashboard");
 
   const orgId = (session.user as any).organizationId;
-
   const org = await prisma.organization.findUnique({ where: { id: orgId } });
 
   const now = new Date();
-  const isFirstHalf = now.getDate() <= 15;
+  const isFirstHalf = now.getUTCDate() <= 15;
+
   const periodStart = isFirstHalf
-    ? new Date(now.getFullYear(), now.getMonth(), 1)
-    : new Date(now.getFullYear(), now.getMonth(), 16);
+    ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 16));
+
   const periodEnd = isFirstHalf
-    ? new Date(now.getFullYear(), now.getMonth(), 15, 23, 59, 59)
-    : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 15, 23, 59, 59))
+    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59));
+
+  // Calcular dias laborables reales del periodo
+  const periodDays = isFirstHalf ? 15 : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate() - 15;
+  const maxRegularHours = 8 * periodDays;
 
   const employees = await prisma.user.findMany({
     where: { organizationId: orgId, role: "EMPLOYEE", isActive: true },
     include: {
       timeEntries: {
-        where: {
-          status: "CLOCKED_OUT",
-          clockIn: { gte: periodStart, lte: periodEnd },
-        },
+        where: { status: "CLOCKED_OUT", clockIn: { gte: periodStart, lte: periodEnd } },
       },
     },
   });
@@ -41,11 +43,13 @@ export default async function AdminDashboard() {
     include: { user: true },
   });
 
+  const activeUserIds = new Set(activeEntries.map((e) => e.userId));
+
   const payrollData = employees.map((emp) => {
     const totalMinutes = emp.timeEntries.reduce((acc, e) => acc + (e.durationMin || 0), 0);
     const totalHours = totalMinutes / 60;
-    const regularHours = Math.min(totalHours, 8 * 15);
-    const overtimeHours = Math.max(0, totalHours - 8 * 15);
+    const regularHours = Math.min(totalHours, maxRegularHours);
+    const overtimeHours = Math.max(0, totalHours - maxRegularHours);
     const totalPay = regularHours * (emp.hourlyRate || 0) + overtimeHours * (emp.overtimeRate || 0);
     return {
       id: emp.id,
@@ -63,7 +67,7 @@ export default async function AdminDashboard() {
   const totalPayroll = payrollData.reduce((acc, e) => acc + e.totalPay, 0);
   const periodLabel = isFirstHalf
     ? `1 — 15 ${now.toLocaleDateString("es", { month: "long" })}`
-    : `16 — ${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()} ${now.toLocaleDateString("es", { month: "long" })}`;
+    : `16 — ${new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate()} ${now.toLocaleDateString("es", { month: "long" })}`;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -71,20 +75,17 @@ export default async function AdminDashboard() {
         <div className="flex items-center gap-3">
           <span className="text-xl font-bold text-gray-900">Punchly</span>
           <span className="text-gray-300">|</span>
-          <span className="text-gray-500 text-sm">{org?.name}</span>
+          <span className="text-gray-500 text-sm">{org?.name || "Sin Organizacion"}</span>
         </div>
         <div className="flex items-center gap-3">
+          <UpgradeButton />
           <Link href="/en/admin/employees/new" className="bg-black text-white text-xs px-4 py-2 rounded-lg hover:bg-gray-800 transition">
             + Empleado
           </Link>
           <Link href="/en/admin/kiosk" className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 px-4 py-2 rounded-lg">
             Kiosk
           </Link>
-          <UpgradeButton />
-          <UpgradeButton />
-          <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">
-            Salir
-          </a>
+          <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">Salir</a>
         </div>
       </div>
 
@@ -174,7 +175,7 @@ export default async function AdminDashboard() {
           ) : (
             <div className="divide-y divide-gray-50">
               {employees.map((emp) => {
-                const isActive = activeEntries.some((e) => e.userId === emp.id);
+                const isActive = activeUserIds.has(emp.id);
                 return (
                   <div key={emp.id} className="px-5 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
