@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -11,24 +12,7 @@ export default async function AdminDashboard() {
 
   const orgId = (session.user as any).organizationId;
 
-  const org = await prisma.organization.findUnique({
-    where: { id: orgId },
-  });
-
-  const employees = await prisma.user.findMany({
-    where: { organizationId: orgId, role: "EMPLOYEE", isActive: true },
-    include: {
-      timeEntries: {
-        where: { status: "CLOCKED_OUT" },
-        orderBy: { clockIn: "desc" },
-      },
-    },
-  });
-
-  const activeEntries = await prisma.timeEntry.findMany({
-    where: { user: { organizationId: orgId }, status: "CLOCKED_IN" },
-    include: { user: true },
-  });
+  const org = await prisma.organization.findUnique({ where: { id: orgId } });
 
   const now = new Date();
   const isFirstHalf = now.getDate() <= 15;
@@ -39,21 +23,33 @@ export default async function AdminDashboard() {
     ? new Date(now.getFullYear(), now.getMonth(), 15, 23, 59, 59)
     : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
+  const employees = await prisma.user.findMany({
+    where: { organizationId: orgId, role: "EMPLOYEE", isActive: true },
+    include: {
+      timeEntries: {
+        where: {
+          status: "CLOCKED_OUT",
+          clockIn: { gte: periodStart, lte: periodEnd },
+        },
+      },
+    },
+  });
+
+  const activeEntries = await prisma.timeEntry.findMany({
+    where: { user: { organizationId: orgId }, status: "CLOCKED_IN" },
+    include: { user: true },
+  });
+
   const payrollData = employees.map((emp) => {
-    const periodEntries = emp.timeEntries.filter(
-      (e) => new Date(e.clockIn) >= periodStart && new Date(e.clockIn) <= periodEnd
-    );
-    const totalMinutes = periodEntries.reduce((acc, e) => acc + (e.durationMin || 0), 0);
+    const totalMinutes = emp.timeEntries.reduce((acc, e) => acc + (e.durationMin || 0), 0);
     const totalHours = totalMinutes / 60;
     const regularHours = Math.min(totalHours, 8 * 15);
     const overtimeHours = Math.max(0, totalHours - 8 * 15);
-    const regularPay = regularHours * (emp.hourlyRate || 0);
-    const overtimePay = overtimeHours * (emp.overtimeRate || 0);
-    const totalPay = regularPay + overtimePay;
-
+    const totalPay = regularHours * (emp.hourlyRate || 0) + overtimeHours * (emp.overtimeRate || 0);
     return {
       id: emp.id,
       name: emp.name,
+      email: emp.email,
       hourlyRate: emp.hourlyRate,
       overtimeRate: emp.overtimeRate,
       totalHours: Math.round(totalHours * 10) / 10,
@@ -70,7 +66,6 @@ export default async function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-xl font-bold text-gray-900">Punchly</span>
@@ -78,12 +73,12 @@ export default async function AdminDashboard() {
           <span className="text-gray-500 text-sm">{org?.name}</span>
         </div>
         <div className="flex items-center gap-3">
-          <a href="/en/admin/employees/new" className="bg-black text-white text-xs px-4 py-2 rounded-lg hover:bg-gray-800 transition">
+          <Link href="/en/admin/employees/new" className="bg-black text-white text-xs px-4 py-2 rounded-lg hover:bg-gray-800 transition">
             + Empleado
-          </a>
-          <a href="/en/admin/kiosk" className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 px-4 py-2 rounded-lg">
+          </Link>
+          <Link href="/en/admin/kiosk" className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 px-4 py-2 rounded-lg">
             Kiosk
-          </a>
+          </Link>
           <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">
             Salir
           </a>
@@ -91,8 +86,6 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="max-w-5xl mx-auto p-6 space-y-6">
-
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <p className="text-xs text-gray-400 mb-1">Empleados activos</p>
@@ -103,12 +96,11 @@ export default async function AdminDashboard() {
             <p className="text-3xl font-bold text-green-600">{activeEntries.length}</p>
           </div>
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <p className="text-xs text-gray-400 mb-1">Nómina estimada</p>
+            <p className="text-xs text-gray-400 mb-1">Nomina estimada</p>
             <p className="text-3xl font-bold text-gray-900">${totalPayroll.toLocaleString()}</p>
           </div>
         </div>
 
-        {/* Active now */}
         {activeEntries.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-200">
             <div className="p-5 border-b border-gray-100 flex items-center gap-2">
@@ -117,13 +109,12 @@ export default async function AdminDashboard() {
             </div>
             <div className="divide-y divide-gray-50">
               {activeEntries.map((entry) => {
-                const clockIn = new Date(entry.clockIn);
-                const minutesWorked = Math.floor((now.getTime() - clockIn.getTime()) / 60000);
+                const minutesWorked = Math.floor((now.getTime() - new Date(entry.clockIn).getTime()) / 60000);
                 return (
                   <div key={entry.id} className="px-5 py-4 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-900">{entry.user.name}</p>
-                      <p className="text-xs text-gray-400">Desde {clockIn.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}</p>
+                      <p className="text-xs text-gray-400">Desde {new Date(entry.clockIn).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}</p>
                     </div>
                     <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
                       {Math.floor(minutesWorked / 60)}h {minutesWorked % 60}m
@@ -135,18 +126,17 @@ export default async function AdminDashboard() {
           </div>
         )}
 
-        {/* Payroll */}
         <div className="bg-white rounded-2xl border border-gray-200">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-gray-900">Nómina quincenal</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Período: {periodLabel}</p>
+              <h2 className="text-sm font-semibold text-gray-900">Nomina quincenal</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Periodo: {periodLabel}</p>
             </div>
             <span className="text-sm font-bold text-gray-900">${totalPayroll.toLocaleString()} total</span>
           </div>
           {payrollData.length === 0 ? (
             <div className="p-6 text-center text-sm text-gray-400">
-              No hay empleados. <a href="/en/admin/employees/new" className="text-black font-medium">Agrega uno</a>
+              No hay empleados. <Link href="/en/admin/employees/new" className="text-black font-medium">Agrega uno</Link>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
@@ -158,9 +148,9 @@ export default async function AdminDashboard() {
                   </div>
                   <div className="flex gap-4 text-xs text-gray-400">
                     <span>{emp.totalHours}h totales</span>
-                    <span>{emp.regularHours}h normales × ${emp.hourlyRate}/h</span>
+                    <span>{emp.regularHours}h normales x ${emp.hourlyRate}/h</span>
                     {emp.overtimeHours > 0 && (
-                      <span className="text-orange-500">{emp.overtimeHours}h extra × ${emp.overtimeRate}/h</span>
+                      <span className="text-orange-500">{emp.overtimeHours}h extra x ${emp.overtimeRate}/h</span>
                     )}
                   </div>
                 </div>
@@ -169,16 +159,14 @@ export default async function AdminDashboard() {
           )}
         </div>
 
-        {/* Employees list */}
         <div className="bg-white rounded-2xl border border-gray-200">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900">Empleados</h2>
-            <a href="/en/admin/employees/new" className="text-xs text-gray-500 hover:text-black">+ Agregar</a>
+            <Link href="/en/admin/employees/new" className="text-xs text-gray-500 hover:text-black">+ Agregar</Link>
           </div>
           {employees.length === 0 ? (
             <div className="p-6 text-center text-sm text-gray-400">
-              No hay empleados.{" "}
-              <a href="/en/admin/employees/new" className="text-black font-medium">Agrega el primero</a>
+              No hay empleados. <Link href="/en/admin/employees/new" className="text-black font-medium">Agrega el primero</Link>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
@@ -203,9 +191,7 @@ export default async function AdminDashboard() {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
 }
-
