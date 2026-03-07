@@ -18,12 +18,10 @@ export default async function EmployeeDashboard() {
   if (!user) redirect("/en/login");
 
   const now = new Date();
-
   const day = now.getDay();
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
   weekStart.setHours(0, 0, 0, 0);
-
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const entries = await prisma.timeEntry.findMany({
@@ -60,12 +58,9 @@ export default async function EmployeeDashboard() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-600">{user.name}</span>
-          <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">
-            Salir
-          </a>
+          <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">Salir</a>
         </div>
       </div>
-
       <div className="max-w-2xl mx-auto p-6 space-y-6">
         <ClockButton
           isActive={!!activeEntry}
