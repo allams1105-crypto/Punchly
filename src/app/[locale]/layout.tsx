@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../globals.css";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,12 +18,18 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const messages = await getMessages();
+
+  let messages = {};
+  try {
+    messages = (await import(`../../messages/${locale}.json`)).default;
+  } catch {
+    messages = (await import(`../../messages/es.json`)).default;
+  }
 
   return (
     <html lang={locale}>
       <body className={inter.className}>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
       </body>
