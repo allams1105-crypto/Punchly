@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import UpgradeButton from "@/components/admin/UpgradeButton";
+import UpgradeButton from "@/components/admin/UpgradeButton";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -79,6 +81,8 @@ export default async function AdminDashboard() {
           <Link href="/en/admin/kiosk" className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 px-4 py-2 rounded-lg">
             Kiosk
           </Link>
+          <UpgradeButton />
+          <UpgradeButton />
           <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">
             Salir
           </a>
