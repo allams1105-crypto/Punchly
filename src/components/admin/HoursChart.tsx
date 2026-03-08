@@ -53,7 +53,7 @@ export default function HoursChart({ data }: Props) {
                 fontSize: "12px",
                 boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
               }}
-              formatter={(value: number) => [`${value}h`, "Horas"]}
+              formatter={(value) => [`${value}h`, "Horas"]}
             />
             <Bar dataKey="hours" fill="url(#gradient)" radius={[6, 6, 0, 0]} />
           </BarChart>
