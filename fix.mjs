@@ -31,7 +31,7 @@ export default function LandingPage() {
           <span className="text-[#E8B84B] text-xs font-semibold">Control de asistencia, simplificado</span>
         </div>
         <h1 className="text-5xl md:text-7xl font-black leading-tight mb-6">
-          Sabe quién está<br />
+          Saber quién está<br />
           trabajando,{" "}
           <span className="text-[#E8B84B]">ahora mismo.</span>
         </h1>

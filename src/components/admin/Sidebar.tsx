@@ -15,84 +15,104 @@ const links = [
 
 export default function Sidebar({ orgName }: { orgName: string }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [open, setOpen] = useState(false);
 
+  // Cerrar al cambiar de página
+  useEffect(() => { setOpen(false); }, [pathname]);
+
+  // Cerrar con Escape
   useEffect(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    if (saved !== null) setCollapsed(saved === "true");
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  function toggle() {
-    const next = !collapsed;
-    setCollapsed(next);
-    localStorage.setItem("sidebar-collapsed", String(next));
-  }
-
-  return (
-    <div className={`shrink-0 h-screen flex flex-col bg-[var(--bg-card)] border-r border-[var(--border)] transition-all duration-300 ${collapsed ? "w-16" : "w-60"}`}>
-      {/* Logo + toggle */}
-      <div className="px-3 py-4 border-b border-[var(--border)] flex items-center justify-between">
-        {!collapsed && (
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center shrink-0">
-              <span className="text-black font-black text-sm">P</span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[var(--text-primary)] font-black text-sm leading-none truncate">Punchly.Clock</p>
-              <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate">{orgName}</p>
-            </div>
-          </div>
-        )}
-        {collapsed && (
-          <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center mx-auto">
-            <span className="text-black font-black text-sm">P</span>
-          </div>
-        )}
-        {!collapsed && (
-          <button onClick={toggle} className="shrink-0 ml-2 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-        )}
-        {collapsed && (
-          <button onClick={toggle} className="absolute left-3 mt-20 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition hidden" />
-        )}
-      </div>
-
-      {/* Nav */}
+  const NavContent = () => (
+    <>
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {collapsed && (
-          <button onClick={toggle} className="w-full flex items-center justify-center p-2.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition mb-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        )}
+        <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-widest px-3 mb-3 opacity-50">Menu</p>
         {links.map((link) => {
           const active = pathname === link.href;
           return (
             <Link key={link.href} href={link.href}
-              title={collapsed ? link.label : undefined}
-              className={`flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-sm transition-all ${collapsed ? "justify-center" : ""} ${active ? "bg-[#E8B84B] text-black font-bold" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] font-medium"}`}>
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all font-medium ${active ? "bg-[#E8B84B] text-black font-bold" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]"}`}>
               {link.icon}
-              {!collapsed && <span>{link.label}</span>}
+              {link.label}
             </Link>
           );
         })}
       </nav>
-
-      {/* Bottom */}
       <div className="px-2 py-3 border-t border-[var(--border)] space-y-1">
-        {!collapsed && (
-          <div className="px-2 py-1">
-            <ThemeToggle />
-          </div>
-        )}
+        <div className="px-3 py-1"><ThemeToggle /></div>
         <a href="/api/auth/signout"
-          title={collapsed ? "Salir" : undefined}
-          className={`flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-sm font-medium text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-all w-full ${collapsed ? "justify-center" : ""}`}>
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-all w-full">
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          {!collapsed && "Salir"}
+          Salir
         </a>
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* DESKTOP sidebar */}
+      <div className="hidden md:flex w-60 shrink-0 h-screen flex-col bg-[var(--bg-card)] border-r border-[var(--border)]">
+        <div className="px-4 py-4 border-b border-[var(--border)]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center shrink-0">
+              <span className="text-black font-black text-sm">P</span>
+            </div>
+            <div>
+              <p className="text-[var(--text-primary)] font-black text-sm leading-none">Punchly.Clock</p>
+              <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate max-w-[130px]">{orgName}</p>
+            </div>
+          </div>
+        </div>
+        <NavContent />
+      </div>
+
+      {/* MOBILE topbar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-[var(--bg-card)] border-b border-[var(--border)] flex items-center justify-between px-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-[#E8B84B] rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-black font-black text-xs">P</span>
+          </div>
+          <p className="text-[var(--text-primary)] font-black text-sm">Punchly.Clock</p>
+        </div>
+        <button onClick={() => setOpen(true)}
+          className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+
+      {/* MOBILE drawer overlay */}
+      {open && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="relative w-72 h-full bg-[var(--bg-card)] border-r border-[var(--border)] flex flex-col">
+            <div className="px-4 py-4 border-b border-[var(--border)] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center shrink-0">
+                  <span className="text-black font-black text-sm">P</span>
+                </div>
+                <div>
+                  <p className="text-[var(--text-primary)] font-black text-sm leading-none">Punchly.Clock</p>
+                  <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate max-w-[130px]">{orgName}</p>
+                </div>
+              </div>
+              <button onClick={() => setOpen(false)}
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <NavContent />
+          </div>
+        </div>
+      )}
+
+      {/* MOBILE spacer */}
+      <div className="md:hidden h-14 shrink-0" />
+    </>
   );
 }
 
