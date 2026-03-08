@@ -1,11 +1,11 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [company, setCompany] = useState("");
+  const [orgName, setOrgName] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,159 +16,73 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const res = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ company, name, email, password }),
+      body: JSON.stringify({ orgName, name, email, password }),
     });
-
     const data = await res.json();
-
-    if (!res.ok) {
-      setError(data.error || "Error al crear cuenta");
-      setLoading(false);
-      return;
-    }
-
+    if (!res.ok) { setError(data.error || "Error al registrar"); setLoading(false); return; }
     router.push("/en/login");
   }
 
   return (
-    <div className="min-h-screen bg-black flex">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-2/5 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[#E8B84B]" />
-        <div className="absolute inset-0" style={{backgroundImage: "radial-gradient(circle at 20% 50%, rgba(0,0,0,0.2) 0%, transparent 60%)", }} />
-        <div className="absolute inset-0 opacity-10" style={{backgroundImage: "linear-gradient(rgba(0,0,0,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.5) 1px, transparent 1px)", backgroundSize: "40px 40px"}} />
-        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-              <span className="text-[#E8B84B] font-black text-sm">P</span>
-            </div>
-            <span className="text-black font-black text-xl tracking-tight">Punchly.Clock</span>
+      <div className="hidden lg:flex w-1/2 bg-[#E8B84B] flex-col justify-between p-12">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center">
+            <span className="text-[#E8B84B] font-black text-base">P</span>
           </div>
-          <div>
-            <p className="text-black/50 text-xs font-bold uppercase tracking-widest mb-5">Empieza gratis</p>
-            <h2 className="text-5xl font-black text-black leading-[1.1] mb-8">
-              Registra<br />
-              tu empresa<br />
-              hoy.
-            </h2>
-            <div className="h-px bg-black/15 mb-8" />
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-black/10 rounded-xl flex items-center justify-center shrink-0">
-                  <span className="text-black font-black text-sm">01</span>
-                </div>
-                <div>
-                  <p className="text-black font-bold text-sm">Crea tu cuenta</p>
-                  <p className="text-black/50 text-xs">Solo toma 30 segundos</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-black/10 rounded-xl flex items-center justify-center shrink-0">
-                  <span className="text-black font-black text-sm">02</span>
-                </div>
-                <div>
-                  <p className="text-black font-bold text-sm">Agrega tus empleados</p>
-                  <p className="text-black/50 text-xs">Con sus tarifas y horarios</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-black/10 rounded-xl flex items-center justify-center shrink-0">
-                  <span className="text-black font-black text-sm">03</span>
-                </div>
-                <div>
-                  <p className="text-black font-bold text-sm">Controla la asistencia</p>
-                  <p className="text-black/50 text-xs">En tiempo real desde cualquier lugar</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <span className="text-black font-black text-xl">Punchly.Clock</span>
+        </div>
+        <div>
+          <h2 className="text-4xl font-black text-black leading-tight mb-4">Empieza a gestionar tu equipo hoy</h2>
+          <p className="text-black/60 text-lg">Crea tu cuenta gratis y comienza en minutos.</p>
+        </div>
+        <div className="flex gap-6">
+          <div><p className="text-3xl font-black text-black">Gratis</p><p className="text-black/60 text-sm">Para empezar</p></div>
+          <div><p className="text-3xl font-black text-black">5min</p><p className="text-black/60 text-sm">Para configurar</p></div>
         </div>
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex flex-col justify-center px-8 lg:px-16">
-        <div className="max-w-sm w-full mx-auto">
-          <div className="lg:hidden flex items-center gap-2 mb-10">
-            <div className="w-7 h-7 bg-[#E8B84B] rounded-lg flex items-center justify-center">
-              <span className="text-black font-black text-xs">P</span>
-            </div>
-            <span className="text-white font-black text-lg">Punchly.Clock</span>
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-sm">
+          <div className="mb-8">
+            <h1 className="text-2xl font-black text-[var(--text-primary)] mb-1">Crear cuenta</h1>
+            <p className="text-[var(--text-muted)] text-sm">Registra tu empresa en Punchly.Clock</p>
           </div>
-
-          <h1 className="text-3xl font-black text-white mb-2">Crear cuenta</h1>
-          <p className="text-gray-500 text-sm mb-8">14 dias gratis, sin tarjeta de credito</p>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Nombre de la empresa</label>
-              <input
-                type="text"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E8B84B] transition"
-                placeholder="Mi Empresa S.A."
-                required
-              />
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Nombre de la empresa</label>
+              <input type="text" value={orgName} onChange={e => setOrgName(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" placeholder="Mi Empresa S.A." required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tu nombre</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E8B84B] transition"
-                placeholder="Juan Perez"
-                required
-              />
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Tu nombre</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" placeholder="Juan Pérez" required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E8B84B] transition"
-                placeholder="tu@empresa.com"
-                required
-              />
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" placeholder="tu@empresa.com" required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Contrasena</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E8B84B] transition"
-                placeholder="••••••••"
-                required
-              />
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Contraseña</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" placeholder="••••••••" required />
             </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50"
-            >
-              {loading ? "Creando cuenta..." : "Crear cuenta gratis →"}
+            {error && <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"><p className="text-red-400 text-sm">{error}</p></div>}
+            <button type="submit" disabled={loading}
+              className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
+              {loading ? "Creando cuenta..." : "Crear cuenta"}
             </button>
-
-            <p className="text-center text-sm text-gray-600">
-              Ya tienes cuenta?{" "}
-              <a href="/en/login" className="text-[#E8B84B] font-semibold hover:underline">
-                Inicia sesion
-              </a>
-            </p>
           </form>
+          <p className="text-center text-xs text-[var(--text-muted)] mt-6">
+            ¿Ya tienes cuenta? <Link href="/en/login" className="text-[#E8B84B] font-semibold hover:underline">Inicia sesión</Link>
+          </p>
         </div>
       </div>
     </div>
