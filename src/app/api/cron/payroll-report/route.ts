@@ -1,6 +1,4 @@
-import { writeFileSync } from "fs";
-
-const cronRoute = `import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
@@ -8,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== \`Bearer \${process.env.CRON_SECRET}\`) {
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -25,8 +23,8 @@ export async function GET(req: NextRequest) {
 
   const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
   const periodLabel = isFirstHalf
-    ? \`1 — 15 \${MONTHS[now.getUTCMonth()]} \${now.getUTCFullYear()}\`
-    : \`16 — \${new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate()} \${MONTHS[now.getUTCMonth()]} \${now.getUTCFullYear()}\`;
+    ? `1 — 15 ${MONTHS[now.getUTCMonth()]} ${now.getUTCFullYear()}`
+    : `16 — ${new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate()} ${MONTHS[now.getUTCMonth()]} ${now.getUTCFullYear()}`;
 
   const organizations = await prisma.organization.findMany({
     include: {
@@ -63,25 +61,25 @@ export async function GET(req: NextRequest) {
 
     const totalPayroll = payrollData.reduce((acc, e) => acc + e.totalPay, 0);
 
-    const rows = payrollData.map((emp) => \`
+    const rows = payrollData.map((emp) => `
       <tr style="border-bottom: 1px solid #f3f4f6;">
-        <td style="padding: 12px 0; font-size: 14px; color: #111;">\${emp.name}</td>
-        <td style="padding: 12px 0; font-size: 14px; color: #6b7280; text-align: center;">\${emp.totalHours}h</td>
-        <td style="padding: 12px 0; font-size: 14px; color: #6b7280; text-align: center;">\${emp.regularHours}h</td>
-        <td style="padding: 12px 0; font-size: 14px; color: \${emp.overtimeHours > 0 ? "#ea580c" : "#6b7280"}; text-align: center;">\${emp.overtimeHours}h</td>
-        <td style="padding: 12px 0; font-size: 14px; font-weight: 600; color: #111; text-align: right;">\$\${emp.totalPay.toLocaleString()}</td>
+        <td style="padding: 12px 0; font-size: 14px; color: #111;">${emp.name}</td>
+        <td style="padding: 12px 0; font-size: 14px; color: #6b7280; text-align: center;">${emp.totalHours}h</td>
+        <td style="padding: 12px 0; font-size: 14px; color: #6b7280; text-align: center;">${emp.regularHours}h</td>
+        <td style="padding: 12px 0; font-size: 14px; color: ${emp.overtimeHours > 0 ? "#ea580c" : "#6b7280"}; text-align: center;">${emp.overtimeHours}h</td>
+        <td style="padding: 12px 0; font-size: 14px; font-weight: 600; color: #111; text-align: right;">$${emp.totalPay.toLocaleString()}</td>
       </tr>
-    \`).join("");
+    `).join("");
 
-    const html = \`
+    const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
         <h2 style="color: #111; margin-bottom: 4px;">Punchly</h2>
-        <p style="color: #666; font-size: 14px; margin-bottom: 24px;">\${org.name}</p>
+        <p style="color: #666; font-size: 14px; margin-bottom: 24px;">${org.name}</p>
         <div style="background: linear-gradient(135deg, #7c3aed, #3b82f6); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
           <p style="margin: 0; font-size: 13px; opacity: 0.8;">Reporte quincenal</p>
-          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.8;">\${periodLabel}</p>
-          <p style="margin: 16px 0 0; font-size: 36px; font-weight: 900;">\$\${totalPayroll.toLocaleString()}</p>
-          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.8;">\${employees.length} empleados</p>
+          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.8;">${periodLabel}</p>
+          <p style="margin: 16px 0 0; font-size: 36px; font-weight: 900;">$${totalPayroll.toLocaleString()}</p>
+          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.8;">${employees.length} empleados</p>
         </div>
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
@@ -93,18 +91,18 @@ export async function GET(req: NextRequest) {
               <th style="padding: 8px 0; font-size: 12px; color: #9ca3af; text-align: right;">Pago</th>
             </tr>
           </thead>
-          <tbody>\${rows}</tbody>
+          <tbody>${rows}</tbody>
         </table>
         <p style="color: #d1d5db; font-size: 11px; margin-top: 32px;">Este reporte fue generado automaticamente por Punchly</p>
       </div>
-    \`;
+    `;
 
     for (const admin of org.users) {
       if (admin.email) {
         await resend.emails.send({
           from: "Punchly <onboarding@resend.dev>",
           to: admin.email,
-          subject: \`Reporte quincenal — \${periodLabel} — \${org.name}\`,
+          subject: `Reporte quincenal — ${periodLabel} — ${org.name}`,
           html,
         });
       }
@@ -112,22 +110,4 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ success: true, orgs: organizations.length });
-}`;
-
-const vercelJson = `{
-  "crons": [
-    {
-      "path": "/api/cron/payroll-report",
-      "schedule": "0 8 15 * *"
-    },
-    {
-      "path": "/api/cron/payroll-report",
-      "schedule": "0 8 1 * *"
-    }
-  ]
-}`;
-
-writeFileSync("src/app/api/cron/payroll-report/route.ts", cronRoute);
-writeFileSync("vercel.json", vercelJson);
-console.log("Listo!");
-
+}
