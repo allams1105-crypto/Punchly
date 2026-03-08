@@ -32,9 +32,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const orgId = (session.user as any).organizationId;
   const { id } = await params;
 
-   await prisma.user.deleteMany({
-    where: { id, organizationId: orgId },
-  });
+   // Borrar registros relacionados primero
+  await prisma.timeEntry.deleteMany({ where: { userId: id } });
+  await prisma.activityLog.deleteMany({ where: { userId: id } });
+  await prisma.user.deleteMany({ where: { id, organizationId: orgId } });
 
   return NextResponse.json({ success: true });
 
