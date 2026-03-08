@@ -56,7 +56,7 @@ export default function LoginPage() {
             <h2 className="text-5xl font-black text-black leading-[1.1] mb-8">
               Tu equipo,<br />
               siempre<br />
-              en punto.
+              a tiempo.
             </h2>
             <div className="h-px bg-black/15 mb-8" />
             <div className="grid grid-cols-2 gap-6">
