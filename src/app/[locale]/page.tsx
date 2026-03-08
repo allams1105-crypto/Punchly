@@ -4,15 +4,15 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navbar */}
-      <nav className="border-b border-white/8 px-6 py-4 flex items-center justify-between sticky top-0 z-50 bg-black/95 backdrop-blur">
+      <nav className="border-b border-white/8 px-4 py-3 flex items-center justify-between sticky top-0 z-50 bg-black/95 backdrop-blur">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center">
             <span className="text-black font-black text-sm">P</span>
           </div>
           <span className="text-white font-black text-lg">Punchly.Clock</span>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/en/login" className="text-sm text-white/50 hover:text-white transition font-medium">
+        <div className="flex items-center gap-2">
+          <Link href="/en/login" className="text-sm text-white/50 hover:text-white transition font-medium hidden sm:block">
             Iniciar sesión
           </Link>
           <Link href="/en/register"
