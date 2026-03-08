@@ -9,66 +9,48 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    fetch("/api/settings")
-      .then((r) => r.json())
-      .then((data) => {
-        setOrgName(data.name || "");
-        setFetching(false);
-      });
+    fetch("/api/settings").then((r) => r.json()).then((data) => {
+      setOrgName(data.name || ""); setFetching(false);
+    });
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+    e.preventDefault(); setLoading(true);
     const res = await fetch("/api/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: orgName }),
     });
-    if (res.ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    }
+    if (res.ok) { setSaved(true); setTimeout(() => setSaved(false), 3000); }
     setLoading(false);
   }
 
-  if (fetching) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-gray-400">Cargando...</p>
-    </div>
-  );
+  if (fetching) return <div className="min-h-screen bg-black flex items-center justify-center"><p className="text-white/30">Cargando...</p></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-black">
+      <div className="bg-black border-b border-white/8 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-gray-900 dark:text-white">Punchly</span>
-          <span className="text-gray-300">|</span>
-          <span className="text-gray-500 dark:text-gray-400 text-sm">Configuracion</span>
+          <div className="w-7 h-7 bg-[#E8B84B] rounded-lg flex items-center justify-center">
+            <span className="text-black font-black text-xs">P</span>
+          </div>
+          <span className="text-white font-black text-lg">Punchly.Clock</span>
+          <span className="text-white/20 mx-1">|</span>
+          <span className="text-white/40 text-sm">Configuracion</span>
         </div>
-        <Link href="/en/admin/dashboard" className="text-sm text-gray-500 hover:text-gray-900">Volver</Link>
+        <Link href="/en/admin/dashboard" className="text-xs text-white/40 hover:text-white border border-white/10 px-3 py-1.5 rounded-lg transition">← Volver</Link>
       </div>
-
-      <div className="max-w-lg mx-auto p-8 space-y-6">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Configuracion de la empresa</h1>
+      <div className="max-w-lg mx-auto p-8">
+        <div className="bg-white/5 border border-white/8 rounded-2xl p-8">
+          <h1 className="text-lg font-black text-white mb-6">Configuracion de la empresa</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre de la empresa</label>
-              <input
-                type="text"
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
-                required
-              />
+              <label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Nombre de la empresa</label>
+              <input type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#E8B84B] transition" required />
             </div>
-            {saved && <p className="text-green-600 text-sm">Guardado correctamente</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-black text-white py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition disabled:opacity-50"
-            >
+            {saved && <p className="text-green-400 text-sm">Guardado correctamente</p>}
+            <button type="submit" disabled={loading}
+              className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
               {loading ? "Guardando..." : "Guardar cambios"}
             </button>
           </form>
