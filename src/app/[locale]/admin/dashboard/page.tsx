@@ -82,6 +82,12 @@ export default async function AdminDashboard() {
           <Link href="/en/admin/employees/new" className="bg-black text-white text-xs px-4 py-2 rounded-lg hover:bg-gray-800 transition">
             + Empleado
           </Link>
+          <Link href="/en/admin/payroll" className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 px-4 py-2 rounded-lg">
+            Nomina
+          </Link>
+          <Link href="/en/admin/payroll" className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 px-4 py-2 rounded-lg">
+            Nomina
+          </Link>
           <Link href="/en/admin/kiosk" className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 px-4 py-2 rounded-lg">
             Kiosk
           </Link>
