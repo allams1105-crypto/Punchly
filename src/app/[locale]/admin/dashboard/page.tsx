@@ -5,7 +5,6 @@ import Link from "next/link";
 import UpgradeButton from "@/components/admin/UpgradeButton";
 import HoursChart from "@/components/admin/HoursChart";
 import ThemeToggle from "@/components/ThemeToggle";
-import Sidebar from "@/components/admin/Sidebar";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -74,11 +73,7 @@ export default async function AdminDashboard() {
   }));
 
   return (
-    <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden">
-      <Sidebar orgName={org?.name || "Mi Empresa"} />
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[var(--bg-primary)]">
         {/* Topbar */}
         <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between shrink-0 bg-[var(--bg-primary)]">
           <div>
@@ -229,7 +224,6 @@ export default async function AdminDashboard() {
           </div>
 
         </div>
-      </div>
     </div>
   );
 }
