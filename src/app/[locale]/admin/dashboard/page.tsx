@@ -5,6 +5,7 @@ import Link from "next/link";
 import UpgradeButton from "@/components/admin/UpgradeButton";
 import HoursChart from "@/components/admin/HoursChart";
 import ThemeToggle from "@/components/ThemeToggle";
+import Sidebar from "@/components/admin/Sidebar";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -73,139 +74,160 @@ export default async function AdminDashboard() {
   }));
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      <div className="bg-[var(--bg-primary)] border-b border-[var(--border)] px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-[#E8B84B] rounded-lg flex items-center justify-center">
-            <span className="text-black font-black text-xs">P</span>
-          </div>
-          <span className="text-[var(--text-primary)] font-black text-lg tracking-tight">Punchly.Clock</span>
-          <span className="text-[var(--text-muted)] opacity-30 mx-1">|</span>
-          <span className="text-[var(--text-muted)] text-sm">{org?.name || "Sin Organizacion"}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/en/admin/payroll" className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition">Nomina</Link>
-          <Link href="/en/admin/activity" className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition">Actividad</Link>
-          <Link href="/en/admin/settings" className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition">Settings</Link>
-          <div className="w-px h-4 bg-[var(--border)] mx-1" />
-          <UpgradeButton />
-          <Link href="/en/admin/employees/new" className="bg-[#E8B84B] text-black text-xs px-4 py-2 rounded-lg font-black hover:bg-[#d4a43a] transition">+ Empleado</Link>
-          <Link href="/en/admin/kiosk" className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] px-3 py-1.5 rounded-lg transition">Kiosk</Link>
-          <ThemeToggle />
-          <a href="/api/auth/signout" className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition">Salir</a>
-        </div>
-      </div>
+    <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden">
+      <Sidebar orgName={org?.name || "Mi Empresa"} />
 
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6">
-            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">Empleados activos</p>
-            <p className="text-4xl font-black text-[var(--text-primary)]">{employees.length}</p>
+      {/* Main */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Topbar */}
+        <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between shrink-0 bg-[var(--bg-primary)]">
+          <div>
+            <h1 className="text-sm font-black text-[var(--text-primary)]">Dashboard</h1>
+            <p className="text-xs text-[var(--text-muted)]">{periodLabel}</p>
           </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6">
-            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">Trabajando ahora</p>
-            <p className="text-4xl font-black text-green-500">{activeEntries.length}</p>
-          </div>
-          <div className="bg-[#E8B84B]/10 border border-[#E8B84B]/20 rounded-2xl p-6">
-            <p className="text-xs text-[#E8B84B]/70 uppercase tracking-wider mb-3">Nomina estimada</p>
-            <p className="text-4xl font-black text-[#E8B84B]">${totalPayroll.toLocaleString()}</p>
-            <p className="text-xs text-[#E8B84B]/50 mt-2">{periodLabel}</p>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UpgradeButton />
+            <Link
+              href="/en/admin/employees/new"
+              className="bg-[#E8B84B] text-black text-xs px-4 py-2 rounded-xl font-black hover:bg-[#d4a43a] transition flex items-center gap-1.5"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Empleado
+            </Link>
           </div>
         </div>
 
-        {activeEntries.length > 0 && (
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <h2 className="text-sm font-bold text-[var(--text-primary)]">Trabajando ahora</h2>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-4 gap-4">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-[#E8B84B]/5 rounded-full -translate-y-4 translate-x-4" />
+              <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">Total Empleados</p>
+              <p className="text-4xl font-black text-[var(--text-primary)]">{employees.length}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">activos en sistema</p>
             </div>
-            <div className="divide-y divide-[var(--border)]">
-              {activeEntries.map((entry) => {
-                const minutesWorked = Math.floor((now.getTime() - new Date(entry.clockIn).getTime()) / 60000);
-                return (
-                  <div key={entry.id} className="px-6 py-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{entry.user.name}</p>
-                      <p className="text-xs text-[var(--text-muted)] mt-0.5">Desde {new Date(entry.clockIn).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}</p>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/5 rounded-full -translate-y-4 translate-x-4" />
+              <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">Trabajando Ahora</p>
+              <p className="text-4xl font-black text-green-500">{activeEntries.length}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">en este momento</p>
+            </div>
+            <div className="bg-[#E8B84B]/10 border border-[#E8B84B]/25 rounded-2xl p-5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-[#E8B84B]/10 rounded-full -translate-y-4 translate-x-4" />
+              <p className="text-xs text-[#E8B84B]/70 uppercase tracking-wider mb-3">Nomina Estimada</p>
+              <p className="text-4xl font-black text-[#E8B84B]">${totalPayroll.toLocaleString()}</p>
+              <p className="text-xs text-[#E8B84B]/50 mt-2">{periodLabel}</p>
+            </div>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-full -translate-y-4 translate-x-4" />
+              <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">Horas Esta Quincena</p>
+              <p className="text-4xl font-black text-[var(--text-primary)]">
+                {Math.round(payrollData.reduce((acc, e) => acc + e.totalHours, 0))}h
+              </p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">horas registradas</p>
+            </div>
+          </div>
+
+          {/* Chart + Active */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-2">
+              <HoursChart data={chartData} />
+            </div>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden flex flex-col">
+              <div className="px-5 py-4 border-b border-[var(--border)] flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <h2 className="text-sm font-bold text-[var(--text-primary)]">En Turno</h2>
+                <span className="ml-auto text-xs bg-green-500/15 text-green-500 px-2 py-0.5 rounded-full font-semibold">{activeEntries.length}</span>
+              </div>
+              <div className="flex-1 overflow-y-auto divide-y divide-[var(--border)]">
+                {activeEntries.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-[var(--text-muted)]">Nadie trabajando ahora</div>
+                ) : activeEntries.map((entry) => {
+                  const minutesWorked = Math.floor((now.getTime() - new Date(entry.clockIn).getTime()) / 60000);
+                  return (
+                    <div key={entry.id} className="px-5 py-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--text-primary)]">{entry.user.name}</p>
+                        <p className="text-xs text-[var(--text-muted)]">{new Date(entry.clockIn).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}</p>
+                      </div>
+                      <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full font-medium">
+                        {Math.floor(minutesWorked / 60)}h {minutesWorked % 60}m
+                      </span>
                     </div>
-                    <span className="text-xs bg-green-500/15 text-green-500 border border-green-500/20 px-3 py-1.5 rounded-full font-semibold">
-                      {Math.floor(minutesWorked / 60)}h {minutesWorked % 60}m
-                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Payroll + Employees */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Payroll */}
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold text-[var(--text-primary)]">Nomina Quincenal</h2>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{periodLabel}</p>
+                </div>
+                <span className="text-sm font-black text-[#E8B84B]">${totalPayroll.toLocaleString()}</span>
+              </div>
+              <div className="divide-y divide-[var(--border)] max-h-64 overflow-y-auto">
+                {payrollData.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-[var(--text-muted)]">
+                    <Link href="/en/admin/employees/new" className="text-[#E8B84B]">Agrega empleados</Link>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <HoursChart data={chartData} />
-
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-[var(--text-primary)]">Nomina quincenal</h2>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">{periodLabel}</p>
-            </div>
-            <span className="text-sm font-black text-[#E8B84B]">${totalPayroll.toLocaleString()}</span>
-          </div>
-          {payrollData.length === 0 ? (
-            <div className="p-8 text-center"><p className="text-sm text-[var(--text-muted)]">No hay empleados. <Link href="/en/admin/employees/new" className="text-[#E8B84B]">Agrega uno</Link></p></div>
-          ) : (
-            <div className="divide-y divide-[var(--border)]">
-              {payrollData.map((emp) => (
-                <div key={emp.id} className="px-6 py-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">{emp.name}</p>
+                ) : payrollData.map((emp) => (
+                  <div key={emp.id} className="px-5 py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-[var(--text-primary)]">{emp.name}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{emp.totalHours}h · {emp.overtimeHours > 0 ? <span className="text-orange-400">{emp.overtimeHours}h extra</span> : "sin horas extra"}</p>
+                    </div>
                     <p className="text-sm font-black text-[#E8B84B]">${emp.totalPay.toLocaleString()}</p>
                   </div>
-                  <div className="flex gap-4 text-xs text-[var(--text-muted)]">
-                    <span>{emp.totalHours}h totales</span>
-                    <span>{emp.regularHours}h normales x ${emp.hourlyRate}/h</span>
-                    {emp.overtimeHours > 0 && <span className="text-orange-400">{emp.overtimeHours}h extra x ${emp.overtimeRate}/h</span>}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          )}
-        </div>
 
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
-            <h2 className="text-sm font-bold text-[var(--text-primary)]">Empleados</h2>
-            <Link href="/en/admin/employees/new" className="text-xs text-[#E8B84B] hover:underline">+ Agregar</Link>
-          </div>
-          {employees.length === 0 ? (
-            <div className="p-8 text-center"><p className="text-sm text-[var(--text-muted)]">No hay empleados. <Link href="/en/admin/employees/new" className="text-[#E8B84B]">Agrega el primero</Link></p></div>
-          ) : (
-            <div className="divide-y divide-[var(--border)]">
-              {employees.map((emp) => {
-                const isActive = activeUserIds.has(emp.id);
-                return (
-                  <div key={emp.id} className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-[var(--border)]"}`} />
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{emp.name}</p>
-                        <p className="text-xs text-[var(--text-muted)]">{emp.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <p className="text-xs text-[var(--text-muted)]">${emp.hourlyRate}/h</p>
-                        <p className="text-xs text-[var(--text-muted)] opacity-50">extra: ${emp.overtimeRate}/h</p>
-                      </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${emp.role === "ADMIN" ? "bg-[#E8B84B]/15 text-[#E8B84B]" : "bg-[var(--border)] text-[var(--text-muted)]"}`}>
-                        {emp.role === "ADMIN" ? "Admin" : "Empleado"}
-                      </span>
-                      <Link href={`/en/admin/employees/${emp.id}`} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] px-3 py-1 rounded-lg transition">
-                        Editar
-                      </Link>
-                    </div>
+            {/* Employees */}
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
+                <h2 className="text-sm font-bold text-[var(--text-primary)]">Empleados</h2>
+                <Link href="/en/admin/employees/new" className="text-xs text-[#E8B84B] hover:underline font-semibold">+ Agregar</Link>
+              </div>
+              <div className="divide-y divide-[var(--border)] max-h-64 overflow-y-auto">
+                {employees.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-[var(--text-muted)]">
+                    <Link href="/en/admin/employees/new" className="text-[#E8B84B]">Agrega el primero</Link>
                   </div>
-                );
-              })}
+                ) : employees.map((emp) => {
+                  const isActive = activeUserIds.has(emp.id);
+                  return (
+                    <div key={emp.id} className="px-5 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? "bg-green-500" : "bg-[var(--border)]"}`} />
+                        <div>
+                          <p className="text-xs font-semibold text-[var(--text-primary)]">{emp.name}</p>
+                          <p className="text-xs text-[var(--text-muted)]">${emp.hourlyRate}/h</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${emp.role === "ADMIN" ? "bg-[#E8B84B]/15 text-[#E8B84B]" : "bg-[var(--border)] text-[var(--text-muted)]"}`}>
+                          {emp.role === "ADMIN" ? "Admin" : "Empleado"}
+                        </span>
+                        <Link href={`/en/admin/employees/${emp.id}`} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] px-2.5 py-1 rounded-lg transition">
+                          Editar
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          )}
+          </div>
+
         </div>
       </div>
     </div>
