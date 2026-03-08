@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
@@ -11,9 +11,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (role !== "OWNER" && role !== "ADMIN") return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
 
   const orgId = (session.user as any).organizationId;
+  const { id } = await params;
 
   const user = await prisma.user.findFirst({
-    where: { id: params.id, organizationId: orgId },
+    where: { id, organizationId: orgId },
     select: { id: true, name: true, email: true, role: true, hourlyRate: true, overtimeRate: true },
   });
 
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return NextResponse.json(user);
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
@@ -29,15 +30,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (role !== "OWNER" && role !== "ADMIN") return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
 
   const orgId = (session.user as any).organizationId;
+  const { id } = await params;
   const { name, email, password, role: newRole, hourlyRate, overtimeRate } = await req.json();
 
   const updateData: any = { name, email, role: newRole, hourlyRate, overtimeRate };
   if (password) updateData.pin = await bcrypt.hash(password, 10);
 
-  const user = await prisma.user.updateMany({
-    where: { id: params.id, organizationId: orgId },
+  await prisma.user.updateMany({
+    where: { id, organizationId: orgId },
     data: updateData,
   });
 
   return NextResponse.json({ success: true });
 }
+
