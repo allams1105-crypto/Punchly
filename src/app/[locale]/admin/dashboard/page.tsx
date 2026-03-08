@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import HoursChart from "@/components/admin/HoursChart";
 import ThemeToggle from "@/components/ThemeToggle";
+import EmployeeTable from "@/components/admin/EmployeeTable";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -49,8 +50,10 @@ export default async function AdminDashboard() {
     include: { user: true },
   });
 
-  const activeUserIds = new Set(activeEntries.map((e) => e.userId));
-  const activeEntryMap = new Map(activeEntries.map((e) => [e.userId, e]));
+  const activeUserIds = activeEntries.map((e) => e.userId);
+  const activeEntryMap = Object.fromEntries(activeEntries.map((e) => [e.userId, {
+    clockIn: e.clockIn.toISOString(),
+  }]));
 
   const payrollData = employees.map((emp) => {
     const completed = emp.timeEntries.filter(e => e.status === "CLOCKED_OUT");
@@ -71,8 +74,11 @@ export default async function AdminDashboard() {
   const totalHoursAll = Math.round(payrollData.reduce((acc, e) => acc + e.totalHours, 0));
   const overtimeCount = payrollData.filter(e => e.overtimeHours > 0).length;
   const chartData = payrollData.map(emp => ({ name: emp.name.split(" ")[0], hours: emp.totalHours, pay: emp.totalPay }));
-
   const dateStr = now.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" });
+
+  const employeesPlain = employees.map(e => ({
+    id: e.id, name: e.name, email: e.email, hourlyRate: e.hourlyRate,
+  }));
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[var(--bg-primary)]">
@@ -126,82 +132,17 @@ export default async function AdminDashboard() {
 
         <div className="p-4 md:p-6 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
-            {/* Employee table */}
-            <div className="lg:col-span-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold text-[var(--text-primary)]">Estado de Empleados</h2>
-                  <span className="text-xs bg-[var(--border)] text-[var(--text-muted)] px-2 py-0.5 rounded-full font-medium">{employees.length}</span>
-                </div>
-                <Link href="/en/admin/employees/new" className="text-xs text-[#E8B84B] font-semibold hover:underline">+ Agregar</Link>
-              </div>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[var(--border)] bg-[var(--bg-primary)]/50">
-                    <th className="text-left px-5 py-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Nombre</th>
-                    <th className="text-left px-3 py-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Estado</th>
-                    <th className="text-left px-3 py-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider hidden sm:table-cell">Entrada</th>
-                    <th className="text-right px-5 py-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Horas</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]">
-                  {employees.length === 0 ? (
-                    <tr><td colSpan={4} className="px-5 py-10 text-center">
-                      <p className="text-sm text-[var(--text-muted)] mb-2">No hay empleados aún</p>
-                      <Link href="/en/admin/employees/new" className="text-xs bg-[#E8B84B] text-black px-4 py-2 rounded-lg font-black hover:bg-[#d4a43a] transition">+ Agregar primer empleado</Link>
-                    </td></tr>
-                  ) : employees.map((emp) => {
-                    const isActive = activeUserIds.has(emp.id);
-                    const activeEntry = activeEntryMap.get(emp.id);
-                    const pData = payrollData.find(p => p.id === emp.id);
-                    const minutesWorked = activeEntry ? Math.floor((now.getTime() - new Date(activeEntry.clockIn).getTime()) / 60000) : 0;
-                    return (
-                      <tr key={emp.id} className="hover:bg-[var(--border)]/20 transition group">
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 bg-[#E8B84B]/10 border border-[#E8B84B]/20 rounded-lg flex items-center justify-center shrink-0">
-                              <span className="text-[#E8B84B] text-xs font-black">{emp.name.charAt(0).toUpperCase()}</span>
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-[var(--text-primary)]">{emp.name}</p>
-                              <p className="text-xs text-[var(--text-muted)]">${emp.hourlyRate}/h</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          {isActive ? (
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shrink-0"></span>
-                              <span className="text-xs font-semibold text-green-400">
-                                {Math.floor(minutesWorked/60)}h {minutesWorked%60}m
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-[var(--text-muted)]">Fuera</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-3 hidden sm:table-cell">
-                          <p className="text-xs text-[var(--text-primary)]">
-                            {activeEntry ? new Date(activeEntry.clockIn).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) : "—"}
-                          </p>
-                        </td>
-                        <td className="px-5 py-3 text-right">
-                          <p className="text-sm font-bold text-[var(--text-primary)]">{pData?.totalHours || 0}h</p>
-                          {pData && pData.overtimeHours > 0 && (
-                            <p className="text-xs text-orange-400">+{pData.overtimeHours}h extra</p>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="lg:col-span-3">
+              <EmployeeTable
+                employees={employeesPlain}
+                payrollData={payrollData}
+                activeUserIds={activeUserIds}
+                activeEntryMap={activeEntryMap}
+                now={now.toISOString()}
+              />
             </div>
 
-            {/* Right panel */}
             <div className="lg:col-span-2 space-y-4">
-              {/* Payroll */}
               <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
                 <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between">
                   <h2 className="text-sm font-bold text-[var(--text-primary)]">Nómina</h2>
@@ -226,7 +167,6 @@ export default async function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Quick actions */}
               <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
                 <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Acciones rápidas</p>
                 <div className="space-y-1.5">
@@ -247,7 +187,6 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          {/* Chart */}
           {chartData.length > 0 && <HoursChart data={chartData} />}
         </div>
       </div>
