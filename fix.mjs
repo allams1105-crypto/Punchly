@@ -27,12 +27,11 @@ export default async function AdminDashboard() {
     ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 15, 23, 59, 59))
     : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59));
 
-  // Calcular dias laborables reales del periodo
   const periodDays = isFirstHalf ? 15 : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate() - 15;
   const maxRegularHours = 8 * periodDays;
 
   const employees = await prisma.user.findMany({
-    where: { organizationId: orgId, role: "EMPLOYEE", isActive: true },
+    where: { organizationId: orgId, role: { in: ["EMPLOYEE", "ADMIN"] }, isActive: true },
     include: {
       timeEntries: {
         where: { status: "CLOCKED_OUT", clockIn: { gte: periodStart, lte: periodEnd } },
@@ -57,6 +56,7 @@ export default async function AdminDashboard() {
       id: emp.id,
       name: emp.name,
       email: emp.email,
+      role: emp.role,
       hourlyRate: emp.hourlyRate,
       overtimeRate: emp.overtimeRate,
       totalHours: Math.round(totalHours * 10) / 10,
@@ -187,9 +187,17 @@ export default async function AdminDashboard() {
                         <p className="text-xs text-gray-400">{emp.email}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">\${emp.hourlyRate}/h</p>
-                      <p className="text-xs text-gray-300">extra: \${emp.overtimeRate}/h</p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400">\${emp.hourlyRate}/h</p>
+                        <p className="text-xs text-gray-300">extra: \${emp.overtimeRate}/h</p>
+                      </div>
+                      <span className={\`text-xs px-2 py-0.5 rounded-full \${emp.role === "ADMIN" ? "bg-violet-100 text-violet-700" : "bg-gray-100 text-gray-500"}\`}>
+                        {emp.role === "ADMIN" ? "Admin" : "Empleado"}
+                      </span>
+                      <Link href={\`/en/admin/employees/\${emp.id}\`} className="text-xs text-gray-400 hover:text-black border border-gray-200 px-3 py-1 rounded-lg">
+                        Editar
+                      </Link>
                     </div>
                   </div>
                 );
