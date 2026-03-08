@@ -5,6 +5,7 @@ import Link from "next/link";
 import HoursChart from "@/components/admin/HoursChart";
 import ThemeToggle from "@/components/ThemeToggle";
 import EmployeeTable from "@/components/admin/EmployeeTable";
+import NotificationBell from "@/components/admin/NotificationBell";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -89,6 +90,7 @@ export default async function AdminDashboard() {
           <p className="text-xs text-[var(--text-muted)]">{periodLabel}</p>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationBell orgId={orgId} />
           <ThemeToggle />
           <Link href="/en/admin/employees/new"
             className="bg-[#E8B84B] text-black text-xs px-3 py-2 rounded-lg font-black hover:bg-[#d4a43a] transition flex items-center gap-1.5">

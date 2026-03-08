@@ -1,6 +1,4 @@
-import { writeFileSync } from "fs";
-
-const notif = `"use client";
+"use client";
 import { useState, useEffect, useRef } from "react";
 
 type Notification = {
@@ -29,7 +27,7 @@ export default function NotificationBell({ orgId }: { orgId: string }) {
   useEffect(() => {
     async function fetchNotifs() {
       try {
-        const res = await fetch(\`/api/activity?limit=10\`);
+        const res = await fetch(`/api/activity?limit=10`);
         const data = await res.json();
         const logs = data.logs || [];
         const recent = logs.filter((l: any) =>
@@ -94,14 +92,14 @@ export default function NotificationBell({ orgId }: { orgId: string }) {
               const action = actionLabel[n.action] || { label: n.action, color: "text-[var(--text-muted)]" };
               const date = new Date(n.createdAt);
               const mins = Math.floor((Date.now() - date.getTime()) / 60000);
-              const timeAgo = mins < 1 ? "ahora" : mins < 60 ? \`\${mins}m\` : \`\${Math.floor(mins/60)}h\`;
+              const timeAgo = mins < 1 ? "ahora" : mins < 60 ? `${mins}m` : `${Math.floor(mins/60)}h`;
               return (
                 <div key={n.id} className="px-4 py-3 hover:bg-[var(--border)]/20 transition">
                   <div className="flex items-center justify-between mb-0.5">
                     <p className="text-xs font-semibold text-[var(--text-primary)]">{n.userName}</p>
                     <p className="text-xs text-[var(--text-muted)]">{timeAgo}</p>
                   </div>
-                  <p className={\`text-xs \${action.color}\`}>{action.label} · {n.details}</p>
+                  <p className={`text-xs ${action.color}`}>{action.label} · {n.details}</p>
                 </div>
               );
             })}
@@ -110,8 +108,4 @@ export default function NotificationBell({ orgId }: { orgId: string }) {
       )}
     </div>
   );
-}`;
-
-writeFileSync("src/components/admin/NotificationBell.tsx", notif);
-console.log("Listo!");
-
+}
