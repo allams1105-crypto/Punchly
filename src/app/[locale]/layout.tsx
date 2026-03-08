@@ -6,13 +6,13 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Punchly — Simple. Powerful. Attendance.",
+  title: "Punchly.Clock — Simple. Powerful. Attendance.",
   description: "Modern attendance tracking for teams",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Punchly",
+    title: "Punchly.Clock",
   },
 };
 
@@ -33,10 +33,10 @@ export default async function LocaleLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Punchly" />
+        <meta name="apple-mobile-web-app-title" content="Punchly.Clock" />
       </head>
       <body className={inter.className}>
-        <ThemeProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           {children}
         </ThemeProvider>
       </body>
