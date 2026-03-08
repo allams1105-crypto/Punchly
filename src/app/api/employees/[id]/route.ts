@@ -32,9 +32,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const orgId = (session.user as any).organizationId;
   const { id } = await params;
 
-  await prisma.user.updateMany({
+   await prisma.user.deleteMany({
     where: { id, organizationId: orgId },
-    data: { isActive: false },
   });
 
   return NextResponse.json({ success: true });
