@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import ClockButton from "@/components/employee/ClockButton";
 import WeeklyCalendar from "@/components/employee/WeeklyCalendar";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default async function EmployeeDashboard() {
   const session = await auth();
@@ -49,16 +50,17 @@ export default async function EmployeeDashboard() {
   }));
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-gray-900">Punchly</span>
-          <span className="text-gray-300">|</span>
-          <span className="text-gray-500 text-sm">{user.organization.name}</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">Punchly</span>
+          <span className="text-gray-300 dark:text-gray-700">|</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm">{user.organization.name}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600">{user.name}</span>
-          <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">Salir</a>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{user.name}</span>
+          <ThemeToggle />
+          <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">Salir</a>
         </div>
       </div>
       <div className="max-w-2xl mx-auto p-6 space-y-6">

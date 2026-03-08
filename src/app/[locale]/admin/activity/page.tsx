@@ -33,20 +33,20 @@ export default function ActivityPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-gray-900">Punchly</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">Punchly</span>
           <span className="text-gray-300">|</span>
-          <span className="text-gray-500 text-sm">Actividad</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm">Actividad</span>
         </div>
         <Link href="/en/admin/dashboard" className="text-sm text-gray-500 hover:text-gray-900">Volver</Link>
       </div>
 
       <div className="max-w-3xl mx-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-200">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
           <div className="p-5 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-900">Log de actividad</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Log de actividad</h2>
             <p className="text-xs text-gray-400 mt-0.5">Ultimas 100 acciones</p>
           </div>
           {loading ? (
@@ -65,7 +65,7 @@ export default function ActivityPage() {
                         {style.label}
                       </span>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{log.userName}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{log.userName}</p>
                         {log.details && <p className="text-xs text-gray-400">{log.details}</p>}
                       </div>
                     </div>

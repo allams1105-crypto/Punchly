@@ -38,35 +38,35 @@ export default function PayrollPage() {
   const periodLabel = half === "1" ? `1 — 15 ${MONTHS[month - 1]} ${year}` : `16 — ${new Date(year, month, 0).getDate()} ${MONTHS[month - 1]} ${year}`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-gray-900">Punchly</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">Punchly</span>
           <span className="text-gray-300">|</span>
-          <span className="text-gray-500 text-sm">Historial de Nomina</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm">Historial de Nomina</span>
         </div>
-        <Link href="/en/admin/dashboard" className="text-sm text-gray-500 hover:text-gray-900">Volver</Link>
+        <Link href="/en/admin/dashboard" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">Volver</Link>
       </div>
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Selector */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
           <div className="flex items-center gap-4 flex-wrap">
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Ano</label>
-              <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="border border-gray-200 rounded-lg px-3 py-2 text-sm">
+              <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">Ano</label>
+              <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2 text-sm">
                 {[2024, 2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">Mes</label>
-              <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="border border-gray-200 rounded-lg px-3 py-2 text-sm">
+              <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2 text-sm">
                 {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">Quincena</label>
-              <select value={half} onChange={(e) => setHalf(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm">
+              <select value={half} onChange={(e) => setHalf(e.target.value)} className="border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2 text-sm">
                 <option value="1">Primera (1-15)</option>
                 <option value="2">Segunda (16-fin)</option>
               </select>
@@ -86,9 +86,9 @@ export default function PayrollPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-2xl border border-gray-200">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
           <div className="p-5 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-900">Desglose por empleado</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Desglose por empleado</h2>
           </div>
           {loading ? (
             <div className="p-8 text-center text-sm text-gray-400">Cargando...</div>
