@@ -1,26 +1,19 @@
-import { createCanvas } from "canvas";
-import { writeFileSync } from "fs";
+import { writeFileSync, readFileSync } from "fs";
 
-function createIcon(size) {
-  const canvas = createCanvas(size, size);
-  const ctx = canvas.getContext("2d");
+let content = readFileSync("src/app/[locale]/admin/dashboard/page.tsx", "utf8");
 
-  // Background
-  ctx.fillStyle = "#000000";
-  ctx.roundRect(0, 0, size, size, size * 0.2);
-  ctx.fill();
+content = content.replace(
+  `<Link href="/en/admin/settings" className="text-xs text-gray-400 hover:text-gray-700">
+            Settings
+          </Link>`,
+  `<Link href="/en/admin/activity" className="text-xs text-gray-400 hover:text-gray-700">
+            Actividad
+          </Link>
+          <Link href="/en/admin/settings" className="text-xs text-gray-400 hover:text-gray-700">
+            Settings
+          </Link>`
+);
 
-  // Text
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `bold ${size * 0.4}px Arial`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("P", size / 2, size / 2);
-
-  return canvas.toBuffer("image/png");
-}
-
-writeFileSync("public/icon-192.png", createIcon(192));
-writeFileSync("public/icon-512.png", createIcon(512));
-console.log("Iconos creados!");
+writeFileSync("src/app/[locale]/admin/dashboard/page.tsx", content);
+console.log("Listo!");
 
