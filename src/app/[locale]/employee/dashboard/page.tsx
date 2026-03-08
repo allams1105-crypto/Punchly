@@ -18,14 +18,10 @@ export default async function EmployeeDashboard() {
   if (!user) redirect("/en/login");
 
   const now = new Date();
-
-  // Semana actual
   const day = now.getDay();
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
   weekStart.setHours(0, 0, 0, 0);
-
-  // Mes actual
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const entries = await prisma.timeEntry.findMany({
@@ -34,21 +30,13 @@ export default async function EmployeeDashboard() {
     take: 50,
   });
 
-  const weeklyEntries = entries.filter(
-    (e) => new Date(e.clockIn) >= weekStart
-  );
-  const monthlyEntries = entries.filter(
-    (e) => new Date(e.clockIn) >= monthStart
-  );
+  const weeklyMinutes = entries
+    .filter((e) => new Date(e.clockIn) >= weekStart)
+    .reduce((acc, e) => acc + (e.durationMin || 0), 0);
 
-  const weeklyMinutes = weeklyEntries.reduce(
-    (acc, e) => acc + (e.durationMin || 0),
-    0
-  );
-  const monthlyMinutes = monthlyEntries.reduce(
-    (acc, e) => acc + (e.durationMin || 0),
-    0
-  );
+  const monthlyMinutes = entries
+    .filter((e) => new Date(e.clockIn) >= monthStart)
+    .reduce((acc, e) => acc + (e.durationMin || 0), 0);
 
   const activeEntry = entries.find((e) => e.status === "CLOCKED_IN") || null;
 
@@ -62,7 +50,6 @@ export default async function EmployeeDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-xl font-bold text-gray-900">Punchly</span>
@@ -71,30 +58,15 @@ export default async function EmployeeDashboard() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-600">{user.name}</span>
-          
-            href="/api/auth/signout"
-            className="text-xs text-gray-400 hover:text-gray-700"
-          >
-            Salir
-          </a>
+          <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">Salir</a>
         </div>
       </div>
-
       <div className="max-w-2xl mx-auto p-6 space-y-6">
-        {/* Clock Button */}
         <ClockButton
-          userId={userId}
-          activeEntry={
-            activeEntry
-              ? {
-                  id: activeEntry.id,
-                  clockIn: activeEntry.clockIn.toISOString(),
-                }
-              : null
-          }
+          isActive={!!activeEntry}
+          entryId={activeEntry?.id}
+          clockInTime={activeEntry?.clockIn.toISOString()}
         />
-
-        {/* Weekly Calendar */}
         <WeeklyCalendar
           entries={serializedEntries}
           weeklyMinutes={weeklyMinutes}
