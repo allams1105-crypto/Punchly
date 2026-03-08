@@ -1,11 +1,16 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 const p = new PrismaClient();
 
-const id = "cmmha32md0001remejm8t3dp5"; // Papa
+const hash = await bcrypt.hash("Admin123!", 10);
+await p.user.update({
+  where: { id: "admin" },
+  data: { 
+    email: "allams1105@gmail.com",
+    pin: hash,
+    name: "Admin"
+  }
+});
 
-await p.timeEntry.deleteMany({ where: { userId: id } });
-await p.activityLog.deleteMany({ where: { userId: id } });
-await p.user.delete({ where: { id } });
-
-console.log("Papa eliminado!");
+console.log("Listo!");
 await p.$disconnect();
