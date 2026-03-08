@@ -47,8 +47,13 @@ export default function EditEmployeePage({ params }: { params: { id: string } })
   async function handleDelete() {
     if (!confirm("¿Eliminar este empleado permanentemente? Esta accion no se puede deshacer.")) return;
     setDeleting(true);
-    await fetch(`/api/employees/${params.id}`, { method: "DELETE" });
-    router.push("/en/admin/dashboard");
+    const res = await fetch(`/api/employees/${params.id}`, { method: "DELETE" });
+    if (res.ok) {
+      window.location.href = "/en/admin/dashboard";
+    } else {
+      alert("Error al eliminar");
+      setDeleting(false);
+    }
   }
 
   if (fetching) return (
