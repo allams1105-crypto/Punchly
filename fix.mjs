@@ -1,224 +1,121 @@
 import { writeFileSync } from "fs";
 
-const content = `import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import UpgradeButton from "@/components/admin/UpgradeButton";
-import HoursChart from "@/components/admin/HoursChart";
-import ThemeToggle from "@/components/ThemeToggle";
+const content = `import Link from "next/link";
 
-export default async function AdminDashboard() {
-  const session = await auth();
-  if (!session) redirect("/en/login");
-
-  const role = (session.user as any).role;
-  if (role !== "OWNER" && role !== "ADMIN") redirect("/en/employee/dashboard");
-
-  const orgId = (session.user as any).organizationId;
-  const org = await prisma.organization.findUnique({ where: { id: orgId } });
-
-  const now = new Date();
-  const isFirstHalf = now.getUTCDate() <= 15;
-
-  const periodStart = isFirstHalf
-    ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 16));
-
-  const periodEnd = isFirstHalf
-    ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 15, 23, 59, 59))
-    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59));
-
-  const periodDays = isFirstHalf ? 15 : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate() - 15;
-  const maxRegularHours = 8 * periodDays;
-
-  const employees = await prisma.user.findMany({
-    where: { organizationId: orgId, role: { in: ["EMPLOYEE", "ADMIN"] }, isActive: true },
-    include: {
-      timeEntries: {
-        where: { status: "CLOCKED_OUT", clockIn: { gte: periodStart, lte: periodEnd } },
-      },
-    },
-  });
-
-  const activeEntries = await prisma.timeEntry.findMany({
-    where: { user: { organizationId: orgId }, status: "CLOCKED_IN" },
-    include: { user: true },
-  });
-
-  const activeUserIds = new Set(activeEntries.map((e) => e.userId));
-
-  const payrollData = employees.map((emp) => {
-    const totalMinutes = emp.timeEntries.reduce((acc, e) => acc + (e.durationMin || 0), 0);
-    const totalHours = totalMinutes / 60;
-    const regularHours = Math.min(totalHours, maxRegularHours);
-    const overtimeHours = Math.max(0, totalHours - maxRegularHours);
-    const totalPay = regularHours * (emp.hourlyRate || 0) + overtimeHours * (emp.overtimeRate || 0);
-    return {
-      id: emp.id, name: emp.name, email: emp.email, role: emp.role,
-      hourlyRate: emp.hourlyRate, overtimeRate: emp.overtimeRate,
-      totalHours: Math.round(totalHours * 10) / 10,
-      overtimeHours: Math.round(overtimeHours * 10) / 10,
-      totalPay: Math.round(totalPay * 100) / 100,
-    };
-  });
-
-  const totalPayroll = payrollData.reduce((acc, e) => acc + e.totalPay, 0);
-  const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  const periodLabel = isFirstHalf
-    ? \`1 — 15 \${MONTHS[now.getUTCMonth()]}\`
-    : \`16 — \${new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate()} \${MONTHS[now.getUTCMonth()]}\`;
-
-  const chartData = payrollData.map((emp) => ({
-    name: emp.name.split(" ")[0], hours: emp.totalHours, pay: emp.totalPay,
-  }));
-
+export default function LandingPage() {
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[var(--bg-primary)]">
-      {/* Topbar */}
-      <div className="h-14 border-b border-[var(--border)] px-4 md:px-6 flex items-center justify-between shrink-0 bg-[var(--bg-primary)]">
-        <div>
-          <h1 className="text-sm font-black text-[var(--text-primary)]">Dashboard</h1>
-          <p className="text-xs text-[var(--text-muted)]">{periodLabel}</p>
+    <div className="min-h-screen bg-black text-white">
+      {/* Navbar */}
+      <nav className="border-b border-white/8 px-6 py-4 flex items-center justify-between sticky top-0 z-50 bg-black/95 backdrop-blur">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center">
+            <span className="text-black font-black text-sm">P</span>
+          </div>
+          <span className="text-white font-black text-lg">Punchly.Clock</span>
         </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <Link href="/en/admin/employees/new"
-            className="bg-[#E8B84B] text-black text-xs px-3 py-2 rounded-xl font-black hover:bg-[#d4a43a] transition flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span className="hidden sm:inline">Empleado</span>
+        <div className="flex items-center gap-3">
+          <Link href="/en/login" className="text-sm text-white/50 hover:text-white transition font-medium">
+            Iniciar sesión
+          </Link>
+          <Link href="/en/register"
+            className="bg-[#E8B84B] text-black text-sm px-4 py-2 rounded-xl font-black hover:bg-[#d4a43a] transition">
+            Prueba gratis
           </Link>
         </div>
-      </div>
+      </nav>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+      {/* Hero */}
+      <section className="px-6 py-24 max-w-4xl mx-auto text-center">
+        <div className="inline-flex items-center gap-2 bg-[#E8B84B]/10 border border-[#E8B84B]/20 rounded-full px-4 py-1.5 mb-8">
+          <span className="w-1.5 h-1.5 bg-[#E8B84B] rounded-full"></span>
+          <span className="text-[#E8B84B] text-xs font-semibold">Control de asistencia, simplificado</span>
+        </div>
+        <h1 className="text-5xl md:text-7xl font-black leading-tight mb-6">
+          Sabe quién está<br />
+          trabajando,{" "}
+          <span className="text-[#E8B84B]">ahora mismo.</span>
+        </h1>
+        <p className="text-white/50 text-lg md:text-xl max-w-2xl mx-auto mb-10">
+          Punchly.Clock ayuda a pequeños negocios a registrar horas, gestionar nómina y usar check-ins por kiosk — todo en un lugar.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link href="/en/register"
+            className="bg-[#E8B84B] text-black px-8 py-3.5 rounded-2xl font-black text-base hover:bg-[#d4a43a] transition w-full sm:w-auto text-center">
+            14 días gratis, sin tarjeta →
+          </Link>
+          <Link href="/en/login"
+            className="border border-white/10 text-white/70 px-8 py-3.5 rounded-2xl font-medium text-base hover:border-white/30 hover:text-white transition w-full sm:w-auto text-center">
+            Iniciar sesión
+          </Link>
+        </div>
+      </section>
 
-        {/* KPI Cards — 2 cols mobile, 4 cols desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4">
-            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">Empleados</p>
-            <p className="text-3xl font-black text-[var(--text-primary)]">{employees.length}</p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">activos</p>
+      {/* Stats */}
+      <section className="border-y border-white/8 py-12 px-6">
+        <div className="max-w-3xl mx-auto grid grid-cols-3 gap-8 text-center">
+          <div>
+            <p className="text-4xl font-black text-[#E8B84B]">100%</p>
+            <p className="text-white/40 text-sm mt-1">En la nube</p>
           </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4">
-            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">Trabajando</p>
-            <p className="text-3xl font-black text-green-500">{activeEntries.length}</p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">ahora</p>
+          <div>
+            <p className="text-4xl font-black text-[#E8B84B]">24/7</p>
+            <p className="text-white/40 text-sm mt-1">Disponible</p>
           </div>
-          <div className="bg-[#E8B84B]/10 border border-[#E8B84B]/25 rounded-2xl p-4">
-            <p className="text-xs text-[#E8B84B]/70 uppercase tracking-wider mb-2">Nómina</p>
-            <p className="text-3xl font-black text-[#E8B84B]">\${totalPayroll.toLocaleString()}</p>
-            <p className="text-xs text-[#E8B84B]/50 mt-1">estimada</p>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4">
-            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">Horas</p>
-            <p className="text-3xl font-black text-[var(--text-primary)]">
-              {Math.round(payrollData.reduce((acc, e) => acc + e.totalHours, 0))}h
-            </p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">quincena</p>
+          <div>
+            <p className="text-4xl font-black text-[#E8B84B]">∞</p>
+            <p className="text-white/40 text-sm mt-1">Empleados</p>
           </div>
         </div>
+      </section>
 
-        {/* Chart — full width on mobile */}
+      {/* Features */}
+      <section className="px-6 py-20 max-w-5xl mx-auto">
+        <h2 className="text-3xl md:text-4xl font-black text-center mb-12">Todo lo que necesitas</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <HoursChart data={chartData} />
+          <div className="bg-white/5 border border-white/8 rounded-2xl p-6 hover:border-[#E8B84B]/30 transition">
+            <div className="w-10 h-10 bg-[#E8B84B]/15 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3 className="font-black text-white mb-2">Control de horas</h3>
+            <p className="text-white/40 text-sm">Registra entradas y salidas en tiempo real desde cualquier dispositivo.</p>
           </div>
-          {/* Active employees */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--border)] flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <h2 className="text-sm font-bold text-[var(--text-primary)]">En Turno</h2>
-              <span className="ml-auto text-xs bg-green-500/15 text-green-500 px-2 py-0.5 rounded-full font-semibold">{activeEntries.length}</span>
+          <div className="bg-white/5 border border-white/8 rounded-2xl p-6 hover:border-[#E8B84B]/30 transition">
+            <div className="w-10 h-10 bg-[#E8B84B]/15 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
             </div>
-            <div className="divide-y divide-[var(--border)] max-h-48 md:max-h-64 overflow-y-auto">
-              {activeEntries.length === 0 ? (
-                <div className="p-6 text-center text-xs text-[var(--text-muted)]">Nadie trabajando ahora</div>
-              ) : activeEntries.map((entry) => {
-                const minutesWorked = Math.floor((now.getTime() - new Date(entry.clockIn).getTime()) / 60000);
-                return (
-                  <div key={entry.id} className="px-4 py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-semibold text-[var(--text-primary)]">{entry.user.name}</p>
-                      <p className="text-xs text-[var(--text-muted)]">{new Date(entry.clockIn).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}</p>
-                    </div>
-                    <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full font-medium">
-                      {Math.floor(minutesWorked / 60)}h {minutesWorked % 60}m
-                    </span>
-                  </div>
-                );
-              })}
+            <h3 className="font-black text-white mb-2">Nómina automática</h3>
+            <p className="text-white/40 text-sm">Calcula pagos quincenales con horas regulares y extras automáticamente.</p>
+          </div>
+          <div className="bg-[#E8B84B]/5 border border-[#E8B84B]/20 rounded-2xl p-6">
+            <div className="w-10 h-10 bg-[#E8B84B]/15 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             </div>
+            <h3 className="font-black text-white mb-2">Modo Kiosk</h3>
+            <p className="text-white/40 text-sm">Instala un tablet en tu oficina para que los empleados fichen con PIN.</p>
           </div>
         </div>
+      </section>
 
-        {/* Employees list — stacked on mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Payroll */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-bold text-[var(--text-primary)]">Nómina Quincenal</h2>
-                <p className="text-xs text-[var(--text-muted)]">{periodLabel}</p>
-              </div>
-              <span className="text-sm font-black text-[#E8B84B]">\${totalPayroll.toLocaleString()}</span>
-            </div>
-            <div className="divide-y divide-[var(--border)] max-h-64 overflow-y-auto">
-              {payrollData.length === 0 ? (
-                <div className="p-6 text-center text-xs text-[var(--text-muted)]">
-                  <Link href="/en/admin/employees/new" className="text-[#E8B84B]">Agrega empleados</Link>
-                </div>
-              ) : payrollData.map((emp) => (
-                <div key={emp.id} className="px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-[var(--text-primary)]">{emp.name}</p>
-                    <p className="text-xs text-[var(--text-muted)]">{emp.totalHours}h {emp.overtimeHours > 0 && <span className="text-orange-400">· {emp.overtimeHours}h extra</span>}</p>
-                  </div>
-                  <p className="text-sm font-black text-[#E8B84B]">\${emp.totalPay.toLocaleString()}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Employees */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[var(--text-primary)]">Empleados</h2>
-              <Link href="/en/admin/employees/new" className="text-xs text-[#E8B84B] hover:underline font-semibold">+ Agregar</Link>
-            </div>
-            <div className="divide-y divide-[var(--border)] max-h-64 overflow-y-auto">
-              {employees.length === 0 ? (
-                <div className="p-6 text-center text-xs text-[var(--text-muted)]">
-                  <Link href="/en/admin/employees/new" className="text-[#E8B84B]">Agrega el primero</Link>
-                </div>
-              ) : employees.map((emp) => {
-                const isActive = activeUserIds.has(emp.id);
-                return (
-                  <div key={emp.id} className="px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className={\`w-1.5 h-1.5 rounded-full shrink-0 \${isActive ? "bg-green-500" : "bg-[var(--border)]"}\`} />
-                      <div>
-                        <p className="text-xs font-semibold text-[var(--text-primary)]">{emp.name}</p>
-                        <p className="text-xs text-[var(--text-muted)]">\${emp.hourlyRate}/h</p>
-                      </div>
-                    </div>
-                    <Link href={\`/en/admin/employees/\${emp.id}\`}
-                      className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] px-2.5 py-1 rounded-lg transition">
-                      Editar
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+      {/* CTA */}
+      <section className="px-6 py-20">
+        <div className="max-w-2xl mx-auto bg-[#E8B84B] rounded-3xl p-12 text-center">
+          <h2 className="text-3xl md:text-4xl font-black text-black mb-4">Empieza hoy gratis</h2>
+          <p className="text-black/60 mb-8">Sin tarjeta de crédito. Sin contrato. Cancela cuando quieras.</p>
+          <Link href="/en/register"
+            className="bg-black text-white px-8 py-3.5 rounded-2xl font-black text-base hover:bg-black/80 transition inline-block">
+            Crear cuenta gratis →
+          </Link>
         </div>
+      </section>
 
-      </div>
+      {/* Footer */}
+      <footer className="border-t border-white/8 px-6 py-8 text-center">
+        <p className="text-white/20 text-sm">© 2026 Punchly.Clock · Todos los derechos reservados</p>
+      </footer>
     </div>
   );
 }`;
 
-writeFileSync("src/app/[locale]/admin/dashboard/page.tsx", content);
+writeFileSync("src/app/[locale]/page.tsx", content);
 console.log("Listo!");
 
