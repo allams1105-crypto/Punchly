@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -8,16 +9,10 @@ export const metadata: Metadata = {
   title: "Punchly — Simple. Powerful. Attendance.",
   description: "Modern attendance tracking for teams",
   manifest: "/manifest.json",
-  themeColor: "#000000",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Punchly",
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
   },
 };
 
@@ -31,7 +26,7 @@ export default async function LocaleLayout({
   const { locale } = await params;
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
@@ -41,9 +36,10 @@ export default async function LocaleLayout({
         <meta name="apple-mobile-web-app-title" content="Punchly" />
       </head>
       <body className={inter.className}>
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
 }
-

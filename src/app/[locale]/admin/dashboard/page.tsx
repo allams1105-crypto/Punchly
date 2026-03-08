@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import UpgradeButton from "@/components/admin/UpgradeButton";
 import HoursChart from "@/components/admin/HoursChart";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -76,10 +77,10 @@ export default async function AdminDashboard() {
     : `16 — ${new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate()} ${now.toLocaleDateString("es", { month: "long" })}`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-gray-900">Punchly</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">Punchly</span>
           <span className="text-gray-300">|</span>
           <span className="text-gray-500 text-sm">{org?.name || "Sin Organizacion"}</span>
         </div>
@@ -103,6 +104,7 @@ export default async function AdminDashboard() {
           <Link href="/en/admin/settings" className="text-xs text-gray-400 hover:text-gray-700">
             Settings
           </Link>
+          <ThemeToggle />
           <a href="/api/auth/signout" className="text-xs text-gray-400 hover:text-gray-700">Salir</a>
         </div>
       </div>
