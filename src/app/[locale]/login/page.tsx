@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import ThemeToggle from "@/components/ThemeToggle";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -43,8 +42,7 @@ export default function LoginPage() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-[#E8B84B]" />
-        <div className="absolute inset-0" style={{backgroundImage: "radial-gradient(circle at 20% 50%, rgba(0,0,0,0.15) 0%, transparent 60%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)"}} />
-        {/* Grid pattern */}
+        <div className="absolute inset-0" style={{backgroundImage: "radial-gradient(circle at 20% 50%, rgba(0,0,0,0.2) 0%, transparent 60%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%)"}} />
         <div className="absolute inset-0 opacity-10" style={{backgroundImage: "linear-gradient(rgba(0,0,0,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.5) 1px, transparent 1px)", backgroundSize: "40px 40px"}} />
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <div className="flex items-center gap-3">
@@ -54,20 +52,33 @@ export default function LoginPage() {
             <span className="text-black font-black text-xl tracking-tight">Punchly.Clock</span>
           </div>
           <div>
-            <p className="text-black/60 text-sm font-medium uppercase tracking-widest mb-4">Control de asistencia</p>
-            <h2 className="text-5xl font-black text-black leading-tight mb-6">
+            <p className="text-black/50 text-xs font-bold uppercase tracking-widest mb-5">Control de asistencia</p>
+            <h2 className="text-5xl font-black text-black leading-[1.1] mb-8">
               Tu equipo,<br />
               siempre<br />
               en punto.
             </h2>
-            <div className="flex gap-6">
-              <div>
-                <p className="text-3xl font-black text-black">100%</p>
-                <p className="text-black/60 text-xs mt-1">Automatizado</p>
+            <div className="h-px bg-black/15 mb-8" />
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-black/8 rounded-2xl p-5">
+                <p className="text-4xl font-black text-black">100%</p>
+                <p className="text-black/60 text-xs font-semibold mt-2 uppercase tracking-wider">Automatizado</p>
+                <p className="text-black/40 text-xs mt-1">Sin procesos manuales</p>
               </div>
-              <div>
-                <p className="text-3xl font-black text-black">0</p>
-                <p className="text-black/60 text-xs mt-1">Errores manuales</p>
+              <div className="bg-black/8 rounded-2xl p-5">
+                <p className="text-4xl font-black text-black">0</p>
+                <p className="text-black/60 text-xs font-semibold mt-2 uppercase tracking-wider">Errores</p>
+                <p className="text-black/40 text-xs mt-1">Registros precisos siempre</p>
+              </div>
+              <div className="bg-black/8 rounded-2xl p-5">
+                <p className="text-4xl font-black text-black">2x</p>
+                <p className="text-black/60 text-xs font-semibold mt-2 uppercase tracking-wider">Mas rapido</p>
+                <p className="text-black/40 text-xs mt-1">Calculo de nomina</p>
+              </div>
+              <div className="bg-black/8 rounded-2xl p-5">
+                <p className="text-4xl font-black text-black">24/7</p>
+                <p className="text-black/60 text-xs font-semibold mt-2 uppercase tracking-wider">Disponible</p>
+                <p className="text-black/40 text-xs mt-1">Web y movil</p>
               </div>
             </div>
           </div>
@@ -76,9 +87,6 @@ export default function LoginPage() {
 
       {/* Right panel */}
       <div className="flex-1 flex flex-col justify-center px-8 lg:px-16 relative">
-        <div className="absolute top-6 right-6">
-          <ThemeToggle />
-        </div>
         <div className="max-w-sm w-full mx-auto">
           <div className="lg:hidden flex items-center gap-2 mb-10">
             <div className="w-7 h-7 bg-[#E8B84B] rounded-lg flex items-center justify-center">
@@ -97,7 +105,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E8B84B] focus:bg-white/8 transition"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E8B84B] transition"
                 placeholder="tu@empresa.com"
                 required
               />
@@ -109,7 +117,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E8B84B] focus:bg-white/8 transition"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E8B84B] transition"
                 placeholder="••••••••"
                 required
               />
