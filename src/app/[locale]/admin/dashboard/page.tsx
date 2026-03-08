@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import UpgradeButton from "@/components/admin/UpgradeButton";
+import HoursChart from "@/components/admin/HoursChart";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -65,6 +66,11 @@ export default async function AdminDashboard() {
   });
 
   const totalPayroll = payrollData.reduce((acc, e) => acc + e.totalPay, 0);
+  const chartData = payrollData.map((emp) => ({
+    name: emp.name.split(" ")[0],
+    hours: emp.totalHours,
+    pay: emp.totalPay,
+  }));
   const periodLabel = isFirstHalf
     ? `1 — 15 ${now.toLocaleDateString("es", { month: "long" })}`
     : `16 — ${new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate()} ${now.toLocaleDateString("es", { month: "long" })}`;
@@ -135,6 +141,8 @@ export default async function AdminDashboard() {
             </div>
           </div>
         )}
+
+        <HoursChart data={chartData} />
 
         <div className="bg-white rounded-2xl border border-gray-200">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
