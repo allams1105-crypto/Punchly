@@ -96,9 +96,17 @@ export default function EditEmployeePage({ params }: { params: { id: string } })
               </div>
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            <button type="submit" disabled={loading} className="w-full bg-black text-white py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition disabled:opacity-50">
-              {loading ? "Guardando..." : "Guardar cambios"}
-            </button>
+            <button
+  type="button"
+  onClick={async () => {
+    if (!confirm("¿Seguro que quieres desactivar este empleado?")) return;
+    await fetch(`/api/employees/${params.id}`, { method: "DELETE" });
+    router.push("/en/admin/dashboard");
+  }}
+  className="w-full border border-red-200 text-red-500 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition"
+>
+  Desactivar empleado
+</button>
           </form>
         </div>
       </div>

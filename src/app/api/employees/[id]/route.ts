@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   return NextResponse.json(user);
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
@@ -31,16 +31,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const orgId = (session.user as any).organizationId;
   const { id } = await params;
-  const { name, email, password, role: newRole, hourlyRate, overtimeRate } = await req.json();
-
-  const updateData: any = { name, email, role: newRole, hourlyRate, overtimeRate };
-  if (password) updateData.pin = await bcrypt.hash(password, 10);
 
   await prisma.user.updateMany({
     where: { id, organizationId: orgId },
-    data: updateData,
+    data: { isActive: false },
   });
 
   return NextResponse.json({ success: true });
+
+  
 }
 
