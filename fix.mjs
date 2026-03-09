@@ -1,101 +1,115 @@
 import { writeFileSync } from "fs";
 
-const fix = `"use client";
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import Link from "next/link";
+const content = `"use client";
+import { useEffect, useState } from "react";
 
-export default function RegisterPage() {
-  const [orgName, setOrgName] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+export default function PayrollPage() {
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth());
+  const [year, setYear] = useState(now.getFullYear());
+  const [half, setHalf] = useState(now.getDate() <= 15 ? 1 : 2);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
     setLoading(true);
-    setError("");
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orgName, name, email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) { setError(data.error || "Error al registrar"); setLoading(false); return; }
-    
-    // Auto login after register
-    const result = await signIn("credentials", {
-      email, password, redirect: false,
-    });
-    if (result?.ok) {
-      window.location.href = "/en/admin/dashboard";
-    } else {
-      window.location.href = "/en/login";
-    }
+    fetch(\`/api/payroll?month=\${month}&year=\${year}&half=\${half}\`)
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); });
+  }, [month, year, half]);
+
+  const total = data?.employees?.reduce((acc: number, e: any) => acc + e.totalPay, 0) || 0;
+  const periodLabel = half === 1 ? \`1 — 15 \${MONTHS[month]} \${year}\` : \`16 — fin \${MONTHS[month]} \${year}\`;
+
+  function exportCSV() {
+    window.open(\`/api/payroll/export?format=csv&month=\${month}&year=\${year}&half=\${half}\`, "_blank");
+  }
+
+  function exportPDF() {
+    window.open(\`/api/payroll/export?format=html&month=\${month}&year=\${year}&half=\${half}\`, "_blank");
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex">
-      <div className="hidden lg:flex w-1/2 bg-[#E8B84B] flex-col justify-between p-12">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center">
-            <span className="text-[#E8B84B] font-black text-base">P</span>
-          </div>
-          <span className="text-black font-black text-xl">Punchly.Clock</span>
-        </div>
+    <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
+      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between bg-[var(--bg-primary)]">
         <div>
-          <h2 className="text-4xl font-black text-black leading-tight mb-4">Empieza a gestionar tu equipo hoy</h2>
-          <p className="text-black/60 text-lg">Crea tu cuenta gratis y comienza en minutos.</p>
+          <h1 className="text-sm font-black text-[var(--text-primary)]">Nómina</h1>
+          <p className="text-xs text-[var(--text-muted)]">{periodLabel}</p>
         </div>
-        <div className="flex gap-6">
-          <div><p className="text-3xl font-black text-black">Gratis</p><p className="text-black/60 text-sm">Para empezar</p></div>
-          <div><p className="text-3xl font-black text-black">5min</p><p className="text-black/60 text-sm">Para configurar</p></div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-black text-[#E8B84B] mr-2">\${total.toLocaleString()}</span>
+          <button onClick={exportCSV}
+            className="flex items-center gap-1.5 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            CSV
+          </button>
+          <button onClick={exportPDF}
+            className="flex items-center gap-1.5 bg-[#E8B84B] text-black px-3 py-1.5 rounded-lg text-xs font-black hover:bg-[#d4a43a] transition">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            PDF
+          </button>
         </div>
       </div>
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm">
-          <div className="mb-8">
-            <h1 className="text-2xl font-black text-[var(--text-primary)] mb-1">Crear cuenta</h1>
-            <p className="text-[var(--text-muted)] text-sm">Registra tu empresa en Punchly.Clock</p>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Nombre de la empresa</label>
-              <input type="text" value={orgName} onChange={e => setOrgName(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" placeholder="Mi Empresa S.A." required />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Tu nombre</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" placeholder="Juan Pérez" required />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" placeholder="tu@empresa.com" required />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Contraseña</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" placeholder="••••••••" required />
-            </div>
-            {error && <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"><p className="text-red-400 text-sm">{error}</p></div>}
-            <button type="submit" disabled={loading}
-              className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
-              {loading ? "Creando cuenta..." : "Crear cuenta"}
+      <div className="p-6 space-y-4">
+        <div className="flex gap-2 flex-wrap">
+          <select value={month} onChange={e => setMonth(Number(e.target.value))}
+            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B]">
+            {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+          </select>
+          <select value={year} onChange={e => setYear(Number(e.target.value))}
+            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B]">
+            {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <div className="flex bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
+            <button onClick={() => setHalf(1)}
+              className={\`px-4 py-2 text-sm font-medium transition \${half === 1 ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}\`}>
+              1 — 15
             </button>
-          </form>
-          <p className="text-center text-xs text-[var(--text-muted)] mt-6">
-            ¿Ya tienes cuenta? <Link href="/en/login" className="text-[#E8B84B] font-semibold hover:underline">Inicia sesión</Link>
-          </p>
+            <button onClick={() => setHalf(2)}
+              className={\`px-4 py-2 text-sm font-medium transition \${half === 2 ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}\`}>
+              16 — fin
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-5 gap-4 px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/50">
+            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider col-span-2">Empleado</p>
+            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider text-right">Horas</p>
+            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider text-right">Extras</p>
+            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider text-right">Total</p>
+          </div>
+          {loading ? (
+            <div className="p-8 text-center text-sm text-[var(--text-muted)]">Cargando...</div>
+          ) : !data?.employees?.length ? (
+            <div className="p-8 text-center text-sm text-[var(--text-muted)]">Sin registros para este período</div>
+          ) : data.employees.map((emp: any) => (
+            <div key={emp.id} className="grid grid-cols-5 gap-4 px-5 py-4 border-b border-[var(--border)] last:border-0 hover:bg-[var(--border)]/30 transition">
+              <div className="col-span-2">
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{emp.name}</p>
+                <p className="text-xs text-[var(--text-muted)]">\${emp.hourlyRate}/h</p>
+              </div>
+              <p className="text-sm text-[var(--text-primary)] text-right self-center">{emp.totalHours}h</p>
+              <p className="text-sm text-right self-center">
+                {emp.overtimeHours > 0 ? <span className="text-orange-400">{emp.overtimeHours}h</span> : <span className="text-[var(--text-muted)]">—</span>}
+              </p>
+              <p className="text-sm font-black text-[#E8B84B] text-right self-center">\${emp.totalPay.toLocaleString()}</p>
+            </div>
+          ))}
+          {data?.employees?.length > 0 && (
+            <div className="grid grid-cols-5 gap-4 px-5 py-4 bg-[#E8B84B]/5 border-t border-[#E8B84B]/20">
+              <p className="text-sm font-black text-[var(--text-primary)] col-span-4">Total nómina</p>
+              <p className="text-sm font-black text-[#E8B84B] text-right">\${total.toLocaleString()}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }`;
 
-writeFileSync("src/app/[locale]/register/page.tsx", fix);
+writeFileSync("src/app/[locale]/admin/payroll/page.tsx", content);
 console.log("Listo!");
 
