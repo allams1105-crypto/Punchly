@@ -1,244 +1,255 @@
 import { writeFileSync } from "fs";
 
-const employeeDashboard = `import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
-import EmployeeDashboardClient from "@/components/employee/EmployeeDashboardClient";
+// ==================== LOGIN PAGE ====================
+const loginPage = `"use client";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+import { useLang } from "@/lib/LangContext";
+import LangToggle from "@/components/LangToggle";
 
-export default async function EmployeeDashboardPage() {
-  const session = await auth();
-  if (!session) redirect("/en/login");
+export default function LoginPage() {
+  const { t } = useLang();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const userId = (session.user as any).id;
-  const orgId = (session.user as any).organizationId;
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { schedule: true },
-  });
-
-  const now = new Date();
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - 6);
-  weekStart.setHours(0, 0, 0, 0);
-
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
-
-  const [todayEntries, weekEntries, monthEntries] = await Promise.all([
-    prisma.timeEntry.findMany({ where: { userId, organizationId: orgId, clockIn: { gte: todayStart } }, orderBy: { clockIn: "desc" } }),
-    prisma.timeEntry.findMany({ where: { userId, organizationId: orgId, clockIn: { gte: weekStart } }, orderBy: { clockIn: "desc" } }),
-    prisma.timeEntry.findMany({ where: { userId, organizationId: orgId, clockIn: { gte: monthStart } }, orderBy: { clockIn: "desc" } }),
-  ]);
-
-  const sumMin = (entries: any[]) => entries.reduce((acc, e) => acc + (e.durationMin || 0), 0);
-  const todayMin = sumMin(todayEntries);
-  const weekMin = sumMin(weekEntries);
-  const monthMin = sumMin(monthEntries);
-
-  const onShift = weekEntries.find(e => !e.clockOut);
-
-  // Attendance for last 7 days with schedule check
-  const schedule = user?.schedule;
-  const DAYS: Record<number, string> = { 0: "sunday", 1: "monday", 2: "tuesday", 3: "wednesday", 4: "thursday", 5: "friday", 6: "saturday" };
-
-  const attendanceHistory = weekEntries.map(entry => {
-    const clockIn = new Date(entry.clockIn);
-    let status = "NO_SCHEDULE";
-    let lateMin = 0;
-    let overtimeMin = 0;
-
-    if (schedule) {
-      const dayKey = DAYS[clockIn.getDay()];
-      const isWorkDay = (schedule as any)[dayKey] as boolean;
-      if (isWorkDay) {
-        const [startH, startM] = schedule.startTime.split(":").map(Number);
-        const [endH, endM] = schedule.endTime.split(":").map(Number);
-        const scheduledStart = new Date(clockIn); scheduledStart.setHours(startH, startM, 0, 0);
-        const scheduledEnd = new Date(clockIn); scheduledEnd.setHours(endH, endM, 0, 0);
-        lateMin = Math.max(0, Math.floor((clockIn.getTime() - scheduledStart.getTime()) / 60000) - schedule.toleranceMin);
-        if (entry.clockOut) {
-          const clockOut = new Date(entry.clockOut);
-          overtimeMin = Math.max(0, Math.floor((clockOut.getTime() - scheduledEnd.getTime()) / 60000));
-        }
-        status = lateMin > 0 ? "LATE" : "ON_TIME";
-      } else {
-        status = "DAY_OFF";
-      }
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const result = await signIn("credentials", { email, password, redirect: false });
+    if (result?.ok) {
+      window.location.href = "/en/admin/dashboard";
+    } else {
+      setError("Email o contraseña incorrectos");
+      setLoading(false);
     }
-
-    return {
-      id: entry.id,
-      clockIn: entry.clockIn.toISOString(),
-      clockOut: entry.clockOut?.toISOString() || null,
-      durationMin: entry.durationMin,
-      status,
-      lateMin,
-      overtimeMin,
-    };
-  });
+  }
 
   return (
-    <EmployeeDashboardClient
-      user={{ name: user?.name || "Empleado", email: user?.email || "" }}
-      schedule={schedule ? {
-        startTime: schedule.startTime,
-        endTime: schedule.endTime,
-        toleranceMin: schedule.toleranceMin,
-        monday: schedule.monday, tuesday: schedule.tuesday, wednesday: schedule.wednesday,
-        thursday: schedule.thursday, friday: schedule.friday, saturday: schedule.saturday, sunday: schedule.sunday,
-      } : null}
-      stats={{ todayMin, weekMin, monthMin }}
-      onShift={!!onShift}
-      attendanceHistory={attendanceHistory}
-    />
-  );
-}`;
-
-const employeeDashboardClient = `"use client";
-
-const DAYS_ES = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-const DAYS_KEYS = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
-
-function fmtHours(min: number) {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  if (h === 0) return \`\${m}m\`;
-  return m === 0 ? \`\${h}h\` : \`\${h}h \${m}m\`;
-}
-
-export default function EmployeeDashboardClient({ user, schedule, stats, onShift, attendanceHistory }: {
-  user: { name: string; email: string };
-  schedule: any;
-  stats: { todayMin: number; weekMin: number; monthMin: number };
-  onShift: boolean;
-  attendanceHistory: any[];
-}) {
-  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-    LATE: { label: "Tardanza", color: "text-orange-400", bg: "bg-orange-500/10" },
-    ON_TIME: { label: "A tiempo", color: "text-green-400", bg: "bg-green-500/10" },
-    DAY_OFF: { label: "Día libre", color: "text-blue-400", bg: "bg-blue-500/10" },
-    NO_SCHEDULE: { label: "—", color: "text-[var(--text-muted)]", bg: "bg-[var(--border)]" },
-  };
-
-  return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      {/* Header */}
-      <div className="border-b border-[var(--border)] px-6 py-5 flex items-center justify-between">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex">
+      <div className="hidden lg:flex w-1/2 bg-[#E8B84B] flex-col justify-between p-12">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-[#E8B84B] rounded-xl flex items-center justify-center shrink-0">
-            <span className="text-black font-black text-sm">{user.name.charAt(0)}</span>
+          <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center">
+            <span className="text-[#E8B84B] font-black text-base">P</span>
           </div>
-          <div>
-            <p className="text-sm font-black text-[var(--text-primary)]">Hola, {user.name.split(" ")[0]} 👋</p>
-            <p className="text-xs text-[var(--text-muted)]">{user.email}</p>
-          </div>
+          <span className="text-black font-black text-xl">Punchly.Clock</span>
         </div>
-        <div className="flex items-center gap-2">
-          {onShift && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-lg">
-              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-              En turno
-            </span>
-          )}
-          <a href="/api/auth/signout" className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] px-3 py-1.5 rounded-lg transition">
-            Salir
-          </a>
+        <div>
+          <h2 className="text-4xl font-black text-black leading-tight mb-4">{t("login.left.title")}</h2>
+          <p className="text-black/60 text-lg">{t("login.left.sub")}</p>
+        </div>
+        <div className="flex gap-6">
+          <div><p className="text-3xl font-black text-black">7</p><p className="text-black/60 text-sm">{t("landing.stats.trial")}</p></div>
+          <div><p className="text-3xl font-black text-black">$49</p><p className="text-black/60 text-sm">{t("landing.stats.price")}</p></div>
         </div>
       </div>
-
-      <div className="p-6 space-y-5 max-w-2xl mx-auto">
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: "Hoy", value: fmtHours(stats.todayMin) },
-            { label: "Esta semana", value: fmtHours(stats.weekMin) },
-            { label: "Este mes", value: fmtHours(stats.monthMin) },
-          ].map(s => (
-            <div key={s.label} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4 text-center">
-              <p className="text-xs text-[var(--text-muted)] mb-1">{s.label}</p>
-              <p className="text-xl font-black text-[#E8B84B]">{s.value || "0h"}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Schedule */}
-        {schedule && (
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[var(--border)]">
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">Mi horario</h3>
-            </div>
-            <div className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex gap-1.5">
-                  {DAYS_KEYS.map((key, i) => (
-                    <div key={key} className={\`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black \${schedule[key] ? "bg-[#E8B84B] text-black" : "bg-[var(--border)] text-[var(--text-muted)]"}\`}>
-                      {DAYS_ES[i].charAt(0)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{schedule.startTime}</p>
-                  <p className="text-xs text-[var(--text-muted)]">entrada</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{schedule.endTime}</p>
-                  <p className="text-xs text-[var(--text-muted)]">salida</p>
-                </div>
-                <div className="flex items-center gap-2 ml-auto">
-                  <p className="text-xs text-[var(--text-muted)]">Tolerancia</p>
-                  <p className="text-xs font-semibold text-[var(--text-primary)]">{schedule.toleranceMin}min</p>
-                </div>
-              </div>
-            </div>
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-sm">
+          <div className="flex justify-end mb-6">
+            <LangToggle />
           </div>
-        )}
-
-        {/* Attendance history */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-[var(--border)]">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Mi asistencia — últimos 7 días</h3>
+          <div className="mb-8">
+            <h1 className="text-2xl font-black text-[var(--text-primary)] mb-1">{t("login.title")}</h1>
+            <p className="text-[var(--text-muted)] text-sm">{t("login.subtitle")}</p>
           </div>
-          {attendanceHistory.length === 0 ? (
-            <div className="p-8 text-center text-sm text-[var(--text-muted)]">Sin registros esta semana</div>
-          ) : (
-            <div className="divide-y divide-[var(--border)]">
-              {attendanceHistory.map(entry => {
-                const s = statusConfig[entry.status] || statusConfig.NO_SCHEDULE;
-                const clockIn = new Date(entry.clockIn);
-                const date = clockIn.toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" });
-                const timeIn = clockIn.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
-                const timeOut = entry.clockOut ? new Date(entry.clockOut).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) : "—";
-                return (
-                  <div key={entry.id} className="px-5 py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-semibold text-[var(--text-primary)] capitalize">{date}</p>
-                      <p className="text-xs text-[var(--text-muted)]">{timeIn} — {timeOut}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        {entry.lateMin > 0 && <p className="text-xs text-orange-400">+{entry.lateMin}m tarde</p>}
-                        {entry.overtimeMin > 0 && <p className="text-xs text-[#E8B84B]">+{entry.overtimeMin}m extra</p>}
-                        {entry.durationMin > 0 && <p className="text-xs text-[var(--text-muted)]">{fmtHours(entry.durationMin)}</p>}
-                      </div>
-                      <span className={\`text-xs px-2.5 py-1 rounded-lg font-semibold \${s.bg} \${s.color}\`}>{s.label}</span>
-                    </div>
-                  </div>
-                );
-              })}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("login.email")}</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
             </div>
-          )}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("login.password")}</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
+            </div>
+            {error && <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"><p className="text-red-400 text-sm">{error}</p></div>}
+            <button type="submit" disabled={loading}
+              className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
+              {loading ? t("login.loading") : t("login.btn")}
+            </button>
+          </form>
+          <p className="text-center text-xs text-[var(--text-muted)] mt-6">
+            {t("login.register")} <Link href="/en/register" className="text-[#E8B84B] font-semibold hover:underline">{t("login.register.link")}</Link>
+          </p>
         </div>
       </div>
     </div>
   );
 }`;
 
-writeFileSync("src/app/[locale]/employee/dashboard/page.tsx", employeeDashboard);
-writeFileSync("src/components/employee/EmployeeDashboardClient.tsx", employeeDashboardClient);
+// ==================== REGISTER PAGE ====================
+const registerPage = `"use client";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+import { useLang } from "@/lib/LangContext";
+import LangToggle from "@/components/LangToggle";
+
+export default function RegisterPage() {
+  const { t } = useLang();
+  const [orgName, setOrgName] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orgName, name, email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error || "Error al registrar"); setLoading(false); return; }
+    const result = await signIn("credentials", { email, password, redirect: false });
+    if (result?.ok) {
+      window.location.href = "/en/admin/dashboard";
+    } else {
+      window.location.href = "/en/login";
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[var(--bg-primary)] flex">
+      <div className="hidden lg:flex w-1/2 bg-[#E8B84B] flex-col justify-between p-12">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center">
+            <span className="text-[#E8B84B] font-black text-base">P</span>
+          </div>
+          <span className="text-black font-black text-xl">Punchly.Clock</span>
+        </div>
+        <div>
+          <h2 className="text-4xl font-black text-black leading-tight mb-4">{t("register.left.title")}</h2>
+          <p className="text-black/60 text-lg">{t("register.left.sub")}</p>
+        </div>
+        <div className="flex gap-6">
+          <div><p className="text-3xl font-black text-black">7</p><p className="text-black/60 text-sm">{t("landing.stats.trial")}</p></div>
+          <div><p className="text-3xl font-black text-black">$49</p><p className="text-black/60 text-sm">{t("landing.stats.price")}</p></div>
+        </div>
+      </div>
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-sm">
+          <div className="flex justify-end mb-6">
+            <LangToggle />
+          </div>
+          <div className="mb-8">
+            <h1 className="text-2xl font-black text-[var(--text-primary)] mb-1">{t("register.title")}</h1>
+            <p className="text-[var(--text-muted)] text-sm">{t("register.subtitle")}</p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("register.company")}</label>
+              <input type="text" value={orgName} onChange={e => setOrgName(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("register.name")}</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("register.email")}</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("register.password")}</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
+            </div>
+            {error && <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"><p className="text-red-400 text-sm">{error}</p></div>}
+            <button type="submit" disabled={loading}
+              className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
+              {loading ? t("register.loading") : t("register.btn")}
+            </button>
+          </form>
+          <p className="text-center text-xs text-[var(--text-muted)] mt-6">
+            {t("register.login")} <Link href="/en/login" className="text-[#E8B84B] font-semibold hover:underline">{t("register.login.link")}</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}`;
+
+// ==================== PAYWALL PAGE ====================
+const paywallPage = `"use client";
+import { useState } from "react";
+import { useLang } from "@/lib/LangContext";
+
+const features = ["paywall.f1","paywall.f2","paywall.f3","paywall.f4","paywall.f5"];
+
+export default function PaywallPage() {
+  const { t } = useLang();
+  const [loading, setLoading] = useState(false);
+
+  async function handleUpgrade() {
+    setLoading(true);
+    const res = await fetch("/api/stripe/checkout", { method: "POST" });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+    else setLoading(false);
+  }
+
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        <div className="flex items-center justify-center gap-2.5 mb-10">
+          <div className="w-9 h-9 bg-[#E8B84B] rounded-xl flex items-center justify-center">
+            <span className="text-black font-black text-base">P</span>
+          </div>
+          <span className="text-white font-black text-xl">Punchly.Clock</span>
+        </div>
+
+        <div className="bg-[#111] border border-white/10 rounded-3xl overflow-hidden">
+          <div className="px-8 pt-8 pb-6 border-b border-white/10">
+            <h1 className="text-2xl font-black text-white mb-2">{t("paywall.title")}</h1>
+            <p className="text-white/50 text-sm">{t("paywall.desc")}</p>
+          </div>
+
+          <div className="px-8 py-6 border-b border-white/10">
+            <div className="flex items-end gap-2 mb-1">
+              <span className="text-5xl font-black text-[#E8B84B]">$49</span>
+              <span className="text-white/40 text-sm mb-2">{t("paywall.price.note")}</span>
+            </div>
+            <p className="text-xs text-white/30">{t("paywall.price.sub")}</p>
+          </div>
+
+          <div className="px-8 py-6 space-y-3 border-b border-white/10">
+            {features.map(key => (
+              <div key={key} className="flex items-center gap-3">
+                <div className="w-5 h-5 bg-[#E8B84B]/10 border border-[#E8B84B]/30 rounded-md flex items-center justify-center shrink-0">
+                  <span className="text-[#E8B84B] text-xs">✓</span>
+                </div>
+                <p className="text-sm text-white/70">{t(key)}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="px-8 py-6 space-y-3">
+            <button onClick={handleUpgrade} disabled={loading}
+              className="w-full bg-[#E8B84B] text-black py-4 rounded-2xl font-black text-sm hover:bg-[#d4a43a] transition disabled:opacity-50">
+              {loading ? "Redirigiendo..." : t("paywall.cta")}
+            </button>
+            <p className="text-center text-xs text-white/30">{t("paywall.secure")}</p>
+            <a href="/api/auth/signout" className="block text-center text-xs text-white/30 hover:text-white/50 transition">{t("paywall.logout")}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}`;
+
+writeFileSync("src/app/[locale]/login/page.tsx", loginPage);
+writeFileSync("src/app/[locale]/register/page.tsx", registerPage);
+writeFileSync("src/app/[locale]/paywall/page.tsx", paywallPage);
 console.log("Listo!");
 
