@@ -1,287 +1,254 @@
-import { writeFileSync } from "fs";
+import { writeFileSync, readFileSync } from "fs";
 
-const attendancePage = `"use client";
-import { useEffect, useState } from "react";
+// Add Empleados link to Sidebar
+let sidebar = readFileSync("src/components/admin/Sidebar.tsx", "utf8");
+sidebar = sidebar.replace(
+  `{ href: "/en/admin/employees/new", label: t("sidebar.new.employee"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> },`,
+  `{ href: "/en/admin/employees", label: "Empleados", icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+    { href: "/en/admin/employees/new", label: t("sidebar.new.employee"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> },`
+);
+writeFileSync("src/components/admin/Sidebar.tsx", sidebar);
 
-type Entry = {
-  id: string;
-  userId: string;
-  userName: string;
-  clockIn: string;
-  clockOut: string | null;
-  durationMin: number | null;
-  status: string;
-  lateMin: number;
-  earlyMin: number;
-  overtimeMin: number;
-  scheduledStart: string;
-  scheduledEnd: string;
-};
+// ==================== WEEKLY ATTENDANCE CHART API ====================
+const attendanceChartApi = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { NextResponse } from "next/server";
 
-const WEEKS = [
-  { label: "Últimos 7 días", value: 7 },
-  { label: "Últimos 14 días", value: 14 },
-  { label: "Últimos 30 días", value: 30 },
-];
+export async function GET() {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const orgId = (session.user as any).organizationId;
 
-export default function AttendancePage() {
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
-  const [search, setSearch] = useState("");
-  const [days, setDays] = useState(7);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch(\`/api/attendance?days=\${days}\`)
-      .then(r => r.json())
-      .then(d => { setEntries(d.entries || []); setLoading(false); });
-  }, [days]);
-
-  const filtered = entries.filter(e => {
-    const matchSearch = e.userName.toLowerCase().includes(search.toLowerCase());
-    const matchFilter =
-      filter === "all" ? true :
-      filter === "late" ? e.status === "LATE" :
-      filter === "ontime" ? e.status === "ON_TIME" :
-      filter === "overtime" ? e.overtimeMin > 0 :
-      filter === "absence" ? e.status === "ABSENCE" : true;
-    return matchSearch && matchFilter;
-  });
-
-  const lateCount = entries.filter(e => e.status === "LATE").length;
-  const ontimeCount = entries.filter(e => e.status === "ON_TIME").length;
-  const overtimeCount = entries.filter(e => e.overtimeMin > 0).length;
-  const totalOvertimeMin = entries.reduce((acc, e) => acc + (e.overtimeMin || 0), 0);
-  const totalLateMin = entries.reduce((acc, e) => acc + (e.lateMin || 0), 0);
-
-  function exportCSV() {
-    const headers = ["Empleado","Fecha","Entrada","Salida","Estado","Tardanza (min)","Salida temprana (min)","Horas extra (min)","Duración (min)"];
-    const rows = filtered.map(e => {
-      const d = new Date(e.clockIn);
-      return [
-        e.userName,
-        d.toLocaleDateString("es"),
-        d.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
-        e.clockOut ? new Date(e.clockOut).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) : "",
-        e.status === "LATE" ? "Tardanza" : e.status === "ON_TIME" ? "A tiempo" : e.status === "DAY_OFF" ? "Día libre" : "—",
-        e.lateMin,
-        e.earlyMin,
-        e.overtimeMin,
-        e.durationMin || "",
-      ].join(",");
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+    const end = new Date(d); end.setHours(23, 59, 59, 999);
+    const entries = await prisma.timeEntry.findMany({
+      where: { organizationId: orgId, clockIn: { gte: d, lte: end } },
+      include: { user: { include: { schedule: true } } },
     });
-    const csv = [headers.join(","), ...rows].join("\\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = \`asistencia-\${new Date().toISOString().split("T")[0]}.csv\`;
-    a.click();
-    URL.revokeObjectURL(url);
+
+    let onTime = 0, late = 0, absent = 0;
+
+    // Count scheduled employees
+    const scheduled = await prisma.schedule.findMany({ where: { organizationId: orgId } });
+    const dayMap: Record<number, string> = { 0: "sunday", 1: "monday", 2: "tuesday", 3: "wednesday", 4: "thursday", 5: "friday", 6: "saturday" };
+    const dayKey = dayMap[d.getDay()];
+
+    for (const sched of scheduled) {
+      const isWorkDay = (sched as any)[dayKey] as boolean;
+      if (!isWorkDay) continue;
+      const entry = entries.find(e => e.userId === sched.userId);
+      if (!entry) { absent++; continue; }
+
+      const clockIn = new Date(entry.clockIn);
+      const [startH, startM] = sched.startTime.split(":").map(Number);
+      const scheduledStart = new Date(clockIn); scheduledStart.setHours(startH, startM, 0, 0);
+      const lateMin = Math.floor((clockIn.getTime() - scheduledStart.getTime()) / 60000) - sched.toleranceMin;
+      if (lateMin > 0) late++; else onTime++;
+    }
+
+    days.push({
+      day: d.toLocaleDateString("es", { weekday: "short" }),
+      date: d.toLocaleDateString("es", { day: "numeric", month: "short" }),
+      onTime, late, absent,
+      total: onTime + late,
+    });
   }
 
-  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-    LATE: { label: "Tardanza", color: "text-orange-400", bg: "bg-orange-500/10" },
-    ON_TIME: { label: "A tiempo", color: "text-green-400", bg: "bg-green-500/10" },
-    DAY_OFF: { label: "Día libre", color: "text-blue-400", bg: "bg-blue-500/10" },
-    ABSENCE: { label: "Ausencia", color: "text-red-400", bg: "bg-red-500/10" },
-    NO_SCHEDULE: { label: "Sin horario", color: "text-[var(--text-muted)]", bg: "bg-[var(--border)]" },
-  };
+  return NextResponse.json({ days });
+}`;
+
+// ==================== ATTENDANCE CHART COMPONENT ====================
+const attendanceChart = `"use client";
+import { useEffect, useState } from "react";
+
+type DayData = { day: string; date: string; onTime: number; late: number; absent: number; total: number };
+
+export default function AttendanceChart() {
+  const [data, setData] = useState<DayData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/attendance/chart")
+      .then(r => r.json())
+      .then(d => { setData(d.days || []); setLoading(false); });
+  }, []);
+
+  if (loading) return (
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5 h-48 flex items-center justify-center">
+      <p className="text-xs text-[var(--text-muted)]">Cargando...</p>
+    </div>
+  );
+
+  const max = Math.max(...data.map(d => d.onTime + d.late + d.absent), 1);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
-      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between bg-[var(--bg-primary)]">
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
         <div>
-          <h1 className="text-sm font-black text-[var(--text-primary)]">Asistencia</h1>
-          <p className="text-xs text-[var(--text-muted)]">Tardanzas, horas extra y ausencias</p>
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">Asistencia semanal</h3>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Últimos 7 días</p>
         </div>
-        <button onClick={exportCSV}
-          className="flex items-center gap-1.5 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-lg text-xs font-semibold transition">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Exportar CSV
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 bg-green-400 rounded-full"></span><span className="text-xs text-[var(--text-muted)]">A tiempo</span></div>
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 bg-orange-400 rounded-full"></span><span className="text-xs text-[var(--text-muted)]">Tardanza</span></div>
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 bg-red-400 rounded-full"></span><span className="text-xs text-[var(--text-muted)]">Ausencia</span></div>
+        </div>
       </div>
-
-      <div className="p-6 space-y-4">
-        {/* KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-[var(--bg-card)] border border-green-500/20 rounded-xl p-4">
-            <p className="text-xs text-[var(--text-muted)] mb-1">A tiempo</p>
-            <p className="text-2xl font-black text-green-400">{ontimeCount}</p>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-orange-500/20 rounded-xl p-4">
-            <p className="text-xs text-[var(--text-muted)] mb-1">Tardanzas</p>
-            <p className="text-2xl font-black text-orange-400">{lateCount}</p>
-            {totalLateMin > 0 && <p className="text-xs text-orange-400/60 mt-0.5">{totalLateMin} min total</p>}
-          </div>
-          <div className="bg-[var(--bg-card)] border border-[#E8B84B]/20 rounded-xl p-4">
-            <p className="text-xs text-[var(--text-muted)] mb-1">Horas extra</p>
-            <p className="text-2xl font-black text-[#E8B84B]">{overtimeCount}</p>
-            {totalOvertimeMin > 0 && <p className="text-xs text-[#E8B84B]/60 mt-0.5">{Math.floor(totalOvertimeMin/60)}h {totalOvertimeMin%60}m total</p>}
-          </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
-            <p className="text-xs text-[var(--text-muted)] mb-1">Total registros</p>
-            <p className="text-2xl font-black text-[var(--text-primary)]">{entries.length}</p>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2 items-center">
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar empleado..."
-            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition w-44" />
-          <div className="flex bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
-            {[["all","Todos"],["ontime","A tiempo"],["late","Tardanzas"],["overtime","Horas extra"],["absence","Ausencias"]].map(([key,label]) => (
-              <button key={key} onClick={() => setFilter(key)}
-                className={\`px-3 py-2 text-xs font-semibold transition \${filter === key ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}\`}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <select value={days} onChange={e => setDays(Number(e.target.value))}
-            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition">
-            {WEEKS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
-          </select>
-        </div>
-
-        {/* Table */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--bg-primary)]/50">
-                <th className="text-left px-5 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Empleado</th>
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider hidden sm:table-cell">Horario</th>
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Entrada</th>
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Salida</th>
-                <th className="text-left px-3 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Estado</th>
-                <th className="text-right px-5 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Detalles</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border)]">
-              {loading ? (
-                <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-[var(--text-muted)]">Cargando...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-[var(--text-muted)]">Sin registros</td></tr>
-              ) : filtered.map(entry => {
-                const s = statusConfig[entry.status] || statusConfig.NO_SCHEDULE;
-                const clockIn = new Date(entry.clockIn);
-                const date = clockIn.toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" });
-                const timeIn = clockIn.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
-                const timeOut = entry.clockOut ? new Date(entry.clockOut).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) : "—";
-                return (
-                  <tr key={entry.id} className="hover:bg-[var(--border)]/20 transition">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 bg-[#E8B84B]/10 border border-[#E8B84B]/20 rounded-lg flex items-center justify-center shrink-0">
-                          <span className="text-[#E8B84B] text-xs font-black">{entry.userName.charAt(0)}</span>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-[var(--text-primary)]">{entry.userName}</p>
-                          <p className="text-xs text-[var(--text-muted)]">{date}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 hidden sm:table-cell">
-                      <p className="text-xs text-[var(--text-muted)]">{entry.scheduledStart} — {entry.scheduledEnd}</p>
-                    </td>
-                    <td className="px-3 py-3">
-                      <p className="text-xs font-semibold text-[var(--text-primary)]">{timeIn}</p>
-                    </td>
-                    <td className="px-3 py-3">
-                      <p className="text-xs text-[var(--text-muted)]">{timeOut}</p>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className={\`text-xs px-2.5 py-1 rounded-lg font-semibold \${s.bg} \${s.color}\`}>{s.label}</span>
-                    </td>
-                    <td className="px-5 py-3 text-right space-y-0.5">
-                      {entry.lateMin > 0 && <p className="text-xs text-orange-400">+{entry.lateMin}m tardanza</p>}
-                      {entry.earlyMin > 0 && <p className="text-xs text-blue-400">-{entry.earlyMin}m temprano</p>}
-                      {entry.overtimeMin > 0 && <p className="text-xs text-[#E8B84B]">+{entry.overtimeMin}m extra</p>}
-                      {entry.lateMin === 0 && entry.overtimeMin === 0 && entry.earlyMin === 0 && entry.status === "ON_TIME" && (
-                        <p className="text-xs text-green-400">✓ Perfecto</p>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      <div className="p-5">
+        <div className="flex items-end gap-2 h-32">
+          {data.map((d, i) => {
+            const onTimeH = (d.onTime / max) * 100;
+            const lateH = (d.late / max) * 100;
+            const absentH = (d.absent / max) * 100;
+            const isToday = i === data.length - 1;
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full flex flex-col justify-end gap-0.5" style={{ height: "100px" }}>
+                  {d.absent > 0 && (
+                    <div className="w-full bg-red-400/70 rounded-sm transition-all" style={{ height: \`\${absentH}%\`, minHeight: d.absent > 0 ? "4px" : "0" }}></div>
+                  )}
+                  {d.late > 0 && (
+                    <div className="w-full bg-orange-400/70 rounded-sm transition-all" style={{ height: \`\${lateH}%\`, minHeight: d.late > 0 ? "4px" : "0" }}></div>
+                  )}
+                  {d.onTime > 0 && (
+                    <div className="w-full bg-green-400/70 rounded-sm transition-all" style={{ height: \`\${onTimeH}%\`, minHeight: d.onTime > 0 ? "4px" : "0" }}></div>
+                  )}
+                  {d.total === 0 && d.absent === 0 && (
+                    <div className="w-full bg-[var(--border)] rounded-sm" style={{ height: "4px" }}></div>
+                  )}
+                </div>
+                <p className={\`text-xs font-semibold capitalize \${isToday ? "text-[#E8B84B]" : "text-[var(--text-muted)]"}\`}>{d.day}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }`;
 
-// Update attendance API to support ?days= param
-const attendanceApi = `import { auth } from "@/lib/auth";
+// ==================== UPDATE DASHBOARD PAGE to include chart ====================
+const dashboardPage = `import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { redirect } from "next/navigation";
+import EmployeeTable from "@/components/admin/EmployeeTable";
+import NotificationBell from "@/components/admin/NotificationBell";
+import AttendanceChart from "@/components/admin/AttendanceChart";
+import Link from "next/link";
 
-export async function GET(req: Request) {
+export default async function DashboardPage() {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session) redirect("/en/login");
   const orgId = (session.user as any).organizationId;
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get("userId");
-  const days = Number(searchParams.get("days") || 7);
 
-  const since = new Date();
-  since.setDate(since.getDate() - days);
-  since.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 1 : 16);
 
-  const where: any = { organizationId: orgId, clockIn: { gte: since } };
-  if (userId) where.userId = userId;
+  const [employees, activeEntries, periodEntries, org] = await Promise.all([
+    prisma.user.findMany({ where: { organizationId: orgId, isActive: true, role: { not: "OWNER" } }, orderBy: { name: "asc" } }),
+    prisma.timeEntry.findMany({ where: { organizationId: orgId, clockOut: null } }),
+    prisma.timeEntry.findMany({ where: { organizationId: orgId, clockIn: { gte: periodStart } } }),
+    prisma.organization.findUnique({ where: { id: orgId }, include: { users: { where: { role: "OWNER" } } } }),
+  ]);
 
-  const entries = await prisma.timeEntry.findMany({
-    where,
-    include: { user: { include: { schedule: true } } },
-    orderBy: { clockIn: "desc" },
+  const activeIds = new Set(activeEntries.map(e => e.userId));
+  const totalHours = Math.floor(periodEntries.reduce((acc, e) => acc + (e.durationMin || 0), 0) / 60);
+
+  const employeesWithRates = await prisma.user.findMany({
+    where: { organizationId: orgId, isActive: true, role: { not: "OWNER" } },
   });
+  const estimatedPayroll = periodEntries.reduce((acc, e) => {
+    const emp = employeesWithRates.find(u => u.id === e.userId);
+    const rate = (emp as any)?.hourlyRate || 0;
+    return acc + ((e.durationMin || 0) / 60) * rate;
+  }, 0);
 
-  const results = entries.map(entry => {
-    const schedule = entry.user.schedule;
-    if (!schedule) return { ...entry, clockIn: entry.clockIn.toISOString(), clockOut: entry.clockOut?.toISOString() || null, status: "NO_SCHEDULE", lateMin: 0, earlyMin: 0, overtimeMin: 0, scheduledStart: "", scheduledEnd: "" };
+  const kpis = [
+    { label: "Total empleados", value: employees.length.toString(), sub: "activos", color: "text-[var(--text-primary)]" },
+    { label: "En turno ahora", value: activeEntries.length.toString(), sub: "trabajando", color: "text-green-400" },
+    { label: "Horas quincena", value: totalHours + "h", sub: "período actual", color: "text-[#E8B84B]" },
+    { label: "Nómina estimada", value: "$" + estimatedPayroll.toLocaleString("en", { maximumFractionDigits: 0 }), sub: "este período", color: "text-[#E8B84B]" },
+  ];
 
-    const clockIn = new Date(entry.clockIn);
-    const dayOfWeek = clockIn.getDay();
-    const dayMap: Record<number, keyof typeof schedule> = { 0: "sunday", 1: "monday", 2: "tuesday", 3: "wednesday", 4: "thursday", 5: "friday", 6: "saturday" };
-    const dayKey = dayMap[dayOfWeek];
-    const isWorkDay = schedule[dayKey] as boolean;
+  return (
+    <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
+      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between bg-[var(--bg-primary)]">
+        <div>
+          <h1 className="text-sm font-black text-[var(--text-primary)]">Dashboard</h1>
+          <p className="text-xs text-[var(--text-muted)]">{org?.name}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <Link href="/en/admin/employees/new"
+            className="bg-[#E8B84B] text-black px-3 py-1.5 rounded-xl text-xs font-black hover:bg-[#d4a43a] transition">
+            + Empleado
+          </Link>
+        </div>
+      </div>
 
-    if (!isWorkDay) return { ...entry, clockIn: entry.clockIn.toISOString(), clockOut: entry.clockOut?.toISOString() || null, status: "DAY_OFF", lateMin: 0, earlyMin: 0, overtimeMin: 0, scheduledStart: schedule.startTime, scheduledEnd: schedule.endTime };
+      <div className="p-6 space-y-4">
+        {/* KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {kpis.map(k => (
+            <div key={k.label} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5">
+              <p className="text-xs text-[var(--text-muted)] mb-2">{k.label}</p>
+              <p className={\`text-2xl font-black \${k.color}\`}>{k.value}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">{k.sub}</p>
+            </div>
+          ))}
+        </div>
 
-    const [startH, startM] = schedule.startTime.split(":").map(Number);
-    const [endH, endM] = schedule.endTime.split(":").map(Number);
-    const scheduledStart = new Date(clockIn); scheduledStart.setHours(startH, startM, 0, 0);
-    const scheduledEnd = new Date(clockIn); scheduledEnd.setHours(endH, endM, 0, 0);
-    const lateMin = Math.max(0, Math.floor((clockIn.getTime() - scheduledStart.getTime()) / 60000) - schedule.toleranceMin);
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
+            {/* Attendance Chart */}
+            <AttendanceChart />
+            {/* Employee Table */}
+            <EmployeeTable employees={employees.map(e => ({
+              id: e.id,
+              name: e.name,
+              email: e.email,
+              isActive: e.isActive,
+              onShift: activeIds.has(e.id),
+              clockInTime: activeEntries.find(a => a.userId === e.id)?.clockIn?.toISOString() || null,
+            }))} />
+          </div>
 
-    let earlyMin = 0, overtimeMin = 0;
-    if (entry.clockOut) {
-      const clockOut = new Date(entry.clockOut);
-      earlyMin = Math.max(0, Math.floor((scheduledEnd.getTime() - clockOut.getTime()) / 60000));
-      overtimeMin = Math.max(0, Math.floor((clockOut.getTime() - scheduledEnd.getTime()) / 60000));
-    }
-
-    return {
-      id: entry.id,
-      userId: entry.userId,
-      userName: entry.user.name,
-      clockIn: entry.clockIn.toISOString(),
-      clockOut: entry.clockOut?.toISOString() || null,
-      durationMin: entry.durationMin,
-      status: lateMin > 0 ? "LATE" : "ON_TIME",
-      lateMin, earlyMin, overtimeMin,
-      scheduledStart: schedule.startTime,
-      scheduledEnd: schedule.endTime,
-    };
-  });
-
-  return NextResponse.json({ entries: results });
+          {/* Quick actions */}
+          <div className="space-y-3">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-[var(--border)]">
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Acciones rápidas</h3>
+              </div>
+              <div className="p-3 space-y-1">
+                {[
+                  { href: "/en/admin/employees/new", label: "Nuevo empleado", icon: "👤" },
+                  { href: "/en/admin/employees", label: "Ver empleados", icon: "👥" },
+                  { href: "/en/admin/kiosk", label: "Abrir Kiosk", icon: "📱" },
+                  { href: "/en/admin/payroll", label: "Ver nómina", icon: "💰" },
+                  { href: "/en/admin/attendance", label: "Asistencia", icon: "📋" },
+                  { href: "/en/admin/activity", label: "Actividad", icon: "⚡" },
+                ].map(a => (
+                  <Link key={a.href} href={a.href}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
+                    <span>{a.icon}</span>
+                    {a.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }`;
 
-writeFileSync("src/app/[locale]/admin/attendance/page.tsx", attendancePage);
-writeFileSync("src/app/api/attendance/route.ts", attendanceApi);
+writeFileSync("src/app/api/attendance/chart/route.ts", attendanceChartApi);
+writeFileSync("src/components/admin/AttendanceChart.tsx", attendanceChart);
+writeFileSync("src/app/[locale]/admin/dashboard/page.tsx", dashboardPage);
 console.log("Listo!");
 
