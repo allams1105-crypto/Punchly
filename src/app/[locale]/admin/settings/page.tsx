@@ -8,9 +8,21 @@ export default async function SettingsPage() {
   if (!session) redirect("/en/login");
 
   const orgId = (session.user as any).organizationId;
-  const userId = (session.user as any).id;
-  const org = await prisma.organization.findUnique({ where: { id: orgId } });
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  
+  // Buscamos la organización incluyendo la suscripción para calcular los días
+  const org = await prisma.organization.findUnique({ 
+    where: { id: orgId },
+    include: { subscription: true }
+  });
+
+  if (!org) redirect("/en/login");
+
+  // Calculamos isPro y daysLeft basados en tu esquema de Subscription
+  const isPro = org.subscription?.status === "ACTIVE" || org.subscription?.tier === "PRO";
+  
+  const daysLeft = org.subscription?.trialEndsAt 
+    ? Math.max(0, Math.ceil((new Date(org.subscription.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
 
   return (
     <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
@@ -21,12 +33,11 @@ export default async function SettingsPage() {
         </div>
       </div>
       <div className="p-6 max-w-2xl space-y-4">
+        {/* Pasamos exactamente las props que SettingsClient espera según el error de TypeScript */}
         <SettingsClient
-          orgId={orgId}
-          orgName={org?.name || ""}
-          userName={user?.name || ""}
-          userEmail={user?.email || ""}
-          isPro={!!(org as any)?.isPro}
+          org={org}
+          isPro={isPro}
+          daysLeft={daysLeft}
         />
       </div>
     </div>
