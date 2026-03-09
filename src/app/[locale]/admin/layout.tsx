@@ -16,8 +16,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const createdAt = org?.createdAt ? new Date(org.createdAt) : new Date();
   const daysSince = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-  const daysLeft = Math.max(0, 14 - daysSince);
-  const trialExpired = daysSince > 14;
+  const trialDays = 7;
+  const daysLeft = Math.max(0, trialDays - daysSince);
+  const trialExpired = daysSince >= trialDays;
   const isPro = !!(org as any)?.isPro;
 
   if (trialExpired && !isPro) redirect("/en/paywall");

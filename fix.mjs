@@ -1,122 +1,172 @@
-import { writeFileSync } from "fs";
+import { writeFileSync, mkdirSync } from "fs";
+import { readFileSync } from "fs";
 
-// Update Sidebar to include LangToggle
-const sidebar = `"use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import ThemeToggle from "@/components/ThemeToggle";
-import LangToggle from "@/components/LangToggle";
-import { useLang } from "@/lib/LangContext";
-import { useState, useEffect } from "react";
+// Fix 1: Change 14 days to 7 days in translations
+let trans = readFileSync("src/lib/translations.ts", "utf8");
+trans = trans
+  .replace(/14 días gratis/g, "7 días gratis")
+  .replace(/14 days free/g, "7 days free")
+  .replace(/14 días · sin tarjeta/g, "7 días gratis")
+  .replace(/14 days · no card/g, "7 days free")
+  .replace(/sin tarjeta de crédito\./g, "")
+  .replace(/No credit card\./g, "")
+  .replace(/sin tarjeta/g, "")
+  .replace(/no card/g, "")
+  .replace(/Sin tarjeta\./g, "")
+  .replace(/no card required/gi, "");
+writeFileSync("src/lib/translations.ts", trans);
 
-export default function Sidebar({ orgName }: { orgName: string }) {
-  const pathname = usePathname();
-  const { t } = useLang();
-  const [open, setOpen] = useState(false);
+// Fix 2: Update admin layout — 7 days trial with countdown
+const adminLayout = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+import Sidebar from "@/components/admin/Sidebar";
+import TrialBanner from "@/components/admin/TrialBanner";
 
-  const links = [
-    { href: "/en/admin/dashboard", label: t("sidebar.dashboard"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
-    { href: "/en/admin/payroll", label: t("sidebar.payroll"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> },
-    { href: "/en/admin/activity", label: t("sidebar.activity"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
-    { href: "/en/admin/employees/new", label: t("sidebar.new.employee"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> },
-    { href: "/en/admin/kiosk", label: t("sidebar.kiosk"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> },
-    { href: "/en/admin/settings", label: t("sidebar.settings"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
-  ];
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+  if (!session) redirect("/en/login");
 
-  useEffect(() => { setOpen(false); }, [pathname]);
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
+  const role = (session.user as any).role;
+  if (role !== "OWNER" && role !== "ADMIN") redirect("/en/employee/dashboard");
 
-  const NavContent = () => (
-    <>
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-widest px-3 mb-3 opacity-50">Menu</p>
-        {links.map((link) => {
-          const active = pathname === link.href;
-          return (
-            <Link key={link.href} href={link.href}
-              className={\`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all font-medium \${active ? "bg-[#E8B84B] text-black font-bold" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]"}\`}>
-              {link.icon}
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
-      <div className="px-2 py-3 border-t border-[var(--border)] space-y-1">
-        <div className="px-3 py-1 flex items-center gap-2">
-          <ThemeToggle />
-          <LangToggle />
-        </div>
-        <a href="/api/auth/signout"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-all w-full">
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          {t("sidebar.logout")}
-        </a>
-      </div>
-    </>
-  );
+  const orgId = (session.user as any).organizationId;
+  const org = await prisma.organization.findUnique({ where: { id: orgId } });
+
+  const createdAt = org?.createdAt ? new Date(org.createdAt) : new Date();
+  const daysSince = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+  const trialDays = 7;
+  const daysLeft = Math.max(0, trialDays - daysSince);
+  const trialExpired = daysSince >= trialDays;
+  const isPro = !!(org as any)?.isPro;
+
+  if (trialExpired && !isPro) redirect("/en/paywall");
 
   return (
-    <>
-      <div className="hidden md:flex w-60 shrink-0 h-screen flex-col bg-[var(--bg-card)] border-r border-[var(--border)]">
-        <div className="px-4 py-4 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center shrink-0">
-              <span className="text-black font-black text-sm">P</span>
-            </div>
-            <div>
-              <p className="text-[var(--text-primary)] font-black text-sm leading-none">Punchly.Clock</p>
-              <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate max-w-[130px]">{orgName}</p>
-            </div>
-          </div>
-        </div>
-        <NavContent />
+    <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden">
+      <Sidebar orgName={org?.name || "Mi Empresa"} />
+      <div className="flex-1 flex flex-col overflow-hidden pt-14 md:pt-0">
+        {!isPro && <TrialBanner daysLeft={daysLeft} expired={false} />}
+        {children}
       </div>
-
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-[var(--bg-card)] border-b border-[var(--border)] flex items-center justify-between px-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#E8B84B] rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-black font-black text-xs">P</span>
-          </div>
-          <p className="text-[var(--text-primary)] font-black text-sm">Punchly.Clock</p>
-        </div>
-        <button onClick={() => setOpen(true)}
-          className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-      </div>
-
-      {open && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="relative w-72 h-full bg-[var(--bg-card)] border-r border-[var(--border)] flex flex-col">
-            <div className="px-4 py-4 border-b border-[var(--border)] flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center shrink-0">
-                  <span className="text-black font-black text-sm">P</span>
-                </div>
-                <div>
-                  <p className="text-[var(--text-primary)] font-black text-sm leading-none">Punchly.Clock</p>
-                  <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate max-w-[130px]">{orgName}</p>
-                </div>
-              </div>
-              <button onClick={() => setOpen(false)}
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <NavContent />
-          </div>
-        </div>
-      )}
-      <div className="md:hidden h-14 shrink-0" />
-    </>
+    </div>
   );
 }`;
 
-writeFileSync("src/components/admin/Sidebar.tsx", sidebar);
+// Fix 3: Trial banner with countdown
+const trialBanner = `"use client";
+import Link from "next/link";
+
+export default function TrialBanner({ daysLeft, expired }: { daysLeft: number; expired: boolean }) {
+  if (expired) return null;
+
+  const urgent = daysLeft <= 2;
+
+  return (
+    <div className={\`w-full px-4 py-2 flex items-center justify-between gap-3 \${urgent ? "bg-red-500/10 border-b border-red-500/20" : "bg-[#E8B84B]/10 border-b border-[#E8B84B]/20"}\`}>
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className={\`shrink-0 flex flex-col items-center justify-center w-8 h-8 rounded-lg font-black text-sm leading-none \${urgent ? "bg-red-500/20 text-red-400" : "bg-[#E8B84B]/20 text-[#E8B84B]"}\`}>
+          <span className="text-base font-black">{daysLeft}</span>
+        </div>
+        <p className={\`text-xs font-medium \${urgent ? "text-red-400" : "text-[#E8B84B]"}\`}>
+          {daysLeft === 1
+            ? "Queda 1 día de prueba"
+            : \`Quedan \${daysLeft} días de prueba — activa tu licencia para no perder el acceso\`}
+        </p>
+      </div>
+      <Link href="/en/admin/settings"
+        className={\`shrink-0 text-xs font-black px-3 py-1.5 rounded-lg transition \${urgent ? "bg-red-500 text-white hover:bg-red-600" : "bg-[#E8B84B] text-black hover:bg-[#d4a43a]"}\`}>
+        Activar licencia
+      </Link>
+    </div>
+  );
+}`;
+
+// Fix 4: Landing page — remove "sin tarjeta", change to 7 days
+let landing = readFileSync("src/app/[locale]/page.tsx", "utf8");
+landing = landing
+  .replace(/14 días gratis, sin tarjeta →/g, "7 días gratis →")
+  .replace(/14 days free, no card →/g, "7 days free →")
+  .replace(/Sin tarjeta de crédito\. 14 días gratis\. Luego solo \$49 una vez\./g, "7 días gratis. Luego solo $49 una vez.")
+  .replace(/No credit card\. 14 days free\. Then just \$49 once\./g, "7 days free. Then just $49 once.")
+  .replace(/Sin tarjeta de crédito\. Sin contrato\. Cancela cuando quieras\./g, "7 días gratis. Sin contrato.")
+  .replace(/14/g, "7");
+writeFileSync("src/app/[locale]/page.tsx", landing);
+
+// Fix 5: PWA manifest with P icon
+const manifest = {
+  name: "Punchly.Clock",
+  short_name: "Punchly",
+  description: "Control de asistencia para tu equipo",
+  start_url: "/en/admin/dashboard",
+  display: "standalone",
+  background_color: "#000000",
+  theme_color: "#E8B84B",
+  orientation: "portrait",
+  icons: [
+    { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
+  ]
+};
+writeFileSync("public/manifest.json", JSON.stringify(manifest, null, 2));
+
+// Fix 6: SVG icons for PWA
+const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="120" fill="#E8B84B"/>
+  <text x="256" y="360" font-family="Arial Black, sans-serif" font-size="320" font-weight="900" text-anchor="middle" fill="#000000">P</text>
+</svg>`;
+writeFileSync("public/icon.svg", svgIcon);
+
+// Fix 7: update layout meta for PWA
+const localeLayout = `import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "../globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { LangProvider } from "@/lib/LangContext";
+
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Punchly.Clock",
+  description: "Control de asistencia para tu equipo",
+  manifest: "/manifest.json",
+  themeColor: "#E8B84B",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Punchly.Clock",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Punchly.Clock" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
+      </head>
+      <body className={\`\${geistSans.variable} \${geistMono.variable} antialiased\`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <LangProvider>
+            {children}
+          </LangProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}`;
+
+writeFileSync("src/app/[locale]/layout.tsx", localeLayout);
+writeFileSync("src/app/[locale]/admin/layout.tsx", adminLayout);
+writeFileSync("src/components/admin/TrialBanner.tsx", trialBanner);
 console.log("Listo!");
 

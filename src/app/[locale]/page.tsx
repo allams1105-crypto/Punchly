@@ -37,7 +37,7 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/en/register"
             className="bg-[#E8B84B] text-black px-8 py-4 rounded-2xl font-black text-base hover:bg-[#d4a43a] transition">
-            14 días gratis, sin tarjeta →
+            7 días gratis →
           </Link>
           <Link href="#precios"
             className="border border-white/15 text-white/70 px-8 py-4 rounded-2xl font-semibold text-base hover:border-white/30 hover:text-white transition">
@@ -50,7 +50,7 @@ export default function LandingPage() {
       <section className="border-y border-white/8 px-6 py-10">
         <div className="max-w-3xl mx-auto grid grid-cols-3 gap-8 text-center">
           <div>
-            <p className="text-3xl font-black text-[#E8B84B]">14</p>
+            <p className="text-3xl font-black text-[#E8B84B]">7</p>
             <p className="text-white/40 text-sm mt-1">Días gratis</p>
           </div>
           <div>
@@ -69,9 +69,9 @@ export default function LandingPage() {
         <h2 className="text-3xl md:text-4xl font-black text-center mb-12">Todo lo que necesitas</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { icon: <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, title: "Control de horas", desc: "Registra entradas y salidas en tiempo real desde cualquier dispositivo." },
-            { icon: <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>, title: "Nómina automática", desc: "Calcula pagos quincenales con horas regulares y extras automáticamente." },
-            { icon: <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>, title: "Modo Kiosk", desc: "Instala un tablet en tu oficina para que los empleados fichen con PIN." },
+            { icon: <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 7"/></svg>, title: "Control de horas", desc: "Registra entradas y salidas en tiempo real desde cualquier dispositivo." },
+            { icon: <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="7" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>, title: "Nómina automática", desc: "Calcula pagos quincenales con horas regulares y extras automáticamente." },
+            { icon: <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="7" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>, title: "Modo Kiosk", desc: "Instala un tablet en tu oficina para que los empleados fichen con PIN." },
             { icon: <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, title: "Actividad en tiempo real", desc: "Ve quién está trabajando ahora mismo sin necesidad de recargar." },
             { icon: <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, title: "Reportes por email", desc: "Recibe el resumen quincenal de horas y nómina directo en tu correo." },
             { icon: <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, title: "Licencia de por vida", desc: "Un solo pago, sin mensualidades, sin sorpresas. Tuyo para siempre." },
@@ -98,7 +98,7 @@ export default function LandingPage() {
           <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
             <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">Prueba gratis</p>
             <p className="text-5xl font-black text-white mb-1">$0</p>
-            <p className="text-white/40 text-sm mb-8">14 días · sin tarjeta</p>
+            <p className="text-white/40 text-sm mb-8">7 días · sin tarjeta</p>
             <div className="space-y-3 mb-8">
               {["Todos los features incluidos","Empleados ilimitados","Kiosk incluido","Nómina automática"].map(f => (
                 <div key={f} className="flex items-center gap-2.5">
@@ -139,7 +139,7 @@ export default function LandingPage() {
       <section className="px-6 py-20">
         <div className="max-w-2xl mx-auto bg-[#E8B84B] rounded-3xl p-12 text-center">
           <h2 className="text-3xl md:text-4xl font-black text-black mb-4">Empieza hoy gratis</h2>
-          <p className="text-black/60 mb-8">Sin tarjeta de crédito. 14 días gratis. Luego solo $49 una vez.</p>
+          <p className="text-black/60 mb-8">7 días gratis. Luego solo $49 una vez.</p>
           <Link href="/en/register"
             className="bg-black text-white px-8 py-3.5 rounded-2xl font-black text-base hover:bg-black/80 transition inline-block">
             Crear cuenta gratis →
