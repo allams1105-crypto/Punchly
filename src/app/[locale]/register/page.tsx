@@ -1,10 +1,9 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [orgName, setOrgName] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -23,12 +22,20 @@ export default function RegisterPage() {
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error || "Error al registrar"); setLoading(false); return; }
-    router.push("/en/login");
+    
+    // Auto login after register
+    const result = await signIn("credentials", {
+      email, password, redirect: false,
+    });
+    if (result?.ok) {
+      window.location.href = "/en/admin/dashboard";
+    } else {
+      window.location.href = "/en/login";
+    }
   }
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] flex">
-      {/* Left panel */}
       <div className="hidden lg:flex w-1/2 bg-[#E8B84B] flex-col justify-between p-12">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center">
@@ -45,8 +52,6 @@ export default function RegisterPage() {
           <div><p className="text-3xl font-black text-black">5min</p><p className="text-black/60 text-sm">Para configurar</p></div>
         </div>
       </div>
-
-      {/* Right panel */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-sm">
           <div className="mb-8">
