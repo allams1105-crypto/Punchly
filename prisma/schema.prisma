@@ -50,6 +50,7 @@ model Organization {
   schedules     Schedule[]
   isPro         Boolean  @default(false)
   licenseKey    String?
+  alertEmail    String?
 }
 
 model User {
