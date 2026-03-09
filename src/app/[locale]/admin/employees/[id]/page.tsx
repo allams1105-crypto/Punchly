@@ -32,6 +32,8 @@ export default async function EmployeeEditPage({ params }: { params: any }) {
           role: employee.role,
           hourlyRate: (employee as any).hourlyRate || 0,
           isActive: employee.isActive,
+          avatarUrl: (employee as any).avatarUrl || null,
+          avatarColor: (employee as any).avatarColor || null,
         }} />
         <ScheduleEditor userId={employee.id} employeeName={employee.name} />
       </div>

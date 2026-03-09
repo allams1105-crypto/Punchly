@@ -1,6 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+
+const COLORS = ["#E8B84B","#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80","#E879F9","#94A3B8"];
 
 export default function EmployeeEditClient({ employee }: { employee: any }) {
   const router = useRouter();
@@ -8,6 +10,7 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
   const [email, setEmail] = useState(employee.email);
   const [hourlyRate, setHourlyRate] = useState(employee.hourlyRate);
   const [isActive, setIsActive] = useState(employee.isActive);
+  const [avatarColor, setAvatarColor] = useState(employee.avatarColor || "#E8B84B");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState("");
@@ -18,6 +21,12 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, hourlyRate: Number(hourlyRate), isActive }),
+    });
+    // Save avatar color
+    await fetch("/api/employees/avatar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: employee.id, avatarColor }),
     });
     setMsg(res.ok ? "✓ Guardado" : "Error al guardar");
     setSaving(false);
@@ -31,12 +40,35 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
     router.push("/en/admin/dashboard");
   }
 
+  const initials = name.split(" ").map((n: string) => n.charAt(0)).join("").substring(0, 2).toUpperCase();
+
   return (
     <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
       <div className="px-5 py-3.5 border-b border-[var(--border)]">
         <h3 className="text-sm font-bold text-[var(--text-primary)]">Información del empleado</h3>
       </div>
-      <div className="p-5 space-y-4">
+      <div className="p-5 space-y-5">
+        {/* Avatar */}
+        <div>
+          <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Avatar</label>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shrink-0 transition-all"
+              style={{ backgroundColor: avatarColor + "20", border: `2px solid ${avatarColor}40`, color: avatarColor }}>
+              {initials}
+            </div>
+            <div>
+              <p className="text-xs text-[var(--text-muted)] mb-2">Color del avatar</p>
+              <div className="flex flex-wrap gap-2">
+                {COLORS.map(c => (
+                  <button key={c} onClick={() => setAvatarColor(c)}
+                    className={`w-6 h-6 rounded-lg transition-all ${avatarColor === c ? "ring-2 ring-white ring-offset-2 ring-offset-[var(--bg-card)] scale-110" : "hover:scale-110"}`}
+                    style={{ backgroundColor: c }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Nombre</label>

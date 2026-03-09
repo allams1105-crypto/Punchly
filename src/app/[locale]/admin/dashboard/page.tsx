@@ -8,17 +8,42 @@ import Link from "next/link";
 
 export default async function DashboardPage() {
   const session = await auth();
-  if (!session) redirect("/en/login");
-  const orgId = (session.user as any).organizationId;
+  
+  // 1. Verificación estricta de sesión
+  if (!session || !session.user) {
+    redirect("/en/login");
+  }
+
+  // 2. Forzamos orgId como string para evitar errores de tipo 'any' o 'undefined'
+  const orgId = (session.user as any).organizationId as string;
+
+  if (!orgId) {
+    return (
+      <div className="p-6 text-red-500">
+        Error: No se encontró una organización vinculada a tu cuenta.
+      </div>
+    );
+  }
 
   const now = new Date();
   const periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 1 : 16);
 
+  // 3. Consultas a la base de datos
   const [employees, activeEntries, periodEntries, org] = await Promise.all([
-    prisma.user.findMany({ where: { organizationId: orgId, isActive: true, role: { not: "OWNER" } }, orderBy: { name: "asc" } }),
-    prisma.timeEntry.findMany({ where: { organizationId: orgId, clockOut: null } }),
-    prisma.timeEntry.findMany({ where: { organizationId: orgId, clockIn: { gte: periodStart } } }),
-    prisma.organization.findUnique({ where: { id: orgId }, include: { users: { where: { role: "OWNER" } } } }),
+    prisma.user.findMany({ 
+      where: { organizationId: orgId, isActive: true, role: { not: "OWNER" } }, 
+      orderBy: { name: "asc" } 
+    }),
+    prisma.timeEntry.findMany({ 
+      where: { organizationId: orgId, clockOut: null } 
+    }),
+    prisma.timeEntry.findMany({ 
+      where: { organizationId: orgId, clockIn: { gte: periodStart } } 
+    }),
+    prisma.organization.findUnique({ 
+      where: { id: orgId }, 
+      include: { users: { where: { role: "OWNER" } } } 
+    }),
   ]);
 
   const activeIds = new Set(activeEntries.map(e => e.userId));
@@ -27,6 +52,7 @@ export default async function DashboardPage() {
   const employeesWithRates = await prisma.user.findMany({
     where: { organizationId: orgId, isActive: true, role: { not: "OWNER" } },
   });
+  
   const estimatedPayroll = periodEntries.reduce((acc, e) => {
     const emp = employeesWithRates.find(u => u.id === e.userId);
     const rate = (emp as any)?.hourlyRate || 0;
@@ -48,7 +74,9 @@ export default async function DashboardPage() {
           <p className="text-xs text-[var(--text-muted)]">{org?.name}</p>
         </div>
         <div className="flex items-center gap-3">
-          <NotificationBell />
+          {/* CORRECCIÓN PRINCIPAL: Se pasa el orgId al componente */}
+          <NotificationBell orgId={orgId} />
+          
           <Link href="/en/admin/employees/new"
             className="bg-[#E8B84B] text-black px-3 py-1.5 rounded-xl text-xs font-black hover:bg-[#d4a43a] transition">
             + Empleado
@@ -70,9 +98,8 @@ export default async function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-4">
-            {/* Attendance Chart */}
             <AttendanceChart />
-            {/* Employee Table */}
+            
             <EmployeeTable employees={employees.map(e => ({
               id: e.id,
               name: e.name,
@@ -83,7 +110,6 @@ export default async function DashboardPage() {
             }))} />
           </div>
 
-          {/* Quick actions */}
           <div className="space-y-3">
             <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
               <div className="px-5 py-3.5 border-b border-[var(--border)]">

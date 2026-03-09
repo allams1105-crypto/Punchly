@@ -72,7 +72,8 @@ model User {
   timeEntries  TimeEntry[]
   accounts     Account[]
   sessions     Session[]
-  schedule     Schedule?
+  schedule          Schedule?
+  pushSubscription  PushSubscription?
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -215,4 +216,11 @@ model Schedule {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
+}
+model PushSubscription {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  subscription String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
