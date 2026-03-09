@@ -1,6 +1,4 @@
-import { writeFileSync } from "fs";
-
-const notFound = `import Link from "next/link";
+import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -32,8 +30,4 @@ export default function NotFound() {
       </div>
     </div>
   );
-}`;
-
-writeFileSync("src/app/not-found.tsx", notFound);
-console.log("Listo!");
-
+}
