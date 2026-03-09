@@ -1,6 +1,4 @@
-import { writeFileSync } from "fs";
-
-const employeesClient = `"use client";
+"use client";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -10,7 +8,7 @@ function Avatar({ name, color }: { name: string; color?: string | null }) {
   const bg = color || COLORS[(name?.charCodeAt(0) || 0) % COLORS.length];
   return (
     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-black shrink-0"
-      style={{ backgroundColor: bg + "20", border: \`1px solid \${bg}40\`, color: bg }}>
+      style={{ backgroundColor: bg + "20", border: `1px solid ${bg}40`, color: bg }}>
       {(name || "?").charAt(0).toUpperCase()}
     </div>
   );
@@ -77,7 +75,7 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
           <div className="flex bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
             {[["all","Todos"],["active","Activos"],["inactive","Inactivos"],["onshift","En turno"],["noschedule","Sin horario"]].map(([key,label]) => (
               <button key={key} onClick={() => setFilter(key)}
-                className={\`px-3 py-2 text-xs font-semibold transition \${filter === key ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}\`}>
+                className={`px-3 py-2 text-xs font-semibold transition ${filter === key ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>
                 {label}
               </button>
             ))}
@@ -92,7 +90,7 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.map(emp => (
-              <Link key={emp.id} href={\`/en/admin/employees/\${emp.id}\`}
+              <Link key={emp.id} href={`/en/admin/employees/${emp.id}`}
                 className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5 hover:border-[#E8B84B]/40 transition group block">
                 <div className="flex items-start justify-between mb-4">
                   <Avatar name={emp.name || "?"} color={emp.avatarColor} />
@@ -113,7 +111,7 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
                 </div>
                 <p className="text-sm font-black text-[var(--text-primary)] group-hover:text-[#E8B84B] transition">{emp.name}</p>
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">{emp.email}</p>
-                <p className="text-xs text-[var(--text-muted)] mt-2">\${emp.hourlyRate || 0}/h · {emp.role}</p>
+                <p className="text-xs text-[var(--text-muted)] mt-2">${emp.hourlyRate || 0}/h · {emp.role}</p>
               </Link>
             ))}
           </div>
@@ -121,8 +119,4 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
       </div>
     </div>
   );
-}`;
-
-writeFileSync("src/components/admin/EmployeesClient.tsx", employeesClient);
-console.log("Listo!");
-
+}
