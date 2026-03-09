@@ -118,7 +118,7 @@ export default function LandingPage() {
             <div className="absolute top-4 right-4 bg-black/15 text-black text-xs font-black px-3 py-1 rounded-full">Más popular</div>
             <p className="text-xs font-semibold text-black/50 uppercase tracking-wider mb-4">Licencia completa</p>
             <p className="text-5xl font-black text-black mb-1">$49</p>
-            <p className="text-black/50 text-sm mb-8">pago único · de por vida</p>
+            <p className="text-black/50 text-sm mb-8">pago único de por vida</p>
             <div className="space-y-3 mb-8">
               {["Todo lo del plan gratis","Acceso de por vida","Sin mensualidades","Soporte incluido","Actualizaciones gratis"].map(f => (
                 <div key={f} className="flex items-center gap-2.5">

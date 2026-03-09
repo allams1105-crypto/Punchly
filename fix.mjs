@@ -1,255 +1,287 @@
 import { writeFileSync } from "fs";
 
-// ==================== LOGIN PAGE ====================
-const loginPage = `"use client";
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import Link from "next/link";
-import { useLang } from "@/lib/LangContext";
-import LangToggle from "@/components/LangToggle";
+const attendancePage = `"use client";
+import { useEffect, useState } from "react";
 
-export default function LoginPage() {
-  const { t } = useLang();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+type Entry = {
+  id: string;
+  userId: string;
+  userName: string;
+  clockIn: string;
+  clockOut: string | null;
+  durationMin: number | null;
+  status: string;
+  lateMin: number;
+  earlyMin: number;
+  overtimeMin: number;
+  scheduledStart: string;
+  scheduledEnd: string;
+};
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+const WEEKS = [
+  { label: "Últimos 7 días", value: 7 },
+  { label: "Últimos 14 días", value: 14 },
+  { label: "Últimos 30 días", value: 30 },
+];
+
+export default function AttendancePage() {
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [days, setDays] = useState(7);
+
+  useEffect(() => {
     setLoading(true);
-    setError("");
-    const result = await signIn("credentials", { email, password, redirect: false });
-    if (result?.ok) {
-      window.location.href = "/en/admin/dashboard";
-    } else {
-      setError("Email o contraseña incorrectos");
-      setLoading(false);
-    }
-  }
+    fetch(\`/api/attendance?days=\${days}\`)
+      .then(r => r.json())
+      .then(d => { setEntries(d.entries || []); setLoading(false); });
+  }, [days]);
 
-  return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex">
-      <div className="hidden lg:flex w-1/2 bg-[#E8B84B] flex-col justify-between p-12">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center">
-            <span className="text-[#E8B84B] font-black text-base">P</span>
-          </div>
-          <span className="text-black font-black text-xl">Punchly.Clock</span>
-        </div>
-        <div>
-          <h2 className="text-4xl font-black text-black leading-tight mb-4">{t("login.left.title")}</h2>
-          <p className="text-black/60 text-lg">{t("login.left.sub")}</p>
-        </div>
-        <div className="flex gap-6">
-          <div><p className="text-3xl font-black text-black">7</p><p className="text-black/60 text-sm">{t("landing.stats.trial")}</p></div>
-          <div><p className="text-3xl font-black text-black">$49</p><p className="text-black/60 text-sm">{t("landing.stats.price")}</p></div>
-        </div>
-      </div>
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm">
-          <div className="flex justify-end mb-6">
-            <LangToggle />
-          </div>
-          <div className="mb-8">
-            <h1 className="text-2xl font-black text-[var(--text-primary)] mb-1">{t("login.title")}</h1>
-            <p className="text-[var(--text-muted)] text-sm">{t("login.subtitle")}</p>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("login.email")}</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("login.password")}</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
-            </div>
-            {error && <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"><p className="text-red-400 text-sm">{error}</p></div>}
-            <button type="submit" disabled={loading}
-              className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
-              {loading ? t("login.loading") : t("login.btn")}
-            </button>
-          </form>
-          <p className="text-center text-xs text-[var(--text-muted)] mt-6">
-            {t("login.register")} <Link href="/en/register" className="text-[#E8B84B] font-semibold hover:underline">{t("login.register.link")}</Link>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}`;
+  const filtered = entries.filter(e => {
+    const matchSearch = e.userName.toLowerCase().includes(search.toLowerCase());
+    const matchFilter =
+      filter === "all" ? true :
+      filter === "late" ? e.status === "LATE" :
+      filter === "ontime" ? e.status === "ON_TIME" :
+      filter === "overtime" ? e.overtimeMin > 0 :
+      filter === "absence" ? e.status === "ABSENCE" : true;
+    return matchSearch && matchFilter;
+  });
 
-// ==================== REGISTER PAGE ====================
-const registerPage = `"use client";
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import Link from "next/link";
-import { useLang } from "@/lib/LangContext";
-import LangToggle from "@/components/LangToggle";
+  const lateCount = entries.filter(e => e.status === "LATE").length;
+  const ontimeCount = entries.filter(e => e.status === "ON_TIME").length;
+  const overtimeCount = entries.filter(e => e.overtimeMin > 0).length;
+  const totalOvertimeMin = entries.reduce((acc, e) => acc + (e.overtimeMin || 0), 0);
+  const totalLateMin = entries.reduce((acc, e) => acc + (e.lateMin || 0), 0);
 
-export default function RegisterPage() {
-  const { t } = useLang();
-  const [orgName, setOrgName] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orgName, name, email, password }),
+  function exportCSV() {
+    const headers = ["Empleado","Fecha","Entrada","Salida","Estado","Tardanza (min)","Salida temprana (min)","Horas extra (min)","Duración (min)"];
+    const rows = filtered.map(e => {
+      const d = new Date(e.clockIn);
+      return [
+        e.userName,
+        d.toLocaleDateString("es"),
+        d.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
+        e.clockOut ? new Date(e.clockOut).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) : "",
+        e.status === "LATE" ? "Tardanza" : e.status === "ON_TIME" ? "A tiempo" : e.status === "DAY_OFF" ? "Día libre" : "—",
+        e.lateMin,
+        e.earlyMin,
+        e.overtimeMin,
+        e.durationMin || "",
+      ].join(",");
     });
-    const data = await res.json();
-    if (!res.ok) { setError(data.error || "Error al registrar"); setLoading(false); return; }
-    const result = await signIn("credentials", { email, password, redirect: false });
-    if (result?.ok) {
-      window.location.href = "/en/admin/dashboard";
-    } else {
-      window.location.href = "/en/login";
-    }
+    const csv = [headers.join(","), ...rows].join("\\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = \`asistencia-\${new Date().toISOString().split("T")[0]}.csv\`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
+  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+    LATE: { label: "Tardanza", color: "text-orange-400", bg: "bg-orange-500/10" },
+    ON_TIME: { label: "A tiempo", color: "text-green-400", bg: "bg-green-500/10" },
+    DAY_OFF: { label: "Día libre", color: "text-blue-400", bg: "bg-blue-500/10" },
+    ABSENCE: { label: "Ausencia", color: "text-red-400", bg: "bg-red-500/10" },
+    NO_SCHEDULE: { label: "Sin horario", color: "text-[var(--text-muted)]", bg: "bg-[var(--border)]" },
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex">
-      <div className="hidden lg:flex w-1/2 bg-[#E8B84B] flex-col justify-between p-12">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center">
-            <span className="text-[#E8B84B] font-black text-base">P</span>
-          </div>
-          <span className="text-black font-black text-xl">Punchly.Clock</span>
-        </div>
+    <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
+      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between bg-[var(--bg-primary)]">
         <div>
-          <h2 className="text-4xl font-black text-black leading-tight mb-4">{t("register.left.title")}</h2>
-          <p className="text-black/60 text-lg">{t("register.left.sub")}</p>
+          <h1 className="text-sm font-black text-[var(--text-primary)]">Asistencia</h1>
+          <p className="text-xs text-[var(--text-muted)]">Tardanzas, horas extra y ausencias</p>
         </div>
-        <div className="flex gap-6">
-          <div><p className="text-3xl font-black text-black">7</p><p className="text-black/60 text-sm">{t("landing.stats.trial")}</p></div>
-          <div><p className="text-3xl font-black text-black">$49</p><p className="text-black/60 text-sm">{t("landing.stats.price")}</p></div>
-        </div>
+        <button onClick={exportCSV}
+          className="flex items-center gap-1.5 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar CSV
+        </button>
       </div>
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm">
-          <div className="flex justify-end mb-6">
-            <LangToggle />
+
+      <div className="p-6 space-y-4">
+        {/* KPIs */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-[var(--bg-card)] border border-green-500/20 rounded-xl p-4">
+            <p className="text-xs text-[var(--text-muted)] mb-1">A tiempo</p>
+            <p className="text-2xl font-black text-green-400">{ontimeCount}</p>
           </div>
-          <div className="mb-8">
-            <h1 className="text-2xl font-black text-[var(--text-primary)] mb-1">{t("register.title")}</h1>
-            <p className="text-[var(--text-muted)] text-sm">{t("register.subtitle")}</p>
+          <div className="bg-[var(--bg-card)] border border-orange-500/20 rounded-xl p-4">
+            <p className="text-xs text-[var(--text-muted)] mb-1">Tardanzas</p>
+            <p className="text-2xl font-black text-orange-400">{lateCount}</p>
+            {totalLateMin > 0 && <p className="text-xs text-orange-400/60 mt-0.5">{totalLateMin} min total</p>}
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("register.company")}</label>
-              <input type="text" value={orgName} onChange={e => setOrgName(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("register.name")}</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("register.email")}</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("register.password")}</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
-            </div>
-            {error && <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"><p className="text-red-400 text-sm">{error}</p></div>}
-            <button type="submit" disabled={loading}
-              className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
-              {loading ? t("register.loading") : t("register.btn")}
-            </button>
-          </form>
-          <p className="text-center text-xs text-[var(--text-muted)] mt-6">
-            {t("register.login")} <Link href="/en/login" className="text-[#E8B84B] font-semibold hover:underline">{t("register.login.link")}</Link>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}`;
-
-// ==================== PAYWALL PAGE ====================
-const paywallPage = `"use client";
-import { useState } from "react";
-import { useLang } from "@/lib/LangContext";
-
-const features = ["paywall.f1","paywall.f2","paywall.f3","paywall.f4","paywall.f5"];
-
-export default function PaywallPage() {
-  const { t } = useLang();
-  const [loading, setLoading] = useState(false);
-
-  async function handleUpgrade() {
-    setLoading(true);
-    const res = await fetch("/api/stripe/checkout", { method: "POST" });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-    else setLoading(false);
-  }
-
-  return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-2.5 mb-10">
-          <div className="w-9 h-9 bg-[#E8B84B] rounded-xl flex items-center justify-center">
-            <span className="text-black font-black text-base">P</span>
+          <div className="bg-[var(--bg-card)] border border-[#E8B84B]/20 rounded-xl p-4">
+            <p className="text-xs text-[var(--text-muted)] mb-1">Horas extra</p>
+            <p className="text-2xl font-black text-[#E8B84B]">{overtimeCount}</p>
+            {totalOvertimeMin > 0 && <p className="text-xs text-[#E8B84B]/60 mt-0.5">{Math.floor(totalOvertimeMin/60)}h {totalOvertimeMin%60}m total</p>}
           </div>
-          <span className="text-white font-black text-xl">Punchly.Clock</span>
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
+            <p className="text-xs text-[var(--text-muted)] mb-1">Total registros</p>
+            <p className="text-2xl font-black text-[var(--text-primary)]">{entries.length}</p>
+          </div>
         </div>
 
-        <div className="bg-[#111] border border-white/10 rounded-3xl overflow-hidden">
-          <div className="px-8 pt-8 pb-6 border-b border-white/10">
-            <h1 className="text-2xl font-black text-white mb-2">{t("paywall.title")}</h1>
-            <p className="text-white/50 text-sm">{t("paywall.desc")}</p>
-          </div>
-
-          <div className="px-8 py-6 border-b border-white/10">
-            <div className="flex items-end gap-2 mb-1">
-              <span className="text-5xl font-black text-[#E8B84B]">$49</span>
-              <span className="text-white/40 text-sm mb-2">{t("paywall.price.note")}</span>
-            </div>
-            <p className="text-xs text-white/30">{t("paywall.price.sub")}</p>
-          </div>
-
-          <div className="px-8 py-6 space-y-3 border-b border-white/10">
-            {features.map(key => (
-              <div key={key} className="flex items-center gap-3">
-                <div className="w-5 h-5 bg-[#E8B84B]/10 border border-[#E8B84B]/30 rounded-md flex items-center justify-center shrink-0">
-                  <span className="text-[#E8B84B] text-xs">✓</span>
-                </div>
-                <p className="text-sm text-white/70">{t(key)}</p>
-              </div>
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar empleado..."
+            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition w-44" />
+          <div className="flex bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
+            {[["all","Todos"],["ontime","A tiempo"],["late","Tardanzas"],["overtime","Horas extra"],["absence","Ausencias"]].map(([key,label]) => (
+              <button key={key} onClick={() => setFilter(key)}
+                className={\`px-3 py-2 text-xs font-semibold transition \${filter === key ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}\`}>
+                {label}
+              </button>
             ))}
           </div>
+          <select value={days} onChange={e => setDays(Number(e.target.value))}
+            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition">
+            {WEEKS.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
+          </select>
+        </div>
 
-          <div className="px-8 py-6 space-y-3">
-            <button onClick={handleUpgrade} disabled={loading}
-              className="w-full bg-[#E8B84B] text-black py-4 rounded-2xl font-black text-sm hover:bg-[#d4a43a] transition disabled:opacity-50">
-              {loading ? "Redirigiendo..." : t("paywall.cta")}
-            </button>
-            <p className="text-center text-xs text-white/30">{t("paywall.secure")}</p>
-            <a href="/api/auth/signout" className="block text-center text-xs text-white/30 hover:text-white/50 transition">{t("paywall.logout")}</a>
-          </div>
+        {/* Table */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[var(--border)] bg-[var(--bg-primary)]/50">
+                <th className="text-left px-5 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Empleado</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider hidden sm:table-cell">Horario</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Entrada</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Salida</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Estado</th>
+                <th className="text-right px-5 py-2.5 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Detalles</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {loading ? (
+                <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-[var(--text-muted)]">Cargando...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-[var(--text-muted)]">Sin registros</td></tr>
+              ) : filtered.map(entry => {
+                const s = statusConfig[entry.status] || statusConfig.NO_SCHEDULE;
+                const clockIn = new Date(entry.clockIn);
+                const date = clockIn.toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" });
+                const timeIn = clockIn.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
+                const timeOut = entry.clockOut ? new Date(entry.clockOut).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) : "—";
+                return (
+                  <tr key={entry.id} className="hover:bg-[var(--border)]/20 transition">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 bg-[#E8B84B]/10 border border-[#E8B84B]/20 rounded-lg flex items-center justify-center shrink-0">
+                          <span className="text-[#E8B84B] text-xs font-black">{entry.userName.charAt(0)}</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-[var(--text-primary)]">{entry.userName}</p>
+                          <p className="text-xs text-[var(--text-muted)]">{date}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 hidden sm:table-cell">
+                      <p className="text-xs text-[var(--text-muted)]">{entry.scheduledStart} — {entry.scheduledEnd}</p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <p className="text-xs font-semibold text-[var(--text-primary)]">{timeIn}</p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <p className="text-xs text-[var(--text-muted)]">{timeOut}</p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <span className={\`text-xs px-2.5 py-1 rounded-lg font-semibold \${s.bg} \${s.color}\`}>{s.label}</span>
+                    </td>
+                    <td className="px-5 py-3 text-right space-y-0.5">
+                      {entry.lateMin > 0 && <p className="text-xs text-orange-400">+{entry.lateMin}m tardanza</p>}
+                      {entry.earlyMin > 0 && <p className="text-xs text-blue-400">-{entry.earlyMin}m temprano</p>}
+                      {entry.overtimeMin > 0 && <p className="text-xs text-[#E8B84B]">+{entry.overtimeMin}m extra</p>}
+                      {entry.lateMin === 0 && entry.overtimeMin === 0 && entry.earlyMin === 0 && entry.status === "ON_TIME" && (
+                        <p className="text-xs text-green-400">✓ Perfecto</p>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }`;
 
-writeFileSync("src/app/[locale]/login/page.tsx", loginPage);
-writeFileSync("src/app/[locale]/register/page.tsx", registerPage);
-writeFileSync("src/app/[locale]/paywall/page.tsx", paywallPage);
+// Update attendance API to support ?days= param
+const attendanceApi = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { NextResponse } from "next/server";
+
+export async function GET(req: Request) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const orgId = (session.user as any).organizationId;
+  const { searchParams } = new URL(req.url);
+  const userId = searchParams.get("userId");
+  const days = Number(searchParams.get("days") || 7);
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  since.setHours(0, 0, 0, 0);
+
+  const where: any = { organizationId: orgId, clockIn: { gte: since } };
+  if (userId) where.userId = userId;
+
+  const entries = await prisma.timeEntry.findMany({
+    where,
+    include: { user: { include: { schedule: true } } },
+    orderBy: { clockIn: "desc" },
+  });
+
+  const results = entries.map(entry => {
+    const schedule = entry.user.schedule;
+    if (!schedule) return { ...entry, clockIn: entry.clockIn.toISOString(), clockOut: entry.clockOut?.toISOString() || null, status: "NO_SCHEDULE", lateMin: 0, earlyMin: 0, overtimeMin: 0, scheduledStart: "", scheduledEnd: "" };
+
+    const clockIn = new Date(entry.clockIn);
+    const dayOfWeek = clockIn.getDay();
+    const dayMap: Record<number, keyof typeof schedule> = { 0: "sunday", 1: "monday", 2: "tuesday", 3: "wednesday", 4: "thursday", 5: "friday", 6: "saturday" };
+    const dayKey = dayMap[dayOfWeek];
+    const isWorkDay = schedule[dayKey] as boolean;
+
+    if (!isWorkDay) return { ...entry, clockIn: entry.clockIn.toISOString(), clockOut: entry.clockOut?.toISOString() || null, status: "DAY_OFF", lateMin: 0, earlyMin: 0, overtimeMin: 0, scheduledStart: schedule.startTime, scheduledEnd: schedule.endTime };
+
+    const [startH, startM] = schedule.startTime.split(":").map(Number);
+    const [endH, endM] = schedule.endTime.split(":").map(Number);
+    const scheduledStart = new Date(clockIn); scheduledStart.setHours(startH, startM, 0, 0);
+    const scheduledEnd = new Date(clockIn); scheduledEnd.setHours(endH, endM, 0, 0);
+    const lateMin = Math.max(0, Math.floor((clockIn.getTime() - scheduledStart.getTime()) / 60000) - schedule.toleranceMin);
+
+    let earlyMin = 0, overtimeMin = 0;
+    if (entry.clockOut) {
+      const clockOut = new Date(entry.clockOut);
+      earlyMin = Math.max(0, Math.floor((scheduledEnd.getTime() - clockOut.getTime()) / 60000));
+      overtimeMin = Math.max(0, Math.floor((clockOut.getTime() - scheduledEnd.getTime()) / 60000));
+    }
+
+    return {
+      id: entry.id,
+      userId: entry.userId,
+      userName: entry.user.name,
+      clockIn: entry.clockIn.toISOString(),
+      clockOut: entry.clockOut?.toISOString() || null,
+      durationMin: entry.durationMin,
+      status: lateMin > 0 ? "LATE" : "ON_TIME",
+      lateMin, earlyMin, overtimeMin,
+      scheduledStart: schedule.startTime,
+      scheduledEnd: schedule.endTime,
+    };
+  });
+
+  return NextResponse.json({ entries: results });
+}`;
+
+writeFileSync("src/app/[locale]/admin/attendance/page.tsx", attendancePage);
+writeFileSync("src/app/api/attendance/route.ts", attendanceApi);
 console.log("Listo!");
 
