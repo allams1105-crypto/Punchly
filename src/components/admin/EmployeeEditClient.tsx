@@ -1,59 +1,4 @@
-import { writeFileSync } from "fs";
-import { readFileSync } from "fs";
-
-// Add Asistencia to Sidebar
-let sidebar = readFileSync("src/components/admin/Sidebar.tsx", "utf8");
-sidebar = sidebar.replace(
-  `{ href: "/en/admin/activity", label: t("sidebar.activity"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },`,
-  `{ href: "/en/admin/activity", label: t("sidebar.activity"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
-    { href: "/en/admin/attendance", label: "Asistencia", icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg> },`
-);
-writeFileSync("src/components/admin/Sidebar.tsx", sidebar);
-
-// Add ScheduleEditor to employee edit page
-const employeeEdit = `import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
-import ScheduleEditor from "@/components/admin/ScheduleEditor";
-import EmployeeEditClient from "@/components/admin/EmployeeEditClient";
-
-export default async function EmployeeEditPage({ params }: { params: any }) {
-  const session = await auth();
-  if (!session) redirect("/en/login");
-  const orgId = (session.user as any).organizationId;
-  const { id } = params;
-
-  const employee = await prisma.user.findFirst({
-    where: { id, organizationId: orgId },
-  });
-
-  if (!employee) redirect("/en/admin/dashboard");
-
-  return (
-    <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
-      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center bg-[var(--bg-primary)]">
-        <div>
-          <h1 className="text-sm font-black text-[var(--text-primary)]">Editar empleado</h1>
-          <p className="text-xs text-[var(--text-muted)]">{employee.name}</p>
-        </div>
-      </div>
-      <div className="p-6 space-y-4 max-w-2xl">
-        <EmployeeEditClient employee={{
-          id: employee.id,
-          name: employee.name,
-          email: employee.email,
-          role: employee.role,
-          hourlyRate: (employee as any).hourlyRate || 0,
-          isActive: employee.isActive,
-        }} />
-        <ScheduleEditor userId={employee.id} employeeName={employee.name} />
-      </div>
-    </div>
-  );
-}`;
-
-// EmployeeEditClient component
-const employeeEditClient = `"use client";
+"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -69,7 +14,7 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
 
   async function save() {
     setSaving(true);
-    const res = await fetch(\`/api/employees/\${employee.id}\`, {
+    const res = await fetch(`/api/employees/${employee.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, hourlyRate: Number(hourlyRate), isActive }),
@@ -82,7 +27,7 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
   async function deleteEmployee() {
     if (!confirm("¿Eliminar este empleado? Esta acción no se puede deshacer.")) return;
     setDeleting(true);
-    await fetch(\`/api/employees/\${employee.id}\`, { method: "DELETE" });
+    await fetch(`/api/employees/${employee.id}`, { method: "DELETE" });
     router.push("/en/admin/dashboard");
   }
 
@@ -125,7 +70,7 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
             {deleting ? "Eliminando..." : "Eliminar empleado"}
           </button>
           <div className="flex items-center gap-3">
-            {msg && <p className={\`text-xs \${msg.startsWith("✓") ? "text-green-400" : "text-red-400"}\`}>{msg}</p>}
+            {msg && <p className={`text-xs ${msg.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>{msg}</p>}
             <button onClick={save} disabled={saving}
               className="bg-[#E8B84B] text-black px-5 py-2.5 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
               {saving ? "Guardando..." : "Guardar"}
@@ -135,9 +80,4 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
       </div>
     </div>
   );
-}`;
-
-writeFileSync("src/app/[locale]/admin/employees/[id]/page.tsx", employeeEdit);
-writeFileSync("src/components/admin/EmployeeEditClient.tsx", employeeEditClient);
-console.log("Listo!");
-
+}

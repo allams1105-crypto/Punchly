@@ -47,6 +47,7 @@ model Organization {
   kioskSessions KioskSession[]
   invites       Invite[]
   activityLogs  ActivityLog[]
+  schedules     Schedule[]
   isPro         Boolean  @default(false)
   licenseKey    String?
 }
@@ -70,6 +71,7 @@ model User {
   timeEntries  TimeEntry[]
   accounts     Account[]
   sessions     Session[]
+  schedule     Schedule?
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -189,4 +191,27 @@ model ActivityLog {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, createdAt])
+}
+
+model Schedule {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String   @unique
+  monday         Boolean  @default(true)
+  tuesday        Boolean  @default(true)
+  wednesday      Boolean  @default(true)
+  thursday       Boolean  @default(true)
+  friday         Boolean  @default(true)
+  saturday       Boolean  @default(false)
+  sunday         Boolean  @default(false)
+  startTime      String   @default("08:00")
+  endTime        String   @default("17:00")
+  toleranceMin   Int      @default(10)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
