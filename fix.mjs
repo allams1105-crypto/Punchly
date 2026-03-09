@@ -1,288 +1,411 @@
-import { writeFileSync } from "fs";
+import { writeFileSync, mkdirSync } from "fs";
 
-// ==================== KIOSK SETUP PAGE ====================
-const kioskSetup = `"use client";
-import { useState } from "react";
+// ==================== API: edit time entries ====================
+const apiEdit = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
-export default function KioskSetupPage() {
-  const [name, setName] = useState("");
-  const [exitPin, setExitPin] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [kioskUrl, setKioskUrl] = useState("");
-  const [error, setError] = useState("");
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    const res = await fetch("/api/kiosk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, exitPin }),
+  const role = (session.user as any).role;
+  if (role !== "OWNER" && role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const { action, password, entryId, userId, clockIn, clockOut } = await req.json();
+
+  // Verify admin password
+  const adminUser = await prisma.user.findUnique({ where: { id: (session.user as any).id } });
+  if (!adminUser) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+  const validPassword = await bcrypt.compare(password, adminUser.password);
+  if (!validPassword) return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
+
+  const orgId = (session.user as any).organizationId;
+
+  if (action === "create") {
+    const clockInDate = new Date(clockIn);
+    const clockOutDate = clockOut ? new Date(clockOut) : null;
+    const durationMin = clockOutDate ? Math.round((clockOutDate.getTime() - clockInDate.getTime()) / 60000) : null;
+    const entry = await prisma.timeEntry.create({
+      data: {
+        userId,
+        organizationId: orgId,
+        clockIn: clockInDate,
+        clockOut: clockOutDate,
+        durationMin,
+        status: clockOutDate ? "CLOCKED_OUT" : "CLOCKED_IN",
+      },
     });
-    const data = await res.json();
-    if (!res.ok) { setError(data.error || "Error al crear kiosk"); setLoading(false); return; }
-    setKioskUrl(\`\${window.location.origin}/en/kiosk/\${data.token}\`);
-    setLoading(false);
+    await prisma.activityLog.create({
+      data: {
+        organizationId: orgId,
+        userId,
+        action: "ENTRY_EDITED",
+        userName: adminUser.name,
+        details: \`Registro manual creado por admin\`,
+      },
+    });
+    return NextResponse.json({ entry });
   }
+
+  if (action === "update") {
+    const existing = await prisma.timeEntry.findUnique({ where: { id: entryId } });
+    if (!existing) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+    const clockInDate = new Date(clockIn);
+    const clockOutDate = clockOut ? new Date(clockOut) : null;
+    const durationMin = clockOutDate ? Math.round((clockOutDate.getTime() - clockInDate.getTime()) / 60000) : null;
+    const entry = await prisma.timeEntry.update({
+      where: { id: entryId },
+      data: { clockIn: clockInDate, clockOut: clockOutDate, durationMin, status: clockOutDate ? "CLOCKED_OUT" : "CLOCKED_IN" },
+    });
+    await prisma.activityLog.create({
+      data: {
+        organizationId: orgId,
+        userId: existing.userId,
+        action: "ENTRY_EDITED",
+        userName: adminUser.name,
+        details: \`Registro editado por admin\`,
+      },
+    });
+    return NextResponse.json({ entry });
+  }
+
+  if (action === "delete") {
+    const existing = await prisma.timeEntry.findUnique({ where: { id: entryId } });
+    if (!existing) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+    await prisma.timeEntry.delete({ where: { id: entryId } });
+    await prisma.activityLog.create({
+      data: {
+        organizationId: orgId,
+        userId: existing.userId,
+        action: "ENTRY_EDITED",
+        userName: adminUser.name,
+        details: \`Registro eliminado por admin\`,
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: "Acción inválida" }, { status: 400 });
+}`;
+
+// ==================== API: get time entries per employee ====================
+const apiEntries = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { NextResponse } from "next/server";
+
+export async function GET(req: Request) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const orgId = (session.user as any).organizationId;
+  const { searchParams } = new URL(req.url);
+  const userId = searchParams.get("userId");
+
+  const where: any = { organizationId: orgId };
+  if (userId) where.userId = userId;
+
+  const entries = await prisma.timeEntry.findMany({
+    where,
+    include: { user: { select: { name: true } } },
+    orderBy: { clockIn: "desc" },
+    take: 50,
+  });
+
+  return NextResponse.json({ entries });
+}`;
+
+// ==================== Activity page with time editing ====================
+const activityPage = `"use client";
+import { useEffect, useState } from "react";
+
+type Entry = {
+  id: string;
+  userId: string;
+  clockIn: string;
+  clockOut: string | null;
+  durationMin: number | null;
+  status: string;
+  user: { name: string };
+};
+
+type Employee = { id: string; name: string };
+
+type Log = {
+  id: string;
+  action: string;
+  userName: string;
+  details: string;
+  createdAt: string;
+};
+
+export default function ActivityPage() {
+  const [tab, setTab] = useState<"logs" | "entries">("entries");
+  const [logs, setLogs] = useState<Log[]>([]);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState("");
+
+  // Modal state
+  const [modal, setModal] = useState<"edit" | "create" | "delete" | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
+  const [password, setPassword] = useState("");
+  const [passError, setPassError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // Form fields
+  const [formUserId, setFormUserId] = useState("");
+  const [formClockIn, setFormClockIn] = useState("");
+  const [formClockOut, setFormClockOut] = useState("");
+
+  useEffect(() => {
+    fetch("/api/employees").then(r => r.json()).then(d => setEmployees(d.employees || []));
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    if (tab === "logs") {
+      fetch("/api/activity").then(r => r.json()).then(d => { setLogs(d.logs || []); setLoading(false); });
+    } else {
+      const url = selectedUser ? \`/api/time-entries?userId=\${selectedUser}\` : "/api/time-entries";
+      fetch(url).then(r => r.json()).then(d => { setEntries(d.entries || []); setLoading(false); });
+    }
+  }, [tab, selectedUser]);
+
+  function toLocalInput(iso: string) {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return \`\${d.getFullYear()}-\${pad(d.getMonth()+1)}-\${pad(d.getDate())}T\${pad(d.getHours())}:\${pad(d.getMinutes())}\`;
+  }
+
+  function openEdit(entry: Entry) {
+    setSelectedEntry(entry);
+    setFormClockIn(toLocalInput(entry.clockIn));
+    setFormClockOut(entry.clockOut ? toLocalInput(entry.clockOut) : "");
+    setPassword(""); setPassError("");
+    setModal("edit");
+  }
+
+  function openCreate() {
+    setFormUserId(selectedUser || (employees[0]?.id || ""));
+    const now = new Date();
+    setFormClockIn(toLocalInput(now.toISOString()));
+    setFormClockOut("");
+    setPassword(""); setPassError("");
+    setModal("create");
+  }
+
+  function openDelete(entry: Entry) {
+    setSelectedEntry(entry);
+    setPassword(""); setPassError("");
+    setModal("delete");
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setPassError("");
+    const body: any = { password };
+    if (modal === "edit") {
+      body.action = "update";
+      body.entryId = selectedEntry?.id;
+      body.clockIn = new Date(formClockIn).toISOString();
+      body.clockOut = formClockOut ? new Date(formClockOut).toISOString() : null;
+    } else if (modal === "create") {
+      body.action = "create";
+      body.userId = formUserId;
+      body.clockIn = new Date(formClockIn).toISOString();
+      body.clockOut = formClockOut ? new Date(formClockOut).toISOString() : null;
+    } else if (modal === "delete") {
+      body.action = "delete";
+      body.entryId = selectedEntry?.id;
+    }
+
+    const res = await fetch("/api/time-entries/edit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) {
+      setPassError(data.error || "Error");
+      setSaving(false);
+      return;
+    }
+
+    // Refresh entries
+    const url = selectedUser ? \`/api/time-entries?userId=\${selectedUser}\` : "/api/time-entries";
+    fetch(url).then(r => r.json()).then(d => setEntries(d.entries || []));
+    setModal(null);
+    setSaving(false);
+  }
+
+  const actionLabel: Record<string, { label: string; color: string; bg: string }> = {
+    CLOCK_IN: { label: "Entrada", color: "text-green-400", bg: "bg-green-500/10" },
+    CLOCK_OUT: { label: "Salida", color: "text-blue-400", bg: "bg-blue-500/10" },
+    EMPLOYEE_CREATED: { label: "Creado", color: "text-[#E8B84B]", bg: "bg-[#E8B84B]/10" },
+    EMPLOYEE_UPDATED: { label: "Editado", color: "text-purple-400", bg: "bg-purple-500/10" },
+    EMPLOYEE_DEACTIVATED: { label: "Desactivado", color: "text-red-400", bg: "bg-red-500/10" },
+    ENTRY_EDITED: { label: "Hora editada", color: "text-orange-400", bg: "bg-orange-500/10" },
+  };
 
   return (
     <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
-      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center bg-[var(--bg-primary)]">
+      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between bg-[var(--bg-primary)]">
         <div>
-          <h1 className="text-sm font-black text-[var(--text-primary)]">Kiosk</h1>
-          <p className="text-xs text-[var(--text-muted)]">Configura un punto de fichaje para tus empleados</p>
+          <h1 className="text-sm font-black text-[var(--text-primary)]">Actividad</h1>
+          <p className="text-xs text-[var(--text-muted)]">Registros y edición de horas</p>
         </div>
-      </div>
-      <div className="max-w-lg mx-auto p-6">
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-          <div className="p-6 border-b border-[var(--border)] bg-[#E8B84B]/5">
-            <div className="w-10 h-10 bg-[#E8B84B]/15 border border-[#E8B84B]/20 rounded-xl flex items-center justify-center mb-3">
-              <svg className="w-5 h-5 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-            </div>
-            <h2 className="text-base font-black text-[var(--text-primary)]">Nuevo Kiosk</h2>
-            <p className="text-xs text-[var(--text-muted)] mt-1">Instala esta URL en una tablet para que tus empleados fichen con un toque.</p>
-          </div>
-          <div className="p-6">
-            {!kioskUrl ? (
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Nombre del Kiosk</label>
-                  <input type="text" value={name} onChange={e => setName(e.target.value)}
-                    className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition"
-                    placeholder="Ej: Recepción, Entrada Principal" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">PIN de salida</label>
-                  <input type="password" value={exitPin} onChange={e => setExitPin(e.target.value)}
-                    className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition"
-                    placeholder="PIN para salir del kiosk" required />
-                  <p className="text-xs text-[var(--text-muted)] mt-1.5">Solo tú sabrás este PIN para cerrar el kiosk</p>
-                </div>
-                {error && <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"><p className="text-red-400 text-sm">{error}</p></div>}
-                <button type="submit" disabled={loading}
-                  className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
-                  {loading ? "Creando..." : "Crear Kiosk"}
-                </button>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3">
-                  <svg className="w-5 h-5 text-green-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                  <div>
-                    <p className="text-sm font-semibold text-green-400">Kiosk creado</p>
-                    <p className="text-xs text-green-400/60">Abre esta URL en tu tablet</p>
-                  </div>
-                </div>
-                <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl p-4">
-                  <p className="text-xs text-[var(--text-muted)] mb-2 font-semibold uppercase tracking-wider">URL del Kiosk</p>
-                  <p className="text-sm font-mono text-[var(--text-primary)] break-all">{kioskUrl}</p>
-                </div>
-                <button onClick={() => navigator.clipboard.writeText(kioskUrl)}
-                  className="w-full border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] py-3 rounded-xl text-sm font-semibold transition">
-                  Copiar URL
-                </button>
-                <a href={kioskUrl} target="_blank"
-                  className="block w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition text-center">
-                  Abrir Kiosk →
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}`;
-
-// ==================== KIOSK CLIENT ====================
-const kioskClient = `"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import bcrypt from "bcryptjs";
-
-interface Employee { id: string; name: string; }
-interface Props {
-  token: string;
-  organizationName: string;
-  employees: Employee[];
-  activeUserIds: string[];
-  exitPin: string;
-}
-
-export default function KioskClient({ token, organizationName, employees, activeUserIds, exitPin }: Props) {
-  const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error"; name: string } | null>(null);
-  const [showExitPin, setShowExitPin] = useState(false);
-  const [pinInput, setPinInput] = useState("");
-  const [pinError, setPinError] = useState("");
-  const [activeIds, setActiveIds] = useState<string[]>(activeUserIds);
-
-  const filtered = employees.filter(e => e.name.toLowerCase().includes(search.toLowerCase()));
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
-  const dateStr = now.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" });
-
-  async function handleClock(userId: string, empName: string, isActive: boolean) {
-    setLoading(userId);
-    setMessage(null);
-    const res = await fetch("/api/kiosk/clock", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, userId, action: isActive ? "out" : "in" }),
-    });
-    if (res.ok) {
-      setMessage({ text: isActive ? "Salida registrada" : "Entrada registrada", type: "success", name: empName });
-      if (isActive) {
-        setActiveIds(prev => prev.filter(id => id !== userId));
-      } else {
-        setActiveIds(prev => [...prev, userId]);
-      }
-      setTimeout(() => setMessage(null), 3000);
-    } else {
-      setMessage({ text: "Error al registrar", type: "error", name: empName });
-    }
-    setLoading(null);
-  }
-
-  async function handleExitPin() {
-    const isValid = await bcrypt.compare(pinInput, exitPin);
-    if (isValid) {
-      router.push("/en/admin/dashboard");
-    } else {
-      setPinError("PIN incorrecto");
-      setPinInput("");
-    }
-  }
-
-  const activeCount = activeIds.length;
-
-  return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Header */}
-      <div className="border-b border-white/8 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-[#E8B84B] rounded-xl flex items-center justify-center">
-            <span className="text-black font-black text-base">P</span>
-          </div>
-          <div>
-            <p className="text-white font-black text-sm leading-none">Punchly.Clock</p>
-            <p className="text-white/40 text-xs mt-0.5">{organizationName}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-white font-black text-lg leading-none">{timeStr}</p>
-            <p className="text-white/40 text-xs capitalize mt-0.5">{dateStr}</p>
-          </div>
-          <div className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-xl">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs font-semibold text-green-400">{activeCount} en turno</span>
-          </div>
-          <button onClick={() => setShowExitPin(true)}
-            className="text-xs text-white/30 hover:text-white/60 transition border border-white/10 px-3 py-1.5 rounded-lg">
-            Salir
+        {tab === "entries" && (
+          <button onClick={openCreate}
+            className="bg-[#E8B84B] text-black text-xs px-3 py-2 rounded-lg font-black hover:bg-[#d4a43a] transition flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Agregar registro
           </button>
-        </div>
-      </div>
-
-      {/* Toast message */}
-      {message && (
-        <div className={\`mx-6 mt-4 p-4 rounded-2xl flex items-center gap-3 \${message.type === "success" ? "bg-green-500/10 border border-green-500/20" : "bg-red-500/10 border border-red-500/20"}\`}>
-          <div className={\`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 \${message.type === "success" ? "bg-green-500/20" : "bg-red-500/20"}\`}>
-            {message.type === "success"
-              ? <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              : <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            }
-          </div>
-          <div>
-            <p className={\`text-sm font-bold \${message.type === "success" ? "text-green-400" : "text-red-400"}\`}>{message.text}</p>
-            <p className="text-xs text-white/40">{message.name}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Search */}
-      <div className="px-6 mt-5">
-        <div className="relative">
-          <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/30" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Busca tu nombre..."
-            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-white/30 focus:outline-none focus:border-[#E8B84B]/50 text-base transition" />
-        </div>
-      </div>
-
-      {/* Employee grid */}
-      <div className="px-6 mt-4 flex-1 overflow-auto pb-6">
-        {filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-white/30 text-sm">No se encontró ningún empleado</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filtered.map((emp) => {
-              const isActive = activeIds.includes(emp.id);
-              const isLoading = loading === emp.id;
-              return (
-                <button key={emp.id} onClick={() => handleClock(emp.id, emp.name, isActive)} disabled={isLoading}
-                  className={\`relative flex items-center justify-between p-5 rounded-2xl border transition-all disabled:opacity-60 text-left \${
-                    isActive
-                      ? "bg-[#E8B84B]/10 border-[#E8B84B]/30 hover:bg-[#E8B84B]/15"
-                      : "bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/20"
-                  }\`}>
-                  <div className="flex items-center gap-3">
-                    <div className={\`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 \${isActive ? "bg-[#E8B84B]/20" : "bg-white/8"}\`}>
-                      <span className={\`text-base font-black \${isActive ? "text-[#E8B84B]" : "text-white/50"}\`}>
-                        {emp.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">{emp.name}</p>
-                      <p className={\`text-xs mt-0.5 \${isActive ? "text-[#E8B84B]/60" : "text-white/30"}\`}>
-                        {isActive ? "Trabajando" : "Fuera"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className={\`px-3 py-1.5 rounded-xl text-xs font-black transition \${
-                    isLoading
-                      ? "bg-white/10 text-white/40"
-                      : isActive
-                      ? "bg-red-500/20 text-red-400 border border-red-500/20"
-                      : "bg-[#E8B84B] text-black"
-                  }\`}>
-                    {isLoading ? "..." : isActive ? "Clock Out" : "Clock In"}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         )}
       </div>
 
-      {/* Exit PIN modal */}
-      {showExitPin && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111] border border-white/10 rounded-3xl p-8 w-full max-w-sm">
-            <div className="w-12 h-12 bg-[#E8B84B]/10 border border-[#E8B84B]/20 rounded-2xl flex items-center justify-center mb-5 mx-auto">
-              <svg className="w-6 h-6 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <div className="p-6 space-y-4">
+        {/* Tabs */}
+        <div className="flex gap-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-1 w-fit">
+          {([["entries", "Registros de horas"], ["logs", "Log de eventos"]] as const).map(([key, label]) => (
+            <button key={key} onClick={() => setTab(key)}
+              className={\`px-4 py-2 rounded-lg text-xs font-semibold transition \${tab === key ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}\`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "entries" && (
+          <div className="flex items-center gap-3">
+            <select value={selectedUser} onChange={e => setSelectedUser(e.target.value)}
+              className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition">
+              <option value="">Todos los empleados</option>
+              {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          </div>
+        )}
+
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+          {loading ? (
+            <div className="p-8 text-center text-sm text-[var(--text-muted)]">Cargando...</div>
+          ) : tab === "logs" ? (
+            logs.length === 0 ? (
+              <div className="p-8 text-center text-sm text-[var(--text-muted)]">Sin actividad registrada</div>
+            ) : logs.map((log) => {
+              const action = actionLabel[log.action] || { label: log.action, color: "text-[var(--text-muted)]", bg: "bg-[var(--border)]" };
+              const date = new Date(log.createdAt);
+              return (
+                <div key={log.id} className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border)] last:border-0 hover:bg-[var(--border)]/30 transition">
+                  <div className="flex items-center gap-3">
+                    <span className={\`text-xs px-2.5 py-1 rounded-lg font-semibold \${action.bg} \${action.color}\`}>{action.label}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{log.userName}</p>
+                      {log.details && <p className="text-xs text-[var(--text-muted)]">{log.details}</p>}
+                    </div>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)] shrink-0 ml-4">
+                    {date.toLocaleDateString("es", { day: "numeric", month: "short" })} · {date.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              );
+            })
+          ) : (
+            entries.length === 0 ? (
+              <div className="p-8 text-center text-sm text-[var(--text-muted)]">Sin registros</div>
+            ) : entries.map((entry) => {
+              const clockIn = new Date(entry.clockIn);
+              const clockOut = entry.clockOut ? new Date(entry.clockOut) : null;
+              const h = Math.floor((entry.durationMin || 0) / 60);
+              const m = (entry.durationMin || 0) % 60;
+              return (
+                <div key={entry.id} className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border)] last:border-0 hover:bg-[var(--border)]/30 transition group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-[#E8B84B]/10 border border-[#E8B84B]/20 rounded-lg flex items-center justify-center shrink-0">
+                      <span className="text-[#E8B84B] text-xs font-black">{entry.user.name.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{entry.user.name}</p>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {clockIn.toLocaleDateString("es", { day: "numeric", month: "short" })} · {clockIn.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
+                        {clockOut && \` — \${clockOut.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}\`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-[var(--text-primary)]">{entry.durationMin ? \`\${h}h \${m}m\` : "—"}</p>
+                      <span className={\`text-xs px-2 py-0.5 rounded-full font-medium \${entry.status === "CLOCKED_IN" ? "bg-green-500/10 text-green-400" : "bg-[var(--border)] text-[var(--text-muted)]"}\`}>
+                        {entry.status === "CLOCKED_IN" ? "Activo" : "Completado"}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                      <button onClick={() => openEdit(entry)}
+                        className="p-1.5 rounded-lg hover:bg-[#E8B84B]/10 text-[var(--text-muted)] hover:text-[#E8B84B] transition">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button onClick={() => openDelete(entry)}
+                        className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 transition">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Modal */}
+      {modal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h2 className="text-base font-black text-[var(--text-primary)] mb-1">
+              {modal === "edit" ? "Editar registro" : modal === "create" ? "Agregar registro manual" : "Eliminar registro"}
+            </h2>
+            <p className="text-xs text-[var(--text-muted)] mb-5">
+              {modal === "delete" ? "Esta acción no se puede deshacer." : "Los cambios quedarán registrados en el log de actividad."}
+            </p>
+
+            {modal !== "delete" && (
+              <div className="space-y-3 mb-4">
+                {modal === "create" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Empleado</label>
+                    <select value={formUserId} onChange={e => setFormUserId(e.target.value)}
+                      className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition">
+                      {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Hora de entrada</label>
+                  <input type="datetime-local" value={formClockIn} onChange={e => setFormClockIn(e.target.value)}
+                    className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">Hora de salida <span className="text-[var(--text-muted)] normal-case font-normal">(opcional)</span></label>
+                  <input type="datetime-local" value={formClockOut} onChange={e => setFormClockOut(e.target.value)}
+                    className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" />
+                </div>
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
+                Contraseña de administrador
+              </label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" />
+              {passError && <p className="text-red-400 text-xs mt-1.5">{passError}</p>}
             </div>
-            <h2 className="text-lg font-black text-white text-center mb-1">PIN de administrador</h2>
-            <p className="text-white/40 text-xs text-center mb-6">Ingresa el PIN para salir del kiosk</p>
-            <input type="password" value={pinInput} onChange={e => setPinInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleExitPin()}
-              placeholder="••••••"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-center text-2xl tracking-widest focus:outline-none focus:border-[#E8B84B]/50 mb-3 transition" />
-            {pinError && <p className="text-red-400 text-xs text-center mb-3">{pinError}</p>}
+
             <div className="flex gap-3">
-              <button onClick={() => { setShowExitPin(false); setPinInput(""); setPinError(""); }}
-                className="flex-1 py-3 rounded-xl border border-white/10 text-white/50 hover:text-white transition text-sm font-medium">
+              <button onClick={() => setModal(null)}
+                className="flex-1 py-2.5 rounded-xl border border-[var(--border)] text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition">
                 Cancelar
               </button>
-              <button onClick={handleExitPin}
-                className="flex-1 py-3 rounded-xl bg-[#E8B84B] text-black font-black hover:bg-[#d4a43a] transition text-sm">
-                Confirmar
+              <button onClick={handleSave} disabled={saving}
+                className={\`flex-1 py-2.5 rounded-xl text-xs font-black transition disabled:opacity-50 \${modal === "delete" ? "bg-red-500 text-white hover:bg-red-600" : "bg-[#E8B84B] text-black hover:bg-[#d4a43a]"}\`}>
+                {saving ? "Guardando..." : modal === "delete" ? "Eliminar" : "Guardar"}
               </button>
             </div>
           </div>
@@ -292,7 +415,10 @@ export default function KioskClient({ token, organizationName, employees, active
   );
 }`;
 
-writeFileSync("src/app/[locale]/admin/kiosk/page.tsx", kioskSetup);
-writeFileSync("src/components/kiosk/KioskClient.tsx", kioskClient);
+mkdirSync("src/app/api/time-entries", { recursive: true });
+mkdirSync("src/app/api/time-entries/edit", { recursive: true });
+writeFileSync("src/app/api/time-entries/route.ts", apiEntries);
+writeFileSync("src/app/api/time-entries/edit/route.ts", apiEdit);
+writeFileSync("src/app/[locale]/admin/activity/page.tsx", activityPage);
 console.log("Listo!");
 
