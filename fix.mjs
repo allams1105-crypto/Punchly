@@ -1,20 +1,26 @@
-import { writeFileSync, mkdirSync } from "fs";
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
-const signout = `import { signOut } from "@/lib/auth";
-import { NextResponse } from "next/server";
+const p = new PrismaClient();
+const hash = bcrypt.hashSync("admin123", 10);
 
-export async function GET() {
-  await signOut({ redirect: false });
-  return NextResponse.redirect(new URL("/en", process.env.NEXTAUTH_URL || "https://punchlyclock.vercel.app"));
-}`;
+await p.organization.create({
+  data: {
+    id: "needy",
+    name: "Mi Empresa",
+    slug: "mi-empresa",
+    users: {
+      create: {
+        id: "admin",
+        email: "admin@needy.com",
+        name: "Admin",
+        role: "OWNER",
+        pin: hash,
+      }
+    }
+  }
+});
 
-const root = `import { redirect } from "next/navigation";
-export default function RootPage() {
-  redirect("/en");
-}`;
-
-mkdirSync("src/app/api/auth/signout", { recursive: true });
-writeFileSync("src/app/api/auth/signout/route.ts", signout);
-writeFileSync("src/app/page.tsx", root);
-console.log("Listo!");
+console.log("Listo! Login: admin@needy.com / admin123");
+await p.$disconnect();
 

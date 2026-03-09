@@ -47,6 +47,8 @@ model Organization {
   kioskSessions KioskSession[]
   invites       Invite[]
   activityLogs  ActivityLog[]
+  isPro         Boolean  @default(false)
+  licenseKey    String?
 }
 
 model User {
