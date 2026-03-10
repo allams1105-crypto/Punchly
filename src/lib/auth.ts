@@ -29,6 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!isValid) return null;
 
+        // Retornamos el objeto con todo lo que necesitamos
         return {
           id: user.id,
           email: user.email,
@@ -41,7 +42,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // Solo en el primer login 'user' existe, aquí lo pasamos al token
       if (user) {
+        token.id = user.id;
         token.role = (user as any).role;
         token.organizationId = (user as any).organizationId;
       }
@@ -49,9 +52,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
+        // Pasamos los datos del token a la sesión de forma explícita
+        (session.user as any).id = token.id;
         (session.user as any).role = token.role;
         (session.user as any).organizationId = token.organizationId;
-        (session.user as any).id = token.sub;
       }
       return session;
     },

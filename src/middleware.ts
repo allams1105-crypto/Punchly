@@ -1,28 +1,30 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = [
-  "/manifest.json",
-  "/sw.js", 
-  "/icon.svg",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/favicon.ico",
-];
+// Añadimos patrones comunes para evitar bloqueos
+const PUBLIC_FILE_CHECK = /\.(.*)$/; 
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Allow public paths without auth
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
-    const response = NextResponse.next();
-    response.headers.set("Cache-Control", "public, max-age=86400");
-    return response;
+  // 1. Permitir archivos estáticos y de sistema (manifest, iconos, sw.js)
+  if (
+    pathname.startsWith("/_next") || 
+    pathname.startsWith("/api") ||
+    pathname.includes("manifest.json") ||
+    pathname.includes("favicon.ico") ||
+    pathname.includes("sw.js") ||
+    PUBLIC_FILE_CHECK.test(pathname)
+  ) {
+    return NextResponse.next();
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|api/).*)"],
+  // Ajustamos el matcher para que ignore explícitamente archivos estáticos y la carpeta api
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|icon-).*)",
+  ],
 };
