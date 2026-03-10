@@ -33,23 +33,32 @@ export default function AttendancePage() {
     setLoading(true);
     fetch(`/api/attendance?days=${days}`)
       .then(r => r.json())
-      .then(d => { setEntries(d.entries || []); setLoading(false); });
+      .then(d => { 
+        setEntries(d.entries || []); 
+        setLoading(false); 
+      })
+      .catch(() => setLoading(false));
   }, [days]);
 
+  // CORRECCIÓN DE FILTRO: Sintaxis limpia y segura contra nulos
   const filtered = entries.filter(e => {
-    const matchSearch = (e.userName||" )\.toLowerCase().includes((search||\)\.toLowerCase());
+    const userName = (e.userName || "").toLowerCase();
+    const searchTerm = (search || "").toLowerCase();
+    const matchSearch = userName.includes(searchTerm);
+
     const matchFilter =
       filter === "all" ? true :
       filter === "late" ? e.status === "LATE" :
       filter === "ontime" ? e.status === "ON_TIME" :
-      filter === "overtime" ? e.overtimeMin > 0 :
+      filter === "overtime" ? (e.overtimeMin || 0) > 0 :
       filter === "absence" ? e.status === "ABSENCE" : true;
+
     return matchSearch && matchFilter;
   });
 
   const lateCount = entries.filter(e => e.status === "LATE").length;
   const ontimeCount = entries.filter(e => e.status === "ON_TIME").length;
-  const overtimeCount = entries.filter(e => e.overtimeMin > 0).length;
+  const overtimeCount = entries.filter(e => (e.overtimeMin || 0) > 0).length;
   const totalOvertimeMin = entries.reduce((acc, e) => acc + (e.overtimeMin || 0), 0);
   const totalLateMin = entries.reduce((acc, e) => acc + (e.lateMin || 0), 0);
 
@@ -58,14 +67,14 @@ export default function AttendancePage() {
     const rows = filtered.map(e => {
       const d = new Date(e.clockIn);
       return [
-        e.userName,
+        e.userName || "Sin nombre",
         d.toLocaleDateString("es"),
         d.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
         e.clockOut ? new Date(e.clockOut).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) : "",
         e.status === "LATE" ? "Tardanza" : e.status === "ON_TIME" ? "A tiempo" : e.status === "DAY_OFF" ? "Día libre" : "—",
-        e.lateMin,
-        e.earlyMin,
-        e.overtimeMin,
+        e.lateMin || 0,
+        e.earlyMin || 0,
+        e.overtimeMin || 0,
         e.durationMin || "",
       ].join(",");
     });
@@ -172,10 +181,10 @@ export default function AttendancePage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 bg-[#E8B84B]/10 border border-[#E8B84B]/20 rounded-lg flex items-center justify-center shrink-0">
-                          <span className="text-[#E8B84B] text-xs font-black">{entry.userName.charAt(0)}</span>
+                          <span className="text-[#E8B84B] text-xs font-black">{(entry.userName || "?").charAt(0)}</span>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-[var(--text-primary)]">{entry.userName}</p>
+                          <p className="text-xs font-semibold text-[var(--text-primary)]">{entry.userName || "Sin nombre"}</p>
                           <p className="text-xs text-[var(--text-muted)]">{date}</p>
                         </div>
                       </div>
@@ -193,10 +202,10 @@ export default function AttendancePage() {
                       <span className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${s.bg} ${s.color}`}>{s.label}</span>
                     </td>
                     <td className="px-5 py-3 text-right space-y-0.5">
-                      {entry.lateMin > 0 && <p className="text-xs text-orange-400">+{entry.lateMin}m tardanza</p>}
-                      {entry.earlyMin > 0 && <p className="text-xs text-blue-400">-{entry.earlyMin}m temprano</p>}
-                      {entry.overtimeMin > 0 && <p className="text-xs text-[#E8B84B]">+{entry.overtimeMin}m extra</p>}
-                      {entry.lateMin === 0 && entry.overtimeMin === 0 && entry.earlyMin === 0 && entry.status === "ON_TIME" && (
+                      {(entry.lateMin || 0) > 0 && <p className="text-xs text-orange-400">+{entry.lateMin}m tardanza</p>}
+                      {(entry.earlyMin || 0) > 0 && <p className="text-xs text-blue-400">-{entry.earlyMin}m temprano</p>}
+                      {(entry.overtimeMin || 0) > 0 && <p className="text-xs text-[#E8B84B]">+{entry.overtimeMin}m extra</p>}
+                      {entry.lateMin === 0 && (entry.overtimeMin || 0) === 0 && entry.earlyMin === 0 && entry.status === "ON_TIME" && (
                         <p className="text-xs text-green-400">✓ Perfecto</p>
                       )}
                     </td>
