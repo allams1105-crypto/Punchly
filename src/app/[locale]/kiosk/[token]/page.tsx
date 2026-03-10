@@ -2,47 +2,34 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import KioskClient from "@/components/kiosk/KioskClient";
 
-export default async function KioskPage({
-  params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
-  const { token } = await params;
+export default async function KioskPage({ params }: { params: any }) {
+  const { token } = params;
 
-  const kiosk = await prisma.kioskSession.findUnique({
-    where: { token, isActive: true },
-    include: { organization: true },
-  });
+  const org = await prisma.organization.findUnique({ where: { id: token } });
+  if (!org) notFound();
 
-  if (!kiosk) notFound();
+  const today = new Date(); today.setHours(0,0,0,0);
 
   const employees = await prisma.user.findMany({
-    where: {
-      organizationId: kiosk.organizationId,
-      isActive: true,
-      role: "EMPLOYEE",
-    },
+    where: { organizationId: token, isActive: true, role: { not: "OWNER" } },
     orderBy: { name: "asc" },
-    select: { id: true, name: true },
   });
 
   const activeEntries = await prisma.timeEntry.findMany({
-    where: {
-      organizationId: kiosk.organizationId,
-      status: "CLOCKED_IN",
-    },
-    select: { userId: true },
+    where: { organizationId: token, clockOut: null, clockIn: { gte: today } },
   });
-
-  const activeUserIds = activeEntries.map((e) => e.userId);
+  const activeIds = new Set(activeEntries.map(e => e.userId));
 
   return (
     <KioskClient
       token={token}
-      organizationName={kiosk.organization.name}
-      employees={employees}
-      activeUserIds={activeUserIds}
-      exitPin={kiosk.exitPin}
+      employees={employees.map(e => ({
+        id: e.id,
+        name: e.name,
+        avatarColor: (e as any).avatarColor || null,
+        onShift: activeIds.has(e.id),
+        clockInTime: activeEntries.find(a => a.userId === e.id)?.clockIn?.toISOString() || null,
+      }))}
     />
   );
 }

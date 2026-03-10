@@ -37,7 +37,7 @@ export default function AttendancePage() {
   }, [days]);
 
   const filtered = entries.filter(e => {
-    const matchSearch = e.userName.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = (e.userName||" )\.toLowerCase().includes((search||\)\.toLowerCase());
     const matchFilter =
       filter === "all" ? true :
       filter === "late" ? e.status === "LATE" :

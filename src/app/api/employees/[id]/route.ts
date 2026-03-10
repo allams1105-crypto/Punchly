@@ -1,44 +1,39 @@
-import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params }: { params: any }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
-  const role = (session.user as any).role;
-  if (role !== "OWNER" && role !== "ADMIN") return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
-
   const orgId = (session.user as any).organizationId;
-  const { id } = await params;
+  const { id } = params;
+  const body = await req.json();
+  const { name, email, hourlyRate, isActive, kioskPin } = body;
 
-  const user = await prisma.user.findFirst({
+  const updateData: any = { name, email, hourlyRate, isActive };
+  if (kioskPin && kioskPin.length === 4) {
+    updateData.kioskPin = await bcrypt.hash(kioskPin, 10);
+  }
+
+  const user = await prisma.user.update({
     where: { id, organizationId: orgId },
-    select: { id: true, name: true, email: true, role: true, hourlyRate: true, overtimeRate: true },
+    data: updateData,
   });
 
-  if (!user) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-  return NextResponse.json(user);
+  return NextResponse.json({ user });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: any }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
-  const role = (session.user as any).role;
-  if (role !== "OWNER" && role !== "ADMIN") return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
-
   const orgId = (session.user as any).organizationId;
-  const { id } = await params;
+  const { id } = params;
 
-  try {
-    await prisma.timeEntry.deleteMany({ where: { userId: id } });
-    await prisma.activityLog.deleteMany({ where: { userId: id } });
-    const deleted = await prisma.user.deleteMany({ where: { id, organizationId: orgId } });
-    return NextResponse.json({ success: true, deleted: deleted.count });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  await prisma.timeEntry.deleteMany({ where: { userId: id, organizationId: orgId } });
+  await prisma.activityLog.deleteMany({ where: { userId: id, organizationId: orgId } });
+  await prisma.schedule.deleteMany({ where: { userId: id, organizationId: orgId } });
+  await prisma.user.delete({ where: { id, organizationId: orgId } });
+
+  return NextResponse.json({ success: true });
 }
-

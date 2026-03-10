@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const COLORS = ["#E8B84B","#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80","#E879F9","#94A3B8"];
@@ -11,18 +11,20 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
   const [hourlyRate, setHourlyRate] = useState(employee.hourlyRate);
   const [isActive, setIsActive] = useState(employee.isActive);
   const [avatarColor, setAvatarColor] = useState(employee.avatarColor || "#E8B84B");
+  const [kioskPin, setKioskPin] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState("");
 
   async function save() {
     setSaving(true);
+    const body: any = { name, email, hourlyRate: Number(hourlyRate), isActive };
+    if (kioskPin.length === 4) body.kioskPin = kioskPin;
     const res = await fetch(`/api/employees/${employee.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, hourlyRate: Number(hourlyRate), isActive }),
+      body: JSON.stringify(body),
     });
-    // Save avatar color
     await fetch("/api/employees/avatar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -30,6 +32,7 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
     });
     setMsg(res.ok ? "✓ Guardado" : "Error al guardar");
     setSaving(false);
+    if (kioskPin) setKioskPin("");
     setTimeout(() => setMsg(""), 3000);
   }
 
@@ -81,6 +84,7 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
               className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" />
           </div>
         </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Tarifa por hora ($)</label>
@@ -96,6 +100,17 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
             </select>
           </div>
         </div>
+
+        {/* Kiosk PIN */}
+        <div>
+          <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">PIN del Kiosk (4 dígitos)</label>
+          <input type="password" value={kioskPin} onChange={e => setKioskPin(e.target.value.replace(/D/g,"").substring(0,4))}
+            placeholder="Dejar vacío para no cambiar"
+            maxLength={4}
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" />
+          <p className="text-xs text-[var(--text-muted)] mt-1">El empleado usará este PIN para fichar en el kiosk</p>
+        </div>
+
         <div className="flex items-center justify-between pt-2">
           <button onClick={deleteEmployee} disabled={deleting}
             className="text-xs text-red-400 hover:text-red-300 font-semibold transition disabled:opacity-50">
