@@ -1,30 +1,19 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Añadimos patrones comunes para evitar bloqueos
-const PUBLIC_FILE_CHECK = /\.(.*)$/; 
-
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  
-  // 1. Permitir archivos estáticos y de sistema (manifest, iconos, sw.js)
-  if (
-    pathname.startsWith("/_next") || 
-    pathname.startsWith("/api") ||
-    pathname.includes("manifest.json") ||
-    pathname.includes("favicon.ico") ||
-    pathname.includes("sw.js") ||
-    PUBLIC_FILE_CHECK.test(pathname)
-  ) {
-    return NextResponse.next();
-  }
-
+  // Por ahora, solo dejamos pasar la petición sin bloquear nada
+  // para que puedas navegar libremente mientras arreglamos las rutas.
   return NextResponse.next();
 }
 
 export const config = {
-  // Ajustamos el matcher para que ignore explícitamente archivos estáticos y la carpeta api
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|icon-).*)",
+    /*
+     * Ignora todos los archivos internos de Next.js (_next)
+     * Ignora todos los archivos estáticos (imágenes, manifest, favicon)
+     * Ignora la carpeta de API
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|.*\\..*).*)",
   ],
 };
