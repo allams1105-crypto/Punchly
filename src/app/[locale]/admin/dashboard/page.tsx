@@ -82,16 +82,16 @@ export default async function DashboardPage() {
               </div>
               <div className="p-3 space-y-1">
                 {[
-                  { href: "/en/admin/employees/new", label: "Nuevo empleado", icon: "👤" },
-                  { href: "/en/admin/employees", label: "Ver empleados", icon: "👥" },
-                  { href: "/en/admin/kiosk", label: "Abrir Kiosk", icon: "📱" },
-                  { href: "/en/admin/payroll", label: "Ver nómina", icon: "💰" },
-                  { href: "/en/admin/attendance", label: "Asistencia", icon: "📋" },
-                  { href: "/en/admin/activity", label: "Actividad", icon: "⚡" },
+                  { href: "/en/admin/employees/new", label: "Nuevo empleado" },
+                  { href: "/en/admin/employees", label: "Ver empleados" },
+                  { href: "/en/admin/kiosk", label: "Abrir Kiosk" },
+                  { href: "/en/admin/payroll", label: "Ver nómina" },
+                  { href: "/en/admin/attendance", label: "Asistencia" },
+                  { href: "/en/admin/activity", label: "Actividad" },
                 ].map(a => (
                   <Link key={a.href} href={a.href}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
-                    <span>{a.icon}</span>{a.label}
+                    {a.label}
                   </Link>
                 ))}
               </div>

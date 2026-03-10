@@ -1,128 +1,164 @@
-import { writeFileSync } from "fs";
+import { writeFileSync, mkdirSync } from "fs";
 
-const employeesClient = `"use client";
-import { useState } from "react";
-import Link from "next/link";
+// 1. Create employees page
+const employeesPage = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+import EmployeesClient from "@/components/admin/EmployeesClient";
 
-const COLORS = ["#E8B84B","#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80"];
+export default async function EmployeesPage() {
+  const session = await auth();
+  if (!session) redirect("/en/login");
+  const orgId = (session.user as any).organizationId;
 
-function Avatar({ name, color }: { name: string; color?: string | null }) {
-  const bg = color || COLORS[(name?.charCodeAt(0) || 0) % COLORS.length];
-  return (
-    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-black shrink-0"
-      style={{ backgroundColor: bg + "20", border: \`1px solid \${bg}40\`, color: bg }}>
-      {(name || "?").charAt(0).toUpperCase()}
-    </div>
-  );
-}
-
-export default function EmployeesClient({ employees }: { employees: any[] }) {
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all");
-
-  const filtered = (employees || []).filter(e => {
-    const name = (e.name || "").toLowerCase();
-    const email = (e.email || "").toLowerCase();
-    const q = search.toLowerCase();
-    const matchSearch = name.includes(q) || email.includes(q);
-    const matchFilter =
-      filter === "all" ? true :
-      filter === "active" ? e.isActive :
-      filter === "inactive" ? !e.isActive :
-      filter === "onshift" ? e.onShift :
-      filter === "noschedule" ? !e.hasSchedule : true;
-    return matchSearch && matchFilter;
+  const employees = await prisma.user.findMany({
+    where: { organizationId: orgId, role: { not: "OWNER" } },
+    include: { schedule: true },
+    orderBy: { name: "asc" },
   });
 
-  const onShiftCount = (employees || []).filter(e => e.onShift).length;
-  const noScheduleCount = (employees || []).filter(e => !e.hasSchedule).length;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const activeEntries = await prisma.timeEntry.findMany({
+    where: { organizationId: orgId, clockOut: null, clockIn: { gte: today } },
+  });
+  const activeIds = new Set(activeEntries.map(e => e.userId));
+
+  return (
+    <EmployeesClient employees={employees.map(e => ({
+      id: e.id,
+      name: e.name || "",
+      email: e.email || "",
+      role: e.role,
+      isActive: e.isActive,
+      hourlyRate: (e as any).hourlyRate || 0,
+      avatarColor: (e as any).avatarColor || null,
+      hasSchedule: !!e.schedule,
+      onShift: activeIds.has(e.id),
+    }))} />
+  );
+}`;
+
+// 2. Fix dashboard - remove emojis
+const dashboard = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+import EmployeeTable from "@/components/admin/EmployeeTable";
+import NotificationBell from "@/components/admin/NotificationBell";
+import AttendanceChart from "@/components/admin/AttendanceChart";
+import Link from "next/link";
+
+export default async function DashboardPage() {
+  const session = await auth();
+  if (!session || !session.user) redirect("/en/login");
+  const orgId = (session.user as any).organizationId as string;
+
+  const now = new Date();
+  const periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 1 : 16);
+
+  const [employees, activeEntries, periodEntries, org] = await Promise.all([
+    prisma.user.findMany({ where: { organizationId: orgId, isActive: true, role: { not: "OWNER" } }, orderBy: { name: "asc" } }),
+    prisma.timeEntry.findMany({ where: { organizationId: orgId, clockOut: null } }),
+    prisma.timeEntry.findMany({ where: { organizationId: orgId, clockIn: { gte: periodStart } } }),
+    prisma.organization.findUnique({ where: { id: orgId } }),
+  ]);
+
+  const activeIds = new Set(activeEntries.map(e => e.userId));
+  const totalHours = Math.floor(periodEntries.reduce((acc, e) => acc + (e.durationMin || 0), 0) / 60);
+  const estimatedPayroll = periodEntries.reduce((acc, e) => {
+    const emp = employees.find(u => u.id === e.userId);
+    const rate = (emp as any)?.hourlyRate || 0;
+    return acc + ((e.durationMin || 0) / 60) * rate;
+  }, 0);
+
+  const kpis = [
+    { label: "Total empleados", value: employees.length.toString(), sub: "activos", color: "text-[var(--text-primary)]" },
+    { label: "En turno ahora", value: activeEntries.length.toString(), sub: "trabajando", color: "text-green-400" },
+    { label: "Horas quincena", value: totalHours + "h", sub: "período actual", color: "text-[#E8B84B]" },
+    { label: "Nómina estimada", value: "\$" + estimatedPayroll.toLocaleString("en", { maximumFractionDigits: 0 }), sub: "este período", color: "text-[#E8B84B]" },
+  ];
 
   return (
     <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
       <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between bg-[var(--bg-primary)]">
         <div>
-          <h1 className="text-sm font-black text-[var(--text-primary)]">Empleados</h1>
-          <p className="text-xs text-[var(--text-muted)]">{(employees||[]).length} en total · {onShiftCount} en turno ahora</p>
+          <h1 className="text-sm font-black text-[var(--text-primary)]">Dashboard</h1>
+          <p className="text-xs text-[var(--text-muted)]">{org?.name}</p>
         </div>
-        <Link href="/en/admin/employees/new"
-          className="bg-[#E8B84B] text-black px-4 py-2 rounded-xl text-xs font-black hover:bg-[#d4a43a] transition">
-          + Nuevo empleado
-        </Link>
+        <div className="flex items-center gap-3">
+          <NotificationBell orgId={orgId} />
+          <Link href="/en/admin/employees/new"
+            className="bg-[#E8B84B] text-black px-3 py-1.5 rounded-xl text-xs font-black hover:bg-[#d4a43a] transition">
+            + Empleado
+          </Link>
+        </div>
       </div>
 
       <div className="p-6 space-y-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
-            <p className="text-xs text-[var(--text-muted)] mb-1">Total</p>
-            <p className="text-2xl font-black text-[var(--text-primary)]">{(employees||[]).length}</p>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-green-500/20 rounded-xl p-4">
-            <p className="text-xs text-[var(--text-muted)] mb-1">En turno</p>
-            <p className="text-2xl font-black text-green-400">{onShiftCount}</p>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
-            <p className="text-xs text-[var(--text-muted)] mb-1">Activos</p>
-            <p className="text-2xl font-black text-[var(--text-primary)]">{(employees||[]).filter(e => e.isActive).length}</p>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-orange-500/20 rounded-xl p-4">
-            <p className="text-xs text-[var(--text-muted)] mb-1">Sin horario</p>
-            <p className="text-2xl font-black text-orange-400">{noScheduleCount}</p>
-          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {kpis.map(k => (
+            <div key={k.label} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5">
+              <p className="text-xs text-[var(--text-muted)] mb-2">{k.label}</p>
+              <p className={\`text-2xl font-black \${k.color}\`}>{k.value}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">{k.sub}</p>
+            </div>
+          ))}
         </div>
 
-        <div className="flex flex-wrap gap-2 items-center">
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar empleado..."
-            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition w-48" />
-          <div className="flex bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
-            {[["all","Todos"],["active","Activos"],["inactive","Inactivos"],["onshift","En turno"],["noschedule","Sin horario"]].map(([key,label]) => (
-              <button key={key} onClick={() => setFilter(key)}
-                className={\`px-3 py-2 text-xs font-semibold transition \${filter === key ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}\`}>
-                {label}
-              </button>
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
+            <AttendanceChart />
+            <EmployeeTable employees={employees.map(e => ({
+              id: e.id,
+              name: e.name,
+              email: e.email,
+              isActive: e.isActive,
+              onShift: activeIds.has(e.id),
+              clockInTime: activeEntries.find(a => a.userId === e.id)?.clockIn?.toISOString() || null,
+            }))} />
+          </div>
+          <div className="space-y-3">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-[var(--border)]">
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Acciones rápidas</h3>
+              </div>
+              <div className="p-3 space-y-1">
+                {[
+                  { href: "/en/admin/employees/new", label: "Nuevo empleado" },
+                  { href: "/en/admin/employees", label: "Ver empleados" },
+                  { href: "/en/admin/kiosk", label: "Abrir Kiosk" },
+                  { href: "/en/admin/payroll", label: "Ver nómina" },
+                  { href: "/en/admin/attendance", label: "Asistencia" },
+                  { href: "/en/admin/activity", label: "Actividad" },
+                ].map(a => (
+                  <Link key={a.href} href={a.href}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
+                    {a.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-
-        {filtered.length === 0 ? (
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-12 text-center">
-            <p className="text-sm text-[var(--text-muted)]">No hay empleados</p>
-            <Link href="/en/admin/employees/new" className="inline-block mt-4 bg-[#E8B84B] text-black px-4 py-2 rounded-xl text-xs font-black">+ Agregar primero</Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filtered.map(emp => (
-              <Link key={emp.id} href={\`/en/admin/employees/\${emp.id}\`}
-                className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5 hover:border-[#E8B84B]/40 transition group block">
-                <div className="flex items-start justify-between mb-4">
-                  <Avatar name={emp.name || "?"} color={emp.avatarColor} />
-                  <div className="flex flex-col items-end gap-1.5">
-                    {emp.onShift && (
-                      <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                        En turno
-                      </span>
-                    )}
-                    {!emp.isActive && (
-                      <span className="text-xs text-[var(--text-muted)] bg-[var(--border)] px-2 py-0.5 rounded-full">Inactivo</span>
-                    )}
-                    {!emp.hasSchedule && (
-                      <span className="text-xs text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full">Sin horario</span>
-                    )}
-                  </div>
-                </div>
-                <p className="text-sm font-black text-[var(--text-primary)] group-hover:text-[#E8B84B] transition">{emp.name}</p>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">{emp.email}</p>
-                <p className="text-xs text-[var(--text-muted)] mt-2">\${emp.hourlyRate || 0}/h · {emp.role}</p>
-              </Link>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
 }`;
 
-writeFileSync("src/components/admin/EmployeesClient.tsx", employeesClient);
+// 3. Fix landing - remove "Más popular" badge
+const { readFileSync } = await import("fs");
+let landing = readFileSync("src/app/[locale]/page.tsx", "utf8");
+landing = landing.replace(
+  `<span className="absolute top-4 right-4 bg-black/20 text-black text-xs font-black px-2.5 py-1 rounded-full">
+              {t("landing.pro.badge")}
+            </span>`,
+  ``
+);
+writeFileSync("src/app/[locale]/page.tsx", landing);
+
+mkdirSync("src/app/[locale]/admin/employees", { recursive: true });
+writeFileSync("src/app/[locale]/admin/employees/page.tsx", employeesPage);
+writeFileSync("src/app/[locale]/admin/dashboard/page.tsx", dashboard);
 console.log("Listo!");
 

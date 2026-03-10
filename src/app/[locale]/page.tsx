@@ -113,9 +113,7 @@ export default function LandingPage() {
           </div>
           {/* Pro */}
           <div className="bg-[#E8B84B] rounded-3xl p-8 relative">
-            <span className="absolute top-4 right-4 bg-black/20 text-black text-xs font-black px-2.5 py-1 rounded-full">
-              {t("landing.pro.badge")}
-            </span>
+            
             <p className="text-xs font-semibold text-black/50 uppercase tracking-wider mb-4">{t("landing.pro.label")}</p>
             <p className="text-5xl font-black text-black mb-1">{t("landing.pro.price")}</p>
             <p className="text-xs text-black/40 mb-8">{t("landing.pro.sub")}</p>
