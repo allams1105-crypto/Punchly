@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useLang } from "@/lib/LangContext";
 import LangToggle from "@/components/LangToggle";
-import ThemeToggle from "@/components/ThemeToggle";
+
 
 export default function LandingPage() {
   const { t } = useLang();
@@ -28,7 +28,7 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-2">
           <LangToggle />
-          <ThemeToggle />
+          
           <Link href="/en/login" className="text-white/60 hover:text-white text-sm font-medium transition px-3 py-1.5">
             {t("nav.login")}
           </Link>
