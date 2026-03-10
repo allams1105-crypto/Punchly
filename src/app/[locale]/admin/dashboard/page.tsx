@@ -9,11 +9,18 @@ import Link from "next/link";
 export default async function DashboardPage() {
   const session = await auth();
   if (!session || !session.user) redirect("/en/login");
+
+  // Forzamos el tipo y verificamos que exista
   const orgId = (session.user as any).organizationId as string;
+
+  if (!orgId) {
+    return <div className="p-10 text-center">Error: Sesión sin ID de organización. Reintenta loguearte.</div>;
+  }
 
   const now = new Date();
   const periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 1 : 16);
 
+  // Consultas con manejo de errores básico
   const [employees, activeEntries, periodEntries, org] = await Promise.all([
     prisma.user.findMany({ where: { organizationId: orgId, isActive: true, role: { not: "OWNER" } }, orderBy: { name: "asc" } }),
     prisma.timeEntry.findMany({ where: { organizationId: orgId, clockOut: null } }),
@@ -23,6 +30,8 @@ export default async function DashboardPage() {
 
   const activeIds = new Set(activeEntries.map(e => e.userId));
   const totalHours = Math.floor(periodEntries.reduce((acc, e) => acc + (e.durationMin || 0), 0) / 60);
+  
+  // Cálculo de nómina con protección opcional (?.)
   const estimatedPayroll = periodEntries.reduce((acc, e) => {
     const emp = employees.find(u => u.id === e.userId);
     const rate = (emp as any)?.hourlyRate || 0;
@@ -41,7 +50,7 @@ export default async function DashboardPage() {
       <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between bg-[var(--bg-primary)]">
         <div>
           <h1 className="text-sm font-black text-[var(--text-primary)]">Dashboard</h1>
-          <p className="text-xs text-[var(--text-muted)]">{org?.name}</p>
+          <p className="text-xs text-[var(--text-muted)]">{org?.name || "Sin Organización"}</p>
         </div>
         <div className="flex items-center gap-3">
           <NotificationBell orgId={orgId} />
@@ -66,10 +75,11 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-4">
             <AttendanceChart />
+            {/* CORRECCIÓN: Aseguramos que los datos mapeados no tengan nulos */}
             <EmployeeTable employees={employees.map(e => ({
               id: e.id,
-              name: e.name,
-              email: e.email,
+              name: e.name || "Sin nombre",
+              email: e.email || "Sin email",
               isActive: e.isActive,
               onShift: activeIds.has(e.id),
               clockInTime: activeEntries.find(a => a.userId === e.id)?.clockIn?.toISOString() || null,

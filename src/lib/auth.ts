@@ -42,7 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // Solo en el primer login 'user' existe, aquí lo pasamos al token
+      // Importante: Los datos solo vienen en 'user' la primera vez que te logueas
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
@@ -52,10 +52,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        // Pasamos los datos del token a la sesión de forma explícita
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).organizationId = token.organizationId;
+        // Aquí pasamos los datos del TOKEN a la SESIÓN
+        (session.user as any).id = token.id as string;
+        (session.user as any).role = token.role as string;
+        (session.user as any).organizationId = token.organizationId as string;
       }
       return session;
     },
