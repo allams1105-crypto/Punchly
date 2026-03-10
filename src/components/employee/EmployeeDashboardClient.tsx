@@ -33,7 +33,7 @@ export default function EmployeeDashboardClient({ user, schedule, stats, onShift
             <span className="text-black font-black text-sm">{user.name.charAt(0)}</span>
           </div>
           <div>
-            <p className="text-sm font-black text-[var(--text-primary)]">Hola, {user.name.split(" ")[0]} 👋</p>
+            <p className="text-sm font-black text-[var(--text-primary)]">Hola, {user.name.split(" ")[0]} </p>
             <p className="text-xs text-[var(--text-muted)]">{user.email}</p>
           </div>
         </div>
