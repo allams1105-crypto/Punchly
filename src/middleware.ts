@@ -2,18 +2,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  // Por ahora, solo dejamos pasar la petición sin bloquear nada
-  // para que puedas navegar libremente mientras arreglamos las rutas.
+  const { pathname } = request.nextUrl;
+
+  // Si es un archivo con extensión (foto, json, ico), déjalo pasar sin preguntas
+  if (pathname.includes('.') || pathname.startsWith('/api')) {
+    return NextResponse.next();
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Ignora todos los archivos internos de Next.js (_next)
-     * Ignora todos los archivos estáticos (imágenes, manifest, favicon)
-     * Ignora la carpeta de API
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|.*\\..*).*)",
-  ],
+  // Matcher ultra-abierto para evitar bloqueos accidentales
+  matcher: ["/((?!_next/static|_next/image).*)"],
 };
