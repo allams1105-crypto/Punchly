@@ -3,6 +3,28 @@ import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
+// --- MANEJAR OBTENCIÓN DE EMPLEADOS (Soluciona el Error 405 GET) ---
+export async function GET() {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+  const orgId = (session.user as any).organizationId;
+
+  try {
+    const employees = await prisma.user.findMany({
+      where: { 
+        organizationId: orgId,
+        role: { not: "OWNER" } // Excluimos al dueño de la lista de empleados si prefieres
+      },
+      orderBy: { name: "asc" },
+    });
+    return NextResponse.json(employees);
+  } catch (error) {
+    return NextResponse.json({ error: "Error al obtener empleados" }, { status: 500 });
+  }
+}
+
+// --- MANEJAR CREACIÓN (Tu código original con mejoras de seguridad) ---
 export async function POST(req: NextRequest) {
   const session = await auth();
 
@@ -32,18 +54,22 @@ export async function POST(req: NextRequest) {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await prisma.user.create({
-    data: {
-      organizationId: orgId,
-      name,
-      email,
-      pin: hashedPassword,
-      role: employeeRole || "EMPLOYEE",
-      isActive: true,
-      hourlyRate: hourlyRate || null,
-      overtimeRate: overtimeRate || null,
-    },
-  });
+  try {
+    const user = await prisma.user.create({
+      data: {
+        organizationId: orgId,
+        name,
+        email,
+        pin: hashedPassword, // Usamos pin para guardar la contraseña hasheada según tu schema
+        role: employeeRole || "EMPLOYEE",
+        isActive: true,
+        hourlyRate: hourlyRate || null,
+        overtimeRate: overtimeRate || null,
+      },
+    });
 
-  return NextResponse.json({ success: true, userId: user.id });
+    return NextResponse.json({ success: true, userId: user.id });
+  } catch (error) {
+    return NextResponse.json({ error: "Error al crear el usuario" }, { status: 500 });
+  }
 }

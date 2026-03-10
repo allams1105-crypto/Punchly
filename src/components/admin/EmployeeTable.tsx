@@ -14,10 +14,14 @@ type Employee = {
 export default function EmployeeTable({ employees }: { employees: Employee[] }) {
   const [search, setSearch] = useState("");
 
-  const filtered = employees.filter(e =>
-    e.name.toLowerCase().includes(search.toLowerCase()) ||
-    e.email.toLowerCase().includes(search.toLowerCase())
-  );
+  // CORRECCIÓN: Usamos ?. y ?? "" para evitar errores si name o email son nulos
+  const filtered = employees?.filter(e => {
+    const searchTerm = search.toLowerCase();
+    const name = e.name?.toLowerCase() ?? "";
+    const email = e.email?.toLowerCase() ?? "";
+    
+    return name.includes(searchTerm) || email.includes(searchTerm);
+  }) ?? [];
 
   function elapsed(clockIn: string) {
     const diff = Math.floor((Date.now() - new Date(clockIn).getTime()) / 60000);
@@ -30,14 +34,20 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
     <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
       <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
         <h3 className="text-sm font-bold text-[var(--text-primary)]">Estado de empleados</h3>
-        <input value={search} onChange={e => setSearch(e.target.value)}
+        <input 
+          value={search} 
+          onChange={e => setSearch(e.target.value)}
           placeholder="Buscar..."
-          className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition w-36" />
+          className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition w-36" 
+        />
       </div>
+      
       {filtered.length === 0 ? (
         <div className="p-8 text-center">
           <p className="text-sm text-[var(--text-muted)]">No hay empleados</p>
-          <Link href="/en/admin/employees/new" className="inline-block mt-3 bg-[#E8B84B] text-black px-4 py-2 rounded-xl text-xs font-black">+ Agregar primero</Link>
+          <Link href="/en/admin/employees/new" className="inline-block mt-3 bg-[#E8B84B] text-black px-4 py-2 rounded-xl text-xs font-black">
+            + Agregar primero
+          </Link>
         </div>
       ) : (
         <table className="w-full">
@@ -54,11 +64,16 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
                 <td className="px-5 py-3">
                   <Link href={`/en/admin/employees/${emp.id}`} className="flex items-center gap-2.5 group">
                     <div className="w-7 h-7 bg-[#E8B84B]/10 border border-[#E8B84B]/20 rounded-lg flex items-center justify-center shrink-0">
-                      <span className="text-[#E8B84B] text-xs font-black">{emp.name.charAt(0)}</span>
+                      {/* CORRECCIÓN: Evita crash si el nombre está vacío */}
+                      <span className="text-[#E8B84B] text-xs font-black">
+                        {emp.name ? emp.name.charAt(0) : "?"}
+                      </span>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-[var(--text-primary)] group-hover:text-[#E8B84B] transition">{emp.name}</p>
-                      <p className="text-xs text-[var(--text-muted)]">{emp.email}</p>
+                      <p className="text-xs font-semibold text-[var(--text-primary)] group-hover:text-[#E8B84B] transition">
+                        {emp.name || "Sin nombre"}
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)]">{emp.email || "Sin email"}</p>
                     </div>
                   </Link>
                 </td>

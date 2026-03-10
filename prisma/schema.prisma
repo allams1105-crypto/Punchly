@@ -73,6 +73,7 @@ model User {
   accounts     Account[]
   sessions     Session[]
   schedule          Schedule?
+  kioskPin           String?
   pushSubscription  PushSubscription?
 
   @@unique([organizationId, email])
