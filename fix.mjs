@@ -61,5 +61,3 @@ if (!css2.includes("bg-primary: #0A0A0A")) {
 writeFileSync("src/app/globals.css", css2);
 
 console.log("Listo!");
-ecuta:
-

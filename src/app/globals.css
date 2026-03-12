@@ -3,6 +3,11 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
+  --bg-primary: #0A0A0A;
+  --bg-card: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.08);
+  --text-primary: #FAFAFA;
+  --text-muted: rgba(255,255,255,0.35);
   --font-heading: var(--font-syne), 'Syne', system-ui, sans-serif;
   --font-body: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
   color-scheme: light dark;
@@ -37,3 +42,5 @@ body {
 }
 .font-syne { font-family: var(--font-syne) !important; }
 .font-dm { font-family: var(--font-dm-sans) !important; }
+
+html, body { color-scheme: dark; background: #0A0A0A !important; }

@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import ThemeToggle from "@/components/ThemeToggle";
 import LangToggle from "@/components/LangToggle";
 import { useLang } from "@/lib/LangContext";
 import { useState, useEffect } from "react";
@@ -46,7 +45,7 @@ export default function Sidebar({ orgName }: { orgName: string }) {
       </nav>
       <div className="px-2 py-3 border-t border-[var(--border)] space-y-1">
         <div className="px-3 py-1 flex items-center gap-2">
-          <ThemeToggle />
+          
           <LangToggle />
         </div>
         <a href="/api/auth/signout"
