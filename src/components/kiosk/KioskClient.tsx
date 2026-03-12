@@ -137,14 +137,15 @@ export default function KioskClient({ employees, token }: { employees: Employee[
         </div>
 
         <button onClick={confirmPin} disabled={loading||pin.length!==4}
-          className="w-full py-4 rounded-2xl font-extrabold text-base transition-all duration-200 disabled:opacity-30"
-          style={{background:`linear-gradient(135deg,${GOLD},#F0D080)`, color:"#000", fontFamily:"var(--font-syne)",
-            boxShadow:pin.length===4 ? `0 0 40px ${GOLD}40` : "none"}}>
-          {loading?"Verificando...":"Confirmar"}
-        </button>
-      </div>
-    </div>
-  );
+          className="w-full py-4 rounded-2xl font-extrabold text-base transition-all duration-200 disabled:opacity-30"
+          style={{background:`linear-gradient(135deg,${GOLD},#F0D080)`, color:"#000", fontFamily:"var(--font-syne)",
+            boxShadow:pin.length===4 ? `0 0 40px ${GOLD}40` : "none"}}>
+          {loading?"Verificando...":"Confirmar"}
+        </button>
+      </div> {/* Closes w-full max-w-sm */}
+    </div> {/* Closes text-center */}
+  </div> {/* <-- ADD THIS TO CLOSE min-h-screen */}
+);
 
   return (
     <div className="min-h-screen text-white" style={{
