@@ -50,7 +50,7 @@ export default function LandingPage() {
         <section style={{position:"relative",zIndex:10,maxWidth:"900px",margin:"0 auto",padding:"80px 40px 60px",textAlign:"center"}}>
           <div className="fade-up-1 glass" style={{display:"inline-flex",alignItems:"center",gap:"8px",padding:"6px 16px",borderRadius:"100px",fontSize:"12px",color:"rgba(255,255,255,0.4)",marginBottom:"32px"}}>
             <div style={{width:"6px",height:"6px",background:"#C9A84C",borderRadius:"50%"}} />
-            7 días gratis — sin tarjeta de crédito
+            7 días gratis 
           </div>
           <h1 className="fade-up-2" style={{fontFamily:"var(--font-syne)",fontSize:"clamp(48px,8vw,88px)",fontWeight:800,lineHeight:1,letterSpacing:"-2px",marginBottom:"24px"}}>
             Control de<br/><span className="gold-text">asistencia</span><br/>sin excusas
@@ -139,7 +139,7 @@ export default function LandingPage() {
             <Link href="/en/register" className="btn-3d" style={{display:"block",background:"linear-gradient(135deg,#C9A84C,#F0D080)",color:"#000",padding:"16px",borderRadius:"16px",fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"15px",textDecoration:"none",boxShadow:"0 0 40px rgba(201,168,76,0.25)"}}>
               Comenzar 7 días gratis
             </Link>
-            <p style={{color:"rgba(255,255,255,0.15)",fontSize:"11px",marginTop:"12px"}}>Sin tarjeta requerida durante el trial</p>
+            <p style={{color:"rgba(255,255,255,0.15)",fontSize:"11px",marginTop:"12px"}}>Sin pago requerido durante el trial</p>
           </div>
         </section>
 
