@@ -1,4 +1,5 @@
 "use client";
+import { useLang } from "@/lib/LangContext";
 import { useEffect, useState } from "react";
 
 type Entry = {
@@ -23,6 +24,8 @@ const WEEKS = [
 ];
 
 export default function AttendancePage() {
+  const { lang } = useLang();
+  const t = lang === "es" ? { title: "Asistencia", search: "Buscar empleado...", export: "Exportar CSV", from: "Desde", to: "Hasta", days: "días", noData: "Sin registros", name: "Empleado", date: "Fecha", in: "Entrada", out: "Salida", hours: "Horas", status: "Estado", late: "Tarde", onTime: "A tiempo", absent: "Ausente" } : { title: "Attendance", search: "Search employee...", export: "Export CSV", from: "From", to: "To", days: "days", noData: "No records", name: "Employee", date: "Date", in: "Clock In", out: "Clock Out", hours: "Hours", status: "Status", late: "Late", onTime: "On time", absent: "Absent" };
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");

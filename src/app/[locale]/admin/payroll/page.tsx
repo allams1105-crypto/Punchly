@@ -1,9 +1,12 @@
 "use client";
+import { useLang } from "@/lib/LangContext";
 import { useEffect, useState } from "react";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 export default function PayrollPage() {
+  const { lang } = useLang();
+  const t = lang === "es" ? { title: "Nómina", period: "Período", employee: "Empleado", hours: "Horas", overtime: "Extras", rate: "Tarifa", total: "Total", export: "Exportar CSV", exportPdf: "Exportar PDF", noData: "Sin registros" } : { title: "Payroll", period: "Period", employee: "Employee", hours: "Hours", overtime: "Overtime", rate: "Rate", total: "Total", export: "Export CSV", exportPdf: "Export PDF", noData: "No records" };
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());

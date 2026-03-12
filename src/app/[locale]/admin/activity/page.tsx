@@ -1,4 +1,5 @@
 "use client";
+import { useLang } from "@/lib/LangContext";
 import { useEffect, useState } from "react";
 
 type Entry = {
@@ -22,6 +23,8 @@ type Log = {
 };
 
 export default function ActivityPage() {
+  const { lang } = useLang();
+  const t = lang === "es" ? { title: "Actividad", noData: "Sin actividad reciente", clockIn: "Entrada", clockOut: "Salida", late: "Tardanza", absent: "Ausencia" } : { title: "Activity", noData: "No recent activity", clockIn: "Clock In", clockOut: "Clock Out", late: "Late", absent: "Absent" };
   const [tab, setTab] = useState<"logs" | "entries">("entries");
   const [logs, setLogs] = useState<Log[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
