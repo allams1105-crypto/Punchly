@@ -3,89 +3,92 @@ import Link from "next/link";
 export default function LandingPage() {
   return (
     <>
-      
+      <style>{`
+        .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
+        .glass-gold{background:rgba(201,168,76,0.08);backdrop-filter:blur(20px);border:1px solid rgba(201,168,76,0.2)}
+        .gold-text{background:linear-gradient(135deg,#C9A84C,#F0D080,#C9A84C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .grid-bg{background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:80px 80px}
+        .glow{box-shadow:0 0 60px rgba(201,168,76,0.2),0 0 120px rgba(201,168,76,0.05)}
+        .card-3d{transition:transform 0.4s ease,box-shadow 0.4s ease;transform-style:preserve-3d}
+        .card-3d:hover{transform:translateY(-6px) rotateX(3deg) rotateY(-1deg);box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 40px rgba(201,168,76,0.12)}
+        .btn-3d{transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+        .btn-3d:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 20px 40px rgba(201,168,76,0.3)}
+        .btn-3d:active{transform:translateY(0) scale(0.98)}
+        @keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-16px) rotate(1.5deg)}}
+        @keyframes fade-up{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes orb-pulse{0%,100%{transform:scale(1);opacity:0.6}50%{transform:scale(1.1);opacity:1}}
+        .float{animation:float 7s ease-in-out infinite}
+        .fade-up-1{animation:fade-up 0.9s ease 0.1s both}
+        .fade-up-2{animation:fade-up 0.9s ease 0.25s both}
+        .fade-up-3{animation:fade-up 0.9s ease 0.4s both}
+        .fade-up-4{animation:fade-up 0.9s ease 0.55s both}
+        .orb{border-radius:50%;filter:blur(100px);position:fixed;pointer-events:none;animation:orb-pulse 8s ease-in-out infinite}
+        .feature-card{transition:all 0.35s cubic-bezier(0.34,1.2,0.64,1)}
+        .feature-card:hover{transform:translateY(-4px) scale(1.02);background:rgba(255,255,255,0.07)!important;border-color:rgba(201,168,76,0.25)!important}
+      `}</style>
 
-      <div className="min-h-screen bg-[#0A0A0A] text-white overflow-hidden">
-        {/* Background orbs */}
-        <div className="orb w-96 h-96 bg-[#C9A84C]/10 top-0 left-1/4 -translate-x-1/2" style={{position:'fixed'}} />
-        <div className="orb w-64 h-64 bg-white/5 bottom-1/4 right-1/4" style={{position:'fixed'}} />
-        
-        {/* Grid bg */}
-        <div className="grid-bg fixed inset-0 pointer-events-none" />
+      <div style={{minHeight:"100vh",background:"#0A0A0A",color:"white",overflow:"hidden",fontFamily:"var(--font-dm-sans)"}}>
+        <div className="orb" style={{width:"500px",height:"500px",background:"rgba(201,168,76,0.07)",top:"-100px",left:"20%"}} />
+        <div className="orb" style={{width:"300px",height:"300px",background:"rgba(255,255,255,0.03)",bottom:"20%",right:"10%",animationDelay:"3s"}} />
+        <div className="grid-bg" style={{position:"fixed",inset:0,pointerEvents:"none"}} />
 
         {/* Nav */}
-        <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center glow" style={{background:'linear-gradient(135deg,#C9A84C,#8B6914)'}}>
-              <span className="font-syne font-800 text-black text-sm font-extrabold">P</span>
+        <nav style={{position:"relative",zIndex:10,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"24px 40px",maxWidth:"1200px",margin:"0 auto"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <div style={{width:"32px",height:"32px",borderRadius:"10px",background:"linear-gradient(135deg,#C9A84C,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 20px rgba(201,168,76,0.3)"}}>
+              <span style={{color:"#000",fontWeight:900,fontSize:"14px",fontFamily:"var(--font-syne)"}}>P</span>
             </div>
-            <span className="font-syne font-bold text-white tracking-tight">Punchly.Clock</span>
+            <span style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"15px"}}>Punchly.Clock</span>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/en/login" className="text-sm text-white/50 hover:text-white transition font-medium">Iniciar sesión</Link>
-            <Link href="/en/register" className="glass-gold text-[#C9A84C] px-5 py-2 rounded-xl text-sm font-semibold hover:bg-[#C9A84C]/15 transition">
-              Comenzar gratis
-            </Link>
+          <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
+            <Link href="/en/login" style={{fontSize:"13px",color:"rgba(255,255,255,0.4)",textDecoration:"none",fontWeight:500,transition:"color 0.2s"}}>Iniciar sesión</Link>
+            <Link href="/en/register" className="glass-gold btn-3d" style={{color:"#C9A84C",padding:"8px 20px",borderRadius:"12px",fontSize:"13px",fontWeight:600,textDecoration:"none",display:"inline-block"}}>Comenzar gratis</Link>
           </div>
         </nav>
 
         {/* Hero */}
-        <section className="relative z-10 max-w-5xl mx-auto px-8 pt-20 pb-32 text-center">
-          <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs text-white/50 mb-8 fade-up">
-            <div className="w-1.5 h-1.5 bg-[#C9A84C] rounded-full" />
+        <section style={{position:"relative",zIndex:10,maxWidth:"900px",margin:"0 auto",padding:"80px 40px 60px",textAlign:"center"}}>
+          <div className="fade-up-1 glass" style={{display:"inline-flex",alignItems:"center",gap:"8px",padding:"6px 16px",borderRadius:"100px",fontSize:"12px",color:"rgba(255,255,255,0.4)",marginBottom:"32px"}}>
+            <div style={{width:"6px",height:"6px",background:"#C9A84C",borderRadius:"50%"}} />
             7 días gratis — sin tarjeta de crédito
           </div>
-          
-          <h1 className="font-syne text-6xl md:text-8xl font-extrabold leading-none tracking-tight mb-6 fade-up-2">
-            Control de<br />
-            <span className="gold-text">asistencia</span><br />
-            sin excusas
+          <h1 className="fade-up-2" style={{fontFamily:"var(--font-syne)",fontSize:"clamp(48px,8vw,88px)",fontWeight:800,lineHeight:1,letterSpacing:"-2px",marginBottom:"24px"}}>
+            Control de<br/><span className="gold-text">asistencia</span><br/>sin excusas
           </h1>
-          
-          <p className="text-white/40 text-lg md:text-xl max-w-xl mx-auto mb-10 font-light leading-relaxed fade-up-3">
-            Kiosk inteligente con PIN, geofencing desde el móvil y reportes automáticos. Todo por un pago único.
+          <p className="fade-up-3" style={{color:"rgba(255,255,255,0.35)",fontSize:"18px",maxWidth:"480px",margin:"0 auto 40px",lineHeight:1.7,fontWeight:300}}>
+            Kiosk con PIN, geofencing móvil y reportes automáticos. Todo por un pago único de $49.
           </p>
-          
-          <div className="flex flex-col sm:flex-row gap-3 justify-center fade-up-4">
-            <Link href="/en/register"
-              className="glow font-syne font-bold px-8 py-4 rounded-2xl text-black text-base transition hover:scale-105"
-              style={{background:'linear-gradient(135deg,#C9A84C,#F0D080)'}}>
+          <div className="fade-up-4" style={{display:"flex",gap:"12px",justifyContent:"center",flexWrap:"wrap"}}>
+            <Link href="/en/register" className="btn-3d glow" style={{background:"linear-gradient(135deg,#C9A84C,#F0D080)",color:"#000",padding:"16px 32px",borderRadius:"16px",fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"15px",textDecoration:"none",display:"inline-block"}}>
               Empezar 7 días gratis
             </Link>
-            <Link href="/en/login"
-              className="glass px-8 py-4 rounded-2xl text-white/70 text-base font-medium hover:text-white hover:bg-white/8 transition">
+            <Link href="/en/login" className="glass btn-3d" style={{color:"rgba(255,255,255,0.6)",padding:"16px 32px",borderRadius:"16px",fontSize:"15px",fontWeight:500,textDecoration:"none",display:"inline-block"}}>
               Ya tengo cuenta
             </Link>
           </div>
         </section>
 
-        {/* Floating kiosk mockup */}
-        <section className="relative z-10 max-w-4xl mx-auto px-8 mb-32">
+        {/* Floating mockup */}
+        <section style={{position:"relative",zIndex:10,maxWidth:"800px",margin:"0 auto",padding:"0 40px 80px"}}>
           <div className="float">
-            <div className="glass rounded-3xl p-1 glow">
-              <div className="bg-[#111] rounded-[20px] overflow-hidden">
-                {/* Fake kiosk UI */}
-                <div className="bg-[#0D0D0D] px-8 py-6 border-b border-white/5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-syne text-4xl font-bold text-white">09:41</p>
-                      <p className="text-white/30 text-sm mt-1">Jueves, 12 de marzo</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-[#C9A84C] rounded-full animate-pulse" />
-                      <span className="text-xs text-[#C9A84C] font-medium">3 en turno</span>
-                    </div>
+            <div className="glass glow" style={{borderRadius:"24px",padding:"4px"}}>
+              <div style={{background:"#0D0D0D",borderRadius:"20px",overflow:"hidden"}}>
+                <div style={{padding:"24px 32px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <p style={{fontFamily:"var(--font-syne)",fontSize:"40px",fontWeight:800,color:"white",lineHeight:1}}>09:41</p>
+                    <p style={{color:"rgba(255,255,255,0.25)",fontSize:"12px",marginTop:"4px"}}>Jueves, 12 de marzo</p>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.2)",padding:"8px 14px",borderRadius:"100px"}}>
+                    <div style={{width:"6px",height:"6px",background:"#34D399",borderRadius:"50%",animation:"pulse 2s infinite"}} />
+                    <span style={{color:"#34D399",fontSize:"12px",fontWeight:500}}>3 en turno</span>
                   </div>
                 </div>
-                <div className="p-6 grid grid-cols-3 gap-3">
-                  {["Ana G.", "Luis M.", "Sofia R.", "Carlos P.", "María J.", "Pedro L."].map((name, i) => (
-                    <div key={name} className="glass rounded-2xl p-4 card-3d cursor-pointer">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center font-syne font-bold text-sm mb-3"
-                        style={{background: ['#C9A84C','#60A5FA','#34D399','#F87171','#A78BFA','#FB923C'][i]+'20', color: ['#C9A84C','#60A5FA','#34D399','#F87171','#A78BFA','#FB923C'][i]}}>
-                        {name.charAt(0)}
-                      </div>
-                      <p className="text-xs font-semibold text-white">{name}</p>
-                      {i < 3 && <div className="flex items-center gap-1 mt-1"><div className="w-1 h-1 bg-green-400 rounded-full animate-pulse"/><span className="text-xs text-green-400">Activo</span></div>}
+                <div style={{padding:"20px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px"}}>
+                  {[["A","Ana G.","#C9A84C",true],["L","Luis M.","#60A5FA",true],["S","Sofia R.","#34D399",true],["C","Carlos P.","#F87171",false],["M","María J.","#A78BFA",false],["P","Pedro L.","#FB923C",false]].map(([init,name,color,active])=>(
+                    <div key={String(name)} className="card-3d" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"16px",padding:"16px",cursor:"pointer"}}>
+                      <div style={{width:"36px",height:"36px",borderRadius:"10px",background:color+"20",border:`1px solid ${color}30`,display:"flex",alignItems:"center",justifyContent:"center",color:String(color),fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"13px",marginBottom:"10px"}}>{init}</div>
+                      <p style={{fontSize:"12px",fontWeight:700,color:"white",fontFamily:"var(--font-syne)"}}>{name}</p>
+                      {active && <div style={{display:"flex",alignItems:"center",gap:"4px",marginTop:"4px"}}><div style={{width:"5px",height:"5px",background:"#34D399",borderRadius:"50%"}} /><span style={{color:"#34D399",fontSize:"10px"}}>Activo</span></div>}
                     </div>
                   ))}
                 </div>
@@ -95,56 +98,53 @@ export default function LandingPage() {
         </section>
 
         {/* Features */}
-        <section className="relative z-10 max-w-5xl mx-auto px-8 mb-32">
-          <h2 className="font-syne text-4xl font-bold text-center mb-3">Todo lo que necesitas</h2>
-          <p className="text-white/30 text-center mb-12 text-sm">Sin suscripciones. Sin límites artificiales.</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <section style={{position:"relative",zIndex:10,maxWidth:"1100px",margin:"0 auto",padding:"0 40px 80px"}}>
+          <h2 style={{fontFamily:"var(--font-syne)",fontSize:"clamp(28px,4vw,40px)",fontWeight:700,textAlign:"center",marginBottom:"12px"}}>Todo lo que necesitas</h2>
+          <p style={{color:"rgba(255,255,255,0.25)",textAlign:"center",marginBottom:"48px",fontSize:"14px"}}>Sin suscripciones. Sin límites artificiales.</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:"16px"}}>
             {[
-              { title: "Kiosk con PIN", desc: "Tablet en la entrada. Cada empleado tiene su PIN único. Nadie puede fichar por otro." },
-              { title: "Geofencing", desc: "Desde el móvil. El empleado solo puede fichar si está dentro del radio configurado." },
-              { title: "Alertas de tardanza", desc: "Email automático al admin cuando alguien llega tarde. En tiempo real." },
-              { title: "Nómina automática", desc: "Cálculo quincenal con horas normales y extras. Exporta a CSV o PDF." },
-              { title: "Multi-empresa", desc: "Cada cliente tiene su propio espacio aislado con sus empleados y datos." },
-              { title: "Pago único $49", desc: "Sin mensualidades. Paga una vez, usa para siempre. Actualizaciones incluidas." },
-            ].map((f, i) => (
-              <div key={f.title} className="glass rounded-2xl p-6 card-3d" style={{animationDelay: i*0.1+'s'}}>
-                <div className="w-8 h-8 glass-gold rounded-xl mb-4" />
-                <h3 className="font-syne font-bold text-white mb-2">{f.title}</h3>
-                <p className="text-white/40 text-sm leading-relaxed">{f.desc}</p>
+              {title:"Kiosk con PIN",desc:"Tablet en la entrada. Cada empleado tiene su PIN único. Nadie puede fichar por otro."},
+              {title:"Geofencing móvil",desc:"El empleado solo puede fichar desde su celular si está dentro del radio de la empresa."},
+              {title:"Alertas de tardanza",desc:"Email automático cuando alguien llega tarde. En tiempo real, sin configuración."},
+              {title:"Nómina automática",desc:"Cálculo quincenal con horas normales y extras. Exporta a CSV o PDF en un clic."},
+              {title:"Multi-empresa",desc:"Cada cliente tiene su propio espacio aislado con sus empleados y configuración."},
+              {title:"Pago único $49",desc:"Sin mensualidades. Paga una vez, usa para siempre. Actualizaciones incluidas."},
+            ].map(f=>(
+              <div key={f.title} className="glass feature-card" style={{borderRadius:"20px",padding:"28px"}}>
+                <div style={{width:"32px",height:"32px",background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.2)",borderRadius:"10px",marginBottom:"16px"}} />
+                <h3 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"16px",marginBottom:"8px"}}>{f.title}</h3>
+                <p style={{color:"rgba(255,255,255,0.35)",fontSize:"13px",lineHeight:1.7}}>{f.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Pricing */}
-        <section className="relative z-10 max-w-md mx-auto px-8 mb-32 text-center">
-          <div className="glass rounded-3xl p-8 glow">
-            <p className="text-white/40 text-sm mb-2 font-syne uppercase tracking-widest">Precio único</p>
-            <div className="flex items-end justify-center gap-2 mb-4">
-              <span className="font-syne text-7xl font-extrabold gold-text">$49</span>
-              <span className="text-white/30 mb-3">para siempre</span>
+        <section style={{position:"relative",zIndex:10,maxWidth:"420px",margin:"0 auto",padding:"0 40px 80px",textAlign:"center"}}>
+          <div className="glass glow" style={{borderRadius:"28px",padding:"40px"}}>
+            <p style={{color:"rgba(255,255,255,0.3)",fontSize:"11px",letterSpacing:"3px",textTransform:"uppercase",marginBottom:"12px",fontFamily:"var(--font-syne)"}}>Precio único</p>
+            <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:"8px",marginBottom:"8px"}}>
+              <span className="gold-text" style={{fontFamily:"var(--font-syne)",fontSize:"80px",fontWeight:800,lineHeight:1}}>$49</span>
+              <span style={{color:"rgba(255,255,255,0.2)",marginBottom:"12px",fontSize:"14px"}}>para siempre</span>
             </div>
-            <ul className="text-sm text-white/50 space-y-2 mb-8 text-left">
-              {["Empleados ilimitados","Kiosk con PIN","Geofencing móvil","Alertas por email","Nómina automática","Soporte incluido"].map(f => (
-                <li key={f} className="flex items-center gap-3">
-                  <div className="w-1.5 h-1.5 bg-[#C9A84C] rounded-full shrink-0" />
+            <p style={{color:"rgba(255,255,255,0.2)",fontSize:"12px",marginBottom:"28px"}}>Un solo pago. Sin sorpresas.</p>
+            <ul style={{listStyle:"none",padding:0,marginBottom:"28px",textAlign:"left"}}>
+              {["Empleados ilimitados","Kiosk con PIN","Geofencing móvil","Alertas por email","Nómina automática","Soporte incluido"].map(f=>(
+                <li key={f} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",color:"rgba(255,255,255,0.5)",fontSize:"13px"}}>
+                  <div style={{width:"6px",height:"6px",background:"#C9A84C",borderRadius:"50%",flexShrink:0}} />
                   {f}
                 </li>
               ))}
             </ul>
-            <Link href="/en/register"
-              className="block w-full py-4 rounded-2xl font-syne font-bold text-black transition hover:scale-105 glow"
-              style={{background:'linear-gradient(135deg,#C9A84C,#F0D080)'}}>
+            <Link href="/en/register" className="btn-3d" style={{display:"block",background:"linear-gradient(135deg,#C9A84C,#F0D080)",color:"#000",padding:"16px",borderRadius:"16px",fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"15px",textDecoration:"none",boxShadow:"0 0 40px rgba(201,168,76,0.25)"}}>
               Comenzar 7 días gratis
             </Link>
-            <p className="text-xs text-white/20 mt-3">Sin tarjeta requerida durante el trial</p>
+            <p style={{color:"rgba(255,255,255,0.15)",fontSize:"11px",marginTop:"12px"}}>Sin tarjeta requerida durante el trial</p>
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="relative z-10 border-t border-white/5 py-8 text-center">
-          <p className="text-white/20 text-xs">Punchly.Clock — Control de asistencia profesional</p>
+        <footer style={{position:"relative",zIndex:10,borderTop:"1px solid rgba(255,255,255,0.05)",padding:"24px",textAlign:"center"}}>
+          <p style={{color:"rgba(255,255,255,0.15)",fontSize:"12px"}}>Punchly.Clock — Control de asistencia profesional</p>
         </footer>
       </div>
     </>
