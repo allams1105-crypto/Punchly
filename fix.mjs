@@ -1,14 +1,25 @@
 import { writeFileSync } from "fs";
 
-// Fix kiosk setup page — use orgId directly as token
-const kioskSetup = `import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+const kioskSetup = `"use client";
+import { useEffect, useState } from "react";
 
-export default async function KioskSetupPage() {
-  const session = await auth();
-  if (!session) redirect("/en/login");
-  const orgId = (session.user as any).organizationId;
-  const kioskUrl = \`\${process.env.NEXTAUTH_URL || "https://punchlyclock.vercel.app"}/en/kiosk/\${orgId}\`;
+export default function KioskSetupPage() {
+  const [kioskUrl, setKioskUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/kiosk/info")
+      .then(r => r.json())
+      .then(d => {
+        if (d.orgId) setKioskUrl(\`\${window.location.origin}/en/kiosk/\${d.orgId}\`);
+      });
+  }, []);
+
+  function copy() {
+    navigator.clipboard.writeText(kioskUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
@@ -30,26 +41,39 @@ export default async function KioskSetupPage() {
           <div className="p-6 space-y-4">
             <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl p-4">
               <p className="text-xs text-[var(--text-muted)] mb-2 font-semibold uppercase tracking-wider">URL del Kiosk</p>
-              <p className="text-sm font-mono text-[#E8B84B] break-all">{kioskUrl}</p>
+              {kioskUrl ? (
+                <p className="text-sm font-mono text-[#E8B84B] break-all">{kioskUrl}</p>
+              ) : (
+                <div className="h-4 bg-[var(--border)] rounded animate-pulse w-3/4" />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <KioskCopyButton url={kioskUrl} />
-              <a href={kioskUrl} target="_blank"
-                className="flex items-center justify-center gap-2 bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition">
-                Abrir Kiosk →
-              </a>
+              <button onClick={copy} disabled={!kioskUrl}
+                className="flex items-center justify-center gap-2 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] py-3 rounded-xl text-sm font-semibold transition disabled:opacity-40">
+                {copied ? "¡Copiado!" : "Copiar URL"}
+              </button>
+              {kioskUrl ? (
+                <a href={kioskUrl} target="_blank"
+                  className="flex items-center justify-center gap-2 bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition">
+                  Abrir Kiosk →
+                </a>
+              ) : (
+                <button disabled className="bg-[#E8B84B]/40 text-black py-3 rounded-xl text-sm font-black opacity-40">
+                  Abrir Kiosk →
+                </button>
+              )}
             </div>
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-              <p className="text-xs font-semibold text-blue-400 mb-1">¿Cómo funciona?</p>
-              <ul className="text-xs text-blue-300/70 space-y-1">
-                <li>1. Abre la URL en la tablet de la entrada</li>
-                <li>2. El empleado toca su nombre</li>
-                <li>3. Ingresa su PIN de 4 dígitos</li>
-                <li>4. Se registra la entrada o salida</li>
-              </ul>
+              <p className="text-xs font-semibold text-blue-400 mb-2">¿Cómo funciona?</p>
+              <div className="space-y-1 text-xs text-blue-300/70">
+                <p>1. Abre la URL en la tablet de la entrada</p>
+                <p>2. El empleado toca su nombre</p>
+                <p>3. Ingresa su PIN de 4 dígitos</p>
+                <p>4. Se registra la entrada o salida</p>
+              </div>
             </div>
             <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl p-4">
-              <p className="text-xs font-semibold text-[var(--text-muted)] mb-1">Asignar PINs a empleados</p>
+              <p className="text-xs font-semibold text-[var(--text-muted)] mb-1">Asignar PINs</p>
               <p className="text-xs text-[var(--text-muted)]">Ve a <strong className="text-[var(--text-primary)]">Empleados → editar empleado → PIN del Kiosk</strong> para asignar el PIN de cada uno.</p>
             </div>
           </div>
@@ -57,61 +81,19 @@ export default async function KioskSetupPage() {
       </div>
     </div>
   );
-}
-
-function KioskCopyButton({ url }: { url: string }) {
-  return (
-    <button onClick={() => {
-      if (typeof window !== "undefined") navigator.clipboard.writeText(url);
-    }}
-      className="flex items-center justify-center gap-2 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] py-3 rounded-xl text-sm font-semibold transition">
-      Copiar URL
-    </button>
-  );
 }`;
 
-// Fix kiosk page — search by orgId directly
-const kioskPage = `import { prisma } from "@/lib/db";
-import { notFound } from "next/navigation";
-import KioskClient from "@/components/kiosk/KioskClient";
+const kioskInfoApi = `import { auth } from "@/lib/auth";
+import { NextResponse } from "next/server";
 
-export default async function KioskPage({ params }: { params: any }) {
-  const { token } = await params;
-  if (!token) notFound();
-
-  // token IS the orgId
-  const org = await prisma.organization.findUnique({ where: { id: token } });
-  if (!org) notFound();
-
-  const today = new Date(); today.setHours(0,0,0,0);
-
-  const [employees, activeEntries] = await Promise.all([
-    prisma.user.findMany({
-      where: { organizationId: org.id, isActive: true, role: { not: "OWNER" } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.timeEntry.findMany({
-      where: { organizationId: org.id, clockOut: null, clockIn: { gte: today } },
-    }),
-  ]);
-
-  const activeIds = new Set(activeEntries.map(e => e.userId));
-
-  return (
-    <KioskClient
-      token={org.id}
-      employees={employees.map(e => ({
-        id: e.id,
-        name: e.name || "",
-        avatarColor: (e as any).avatarColor || null,
-        onShift: activeIds.has(e.id),
-        clockInTime: activeEntries.find(a => a.userId === e.id)?.clockIn?.toISOString() || null,
-      }))}
-    />
-  );
+export async function GET() {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const orgId = (session.user as any).organizationId;
+  return NextResponse.json({ orgId });
 }`;
 
 writeFileSync("src/app/[locale]/admin/kiosk/page.tsx", kioskSetup);
-writeFileSync("src/app/[locale]/kiosk/[token]/page.tsx", kioskPage);
+writeFileSync("src/app/api/kiosk/info/route.ts", kioskInfoApi);
 console.log("Listo!");
 
