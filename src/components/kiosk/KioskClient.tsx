@@ -1,33 +1,27 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const COLORS = ["#E8B84B","#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80"];
+const GOLD = "#C9A84C";
+const COLORS = [GOLD,"#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80"];
 
-function Avatar({ name, color, size = "md" }: { name: string; color?: string | null; size?: "sm" | "md" | "lg" }) {
-  const bg = color || COLORS[(name?.charCodeAt(0) || 0) % COLORS.length];
-  const sz = size === "lg" ? "w-20 h-20 text-3xl" : size === "md" ? "w-14 h-14 text-xl" : "w-10 h-10 text-sm";
+function Avatar({ name, color, size = "md" }: { name: string; color?: string | null; size?: "sm"|"md"|"lg" }) {
+  const bg = color || COLORS[(name?.charCodeAt(0)||0) % COLORS.length];
+  const sz = size==="lg" ? "w-20 h-20 text-3xl" : size==="md" ? "w-14 h-14 text-xl" : "w-10 h-10 text-sm";
   return (
-    <div className={`${sz} rounded-2xl flex items-center justify-center font-black shrink-0`}
-      style={{ backgroundColor: bg + "25", border: `2px solid ${bg}50`, color: bg }}>
-      {(name || "?").charAt(0).toUpperCase()}
+    <div className={`${sz} rounded-2xl flex items-center justify-center font-extrabold shrink-0`}
+      style={{background:`${bg}15`, border:`1.5px solid ${bg}30`, color:bg, fontFamily:"'Syne',sans-serif"}}>
+      {(name||"?").charAt(0).toUpperCase()}
     </div>
   );
 }
 
-type Employee = {
-  id: string;
-  name: string;
-  avatarColor?: string | null;
-  onShift: boolean;
-  clockInTime?: string | null;
-};
-
-type Step = "list" | "pin" | "success";
+type Employee = { id:string; name:string; avatarColor?:string|null; onShift:boolean; clockInTime?:string|null };
+type Step = "list"|"pin"|"success";
 
 export default function KioskClient({ employees, token }: { employees: Employee[]; token: string }) {
   const [time, setTime] = useState(new Date());
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Employee | null>(null);
+  const [selected, setSelected] = useState<Employee|null>(null);
   const [step, setStep] = useState<Step>("list");
   const [pin, setPin] = useState("");
   const [action, setAction] = useState<"in"|"out">("in");
@@ -36,185 +30,214 @@ export default function KioskClient({ employees, token }: { employees: Employee[
   const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
+    const t = setInterval(()=>setTime(new Date()),1000);
+    return ()=>clearInterval(t);
+  },[]);
 
-  const filtered = employees.filter(e =>
-    (e.name || "").toLowerCase().includes(search.toLowerCase())
-  );
-
-  const onShiftNow = employees.filter(e => e.onShift);
+  const filtered = employees.filter(e=>(e.name||"").toLowerCase().includes(search.toLowerCase()));
+  const onShiftNow = employees.filter(e=>e.onShift);
 
   function selectEmployee(emp: Employee) {
-    setSelected(emp);
-    setAction(emp.onShift ? "out" : "in");
-    setPin("");
-    setError("");
-    setStep("pin");
+    setSelected(emp); setAction(emp.onShift?"out":"in");
+    setPin(""); setError(""); setStep("pin");
   }
 
-  function addDigit(d: string) {
-    if (pin.length < 4) setPin(prev => prev + d);
-  }
-
-  function removeDigit() {
-    setPin(prev => prev.slice(0, -1));
-  }
+  function addDigit(d: string) { if(pin.length<4) setPin(p=>p+d); }
+  function removeDigit() { setPin(p=>p.slice(0,-1)); }
 
   async function confirmPin() {
-    if (pin.length !== 4) { setError("Ingresa tu PIN de 4 dígitos"); return; }
-    setLoading(true);
-    setError("");
-    const res = await fetch(`/api/kiosk/clock`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: selected!.id, organizationId: token, action, pin }),
+    if(pin.length!==4){setError("Ingresa tu PIN de 4 dígitos");return;}
+    setLoading(true); setError("");
+    const res = await fetch("/api/kiosk/clock",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({userId:selected!.id, organizationId:token, action, pin}),
     });
     const data = await res.json();
     setLoading(false);
-    if (!res.ok) { setError(data.error || "Error al registrar"); return; }
-    setSuccessMsg(action === "in" ? "Entrada registrada" : "Salida registrada");
+    if(!res.ok){setError(data.error||"Error al registrar");return;}
+    setSuccessMsg(action==="in"?"Entrada registrada":"Salida registrada");
     setStep("success");
-    setTimeout(() => {
-      setStep("list");
-      setSelected(null);
-      setPin("");
-      setSearch("");
-      setSuccessMsg("");
-    }, 3000);
+    setTimeout(()=>{setStep("list");setSelected(null);setPin("");setSearch("");setSuccessMsg("");},3000);
   }
 
-  const timeStr = time.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const dateStr = time.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" });
+  const timeStr = time.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const dateStr = time.toLocaleDateString("es",{weekday:"long",day:"numeric",month:"long"});
 
-  // SUCCESS SCREEN
-  if (step === "success") return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8">
-      <div className="text-center animate-pulse">
-        <div className="w-24 h-24 bg-[#E8B84B]/20 border-2 border-[#E8B84B] rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-12 h-12 text-[#E8B84B]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  const glassStyle = {
+    background:"rgba(255,255,255,0.04)",
+    backdropFilter:"blur(20px)",
+    WebkitBackdropFilter:"blur(20px)",
+    border:"1px solid rgba(255,255,255,0.08)"
+  };
+  const glassGoldStyle = {
+    background:"rgba(201,168,76,0.08)",
+    backdropFilter:"blur(20px)",
+    WebkitBackdropFilter:"blur(20px)",
+    border:"1px solid rgba(201,168,76,0.2)"
+  };
+
+  if(step==="success") return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-8"
+      style={{background:"#0A0A0A", backgroundImage:"radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 70%)"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');`}</style>
+      <div className="text-center" style={{animation:"scale-in 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards"}}>
+        <style>{`@keyframes scale-in{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}`}</style>
+        <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6"
+          style={{...glassGoldStyle, boxShadow:"0 0 60px rgba(201,168,76,0.3)"}}>
+          <svg className="w-10 h-10" style={{color:GOLD}} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
         </div>
-        <p className="text-4xl font-black text-white mb-2">{successMsg}</p>
-        <p className="text-xl text-[#E8B84B] font-bold">{selected?.name}</p>
-        <p className="text-white/40 mt-2">{timeStr}</p>
+        <p className="text-4xl font-extrabold text-white mb-2" style={{fontFamily:"'Syne',sans-serif"}}>{successMsg}</p>
+        <p className="text-lg font-medium" style={{color:GOLD, fontFamily:"'Syne',sans-serif"}}>{selected?.name}</p>
+        <p className="text-white/30 text-sm mt-2" style={{fontFamily:"'DM Sans',sans-serif"}}>{timeStr}</p>
       </div>
     </div>
   );
 
-  // PIN SCREEN
-  if (step === "pin") return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8">
-      <button onClick={() => setStep("list")} className="absolute top-6 left-6 text-white/40 hover:text-white transition text-sm flex items-center gap-2">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+  if(step==="pin") return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-8"
+      style={{background:"#0A0A0A", backgroundImage:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 60%)"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');`}</style>
+      <button onClick={()=>setStep("list")}
+        className="absolute top-6 left-6 flex items-center gap-2 transition"
+        style={{color:"rgba(255,255,255,0.3)", fontFamily:"'DM Sans',sans-serif", fontSize:"13px"}}
+        onMouseEnter={e=>(e.currentTarget.style.color="rgba(255,255,255,0.7)")}
+        onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.3)")}>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+        </svg>
         Volver
       </button>
 
       <div className="w-full max-w-sm">
-        {/* Employee info */}
         <div className="flex flex-col items-center mb-8">
           <Avatar name={selected!.name} color={selected?.avatarColor} size="lg" />
-          <p className="text-2xl font-black text-white mt-4">{selected!.name}</p>
-          <div className={`mt-2 px-4 py-1.5 rounded-full text-sm font-bold ${action === "in" ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>
-            {action === "in" ? "Registrar Entrada" : "Registrar Salida"}
+          <p className="text-2xl font-extrabold text-white mt-4" style={{fontFamily:"'Syne',sans-serif"}}>{selected!.name}</p>
+          <div className="mt-3 px-5 py-1.5 rounded-full text-sm font-semibold"
+            style={action==="in"
+              ? {background:"rgba(52,211,153,0.1)", color:"#34D399", border:"1px solid rgba(52,211,153,0.2)"}
+              : {background:"rgba(248,113,113,0.1)", color:"#F87171", border:"1px solid rgba(248,113,113,0.2)"}}>
+            {action==="in"?"Registrar Entrada":"Registrar Salida"}
           </div>
         </div>
 
         {/* PIN dots */}
-        <div className="flex justify-center gap-4 mb-8">
-          {[0,1,2,3].map(i => (
-            <div key={i} className={`w-5 h-5 rounded-full transition-all ${i < pin.length ? "bg-[#E8B84B] scale-110" : "bg-white/20"}`} />
+        <div className="flex justify-center gap-5 mb-8">
+          {[0,1,2,3].map(i=>(
+            <div key={i} className="w-4 h-4 rounded-full transition-all duration-200"
+              style={{background: i<pin.length ? GOLD : "rgba(255,255,255,0.15)",
+                transform: i<pin.length ? "scale(1.2)" : "scale(1)",
+                boxShadow: i<pin.length ? `0 0 12px ${GOLD}60` : "none"}} />
           ))}
         </div>
 
-        {error && <p className="text-center text-red-400 text-sm mb-4">{error}</p>}
+        {error && <p className="text-center text-sm mb-4" style={{color:"#F87171", fontFamily:"'DM Sans',sans-serif"}}>{error}</p>}
 
         {/* Numpad */}
-        <div className="grid grid-cols-3 gap-3">
-          {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((d, i) => (
-            <button key={i} onClick={() => d === "⌫" ? removeDigit() : d ? addDigit(d) : null}
-              disabled={!d && d !== "0"}
-              className={`h-16 rounded-2xl text-xl font-black transition ${
-                d === "⌫" ? "bg-white/10 text-white/60 hover:bg-white/20" :
-                d ? "bg-white/10 text-white hover:bg-white/20 active:bg-[#E8B84B]/30 active:text-[#E8B84B]" :
-                "opacity-0 pointer-events-none"
-              }`}>
-              {d}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {["1","2","3","4","5","6","7","8","9","","0","del"].map((d,i)=>(
+            <button key={i}
+              onClick={()=>d==="del"?removeDigit():d?addDigit(d):null}
+              disabled={!d && d!=="0"}
+              className="h-16 rounded-2xl text-lg font-semibold transition-all duration-150 active:scale-95"
+              style={d==="del"
+                ? {background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.4)", border:"1px solid rgba(255,255,255,0.08)", fontFamily:"'DM Sans',sans-serif"}
+                : d
+                ? {background:"rgba(255,255,255,0.06)", color:"white", border:"1px solid rgba(255,255,255,0.08)", fontFamily:"'Syne',sans-serif", fontWeight:700}
+                : {opacity:0, pointerEvents:"none"}}>
+              {d==="del"
+                ? <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+                : d}
             </button>
           ))}
         </div>
 
-        <button onClick={confirmPin} disabled={loading || pin.length !== 4}
-          className="w-full mt-4 bg-[#E8B84B] text-black py-4 rounded-2xl font-black text-lg hover:bg-[#d4a43a] transition disabled:opacity-40">
-          {loading ? "Verificando..." : "Confirmar"}
+        <button onClick={confirmPin} disabled={loading||pin.length!==4}
+          className="w-full py-4 rounded-2xl font-extrabold text-base transition-all duration-200 disabled:opacity-30"
+          style={{background:`linear-gradient(135deg,${GOLD},#F0D080)`, color:"#000", fontFamily:"'Syne',sans-serif",
+            boxShadow:pin.length===4 ? `0 0 40px ${GOLD}40` : "none"}}>
+          {loading?"Verificando...":"Confirmar"}
         </button>
       </div>
     </div>
   );
 
-  // MAIN LIST SCREEN
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen text-white" style={{
+      background:"#0A0A0A",
+      backgroundImage:"radial-gradient(ellipse at 20% 0%, rgba(201,168,76,0.05) 0%, transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(255,255,255,0.02) 0%, transparent 40%)"
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+        .emp-card { transition: all 0.2s cubic-bezier(0.34,1.3,0.64,1); }
+        .emp-card:hover { transform: translateY(-2px) scale(1.02); }
+        .emp-card:active { transform: scale(0.97); }
+      `}</style>
+
       {/* Header */}
-      <div className="px-8 pt-8 pb-4 flex items-start justify-between">
+      <div className="px-8 pt-8 pb-5 flex items-start justify-between">
         <div>
-          <p className="text-5xl font-black text-white tracking-tight">{timeStr}</p>
-          <p className="text-white/40 text-sm mt-1 capitalize">{dateStr}</p>
+          <p className="text-6xl font-extrabold text-white leading-none" style={{fontFamily:"'Syne',sans-serif"}}>{timeStr}</p>
+          <p className="text-white/30 text-sm mt-2 capitalize" style={{fontFamily:"'DM Sans',sans-serif"}}>{dateStr}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center">
-            <span className="text-black font-black text-sm">P</span>
+        <div className="flex items-center gap-2.5 mt-2">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+            style={{background:"linear-gradient(135deg,#C9A84C,#8B6914)"}}>
+            <span className="text-black font-extrabold text-xs" style={{fontFamily:"'Syne',sans-serif"}}>P</span>
           </div>
-          <span className="text-white font-black">Punchly.Clock</span>
+          <span className="font-bold text-white/70 text-sm" style={{fontFamily:"'Syne',sans-serif"}}>Punchly.Clock</span>
         </div>
       </div>
 
       {/* On shift strip */}
-      {onShiftNow.length > 0 && (
-        <div className="px-8 py-3 border-y border-white/8 flex items-center gap-3 overflow-x-auto">
-          <span className="text-xs text-white/40 shrink-0">En turno:</span>
-          {onShiftNow.map(e => (
-            <div key={e.id} className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-full shrink-0">
-              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-              <span className="text-xs text-green-400 font-semibold">{e.name}</span>
+      {onShiftNow.length>0 && (
+        <div className="px-8 py-3 flex items-center gap-3 overflow-x-auto" style={{borderTop:"1px solid rgba(255,255,255,0.05)", borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+          <span className="text-xs text-white/25 shrink-0" style={{fontFamily:"'DM Sans',sans-serif"}}>En turno</span>
+          {onShiftNow.map(e=>(
+            <div key={e.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full shrink-0"
+              style={{background:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.15)"}}>
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full" style={{animation:"pulse 2s infinite"}} />
+              <span className="text-xs text-green-400 font-medium" style={{fontFamily:"'DM Sans',sans-serif"}}>{e.name}</span>
             </div>
           ))}
         </div>
       )}
 
       {/* Search */}
-      <div className="px-8 py-4">
-        <input value={search} onChange={e => setSearch(e.target.value)}
+      <div className="px-8 py-5">
+        <input value={search} onChange={e=>setSearch(e.target.value)}
           placeholder="Busca tu nombre..."
-          className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-lg placeholder-white/20 focus:outline-none focus:border-[#E8B84B]/50 transition" />
+          className="w-full text-white text-lg focus:outline-none"
+          style={{...glassStyle, borderRadius:"16px", padding:"16px 20px",
+            fontFamily:"'DM Sans',sans-serif", background:"rgba(255,255,255,0.04)"}}
+          onFocus={e=>{e.currentTarget.style.border="1px solid rgba(201,168,76,0.3)"; e.currentTarget.style.boxShadow="0 0 0 4px rgba(201,168,76,0.06)"}}
+          onBlur={e=>{e.currentTarget.style.border="1px solid rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow="none"}} />
       </div>
 
-      {/* Employee grid */}
-      <div className="flex-1 px-8 pb-8 overflow-y-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {filtered.map(emp => (
-            <button key={emp.id} onClick={() => selectEmployee(emp)}
-              className={`p-5 rounded-2xl border text-left transition active:scale-95 ${
-                emp.onShift
-                  ? "bg-green-500/10 border-green-500/30 hover:bg-green-500/20"
-                  : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-[#E8B84B]/30"
-              }`}>
+      {/* Grid */}
+      <div className="px-8 pb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {filtered.map(emp=>(
+            <button key={emp.id} onClick={()=>selectEmployee(emp)}
+              className="emp-card p-5 rounded-2xl text-left"
+              style={emp.onShift
+                ? {background:"rgba(52,211,153,0.06)", border:"1px solid rgba(52,211,153,0.15)"}
+                : {...glassStyle}}>
               <Avatar name={emp.name} color={emp.avatarColor} size="md" />
-              <p className="text-sm font-black text-white mt-3 leading-tight">{emp.name}</p>
-              {emp.onShift ? (
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                  <span className="text-xs text-green-400">En turno</span>
-                </div>
-              ) : (
-                <span className="text-xs text-white/30 mt-1.5 block">Fuera</span>
-              )}
+              <p className="text-sm font-bold text-white mt-3 leading-tight" style={{fontFamily:"'Syne',sans-serif"}}>{emp.name}</p>
+              {emp.onShift
+                ? <div className="flex items-center gap-1.5 mt-1.5">
+                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full" style={{animation:"pulse 2s infinite"}} />
+                    <span className="text-xs text-green-400" style={{fontFamily:"'DM Sans',sans-serif"}}>En turno</span>
+                  </div>
+                : <span className="text-xs text-white/25 mt-1.5 block" style={{fontFamily:"'DM Sans',sans-serif"}}>Toca para fichar</span>}
             </button>
           ))}
         </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-white/30 text-sm">No se encontraron empleados</p>
+        {filtered.length===0 && (
+          <div className="text-center py-20">
+            <p className="text-white/20 text-sm" style={{fontFamily:"'DM Sans',sans-serif"}}>No se encontraron empleados</p>
           </div>
         )}
       </div>

@@ -1,210 +1,221 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const COLORS = ["#E8B84B","#60A5FA","#34D399","#F87171","#A78BFA","#FB923C"];
+const GOLD = "#C9A84C";
+const COLORS = [GOLD,"#60A5FA","#34D399","#F87171","#A78BFA","#FB923C"];
 
 function Avatar({ name, color }: { name: string; color?: string | null }) {
-  const bg = color || COLORS[(name?.charCodeAt(0) || 0) % COLORS.length];
+  const bg = color || COLORS[(name?.charCodeAt(0)||0) % COLORS.length];
   return (
-    <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black"
-      style={{ backgroundColor: bg + "20", border: `2px solid ${bg}40`, color: bg }}>
-      {(name || "?").charAt(0).toUpperCase()}
+    <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-extrabold"
+      style={{background:`${bg}15`, border:`2px solid ${bg}25`, color:bg, fontFamily:"'Syne',sans-serif"}}>
+      {(name||"?").charAt(0).toUpperCase()}
     </div>
   );
 }
 
 type Props = {
-  user: { id: string; name: string; email: string; avatarColor?: string | null };
+  user: { id:string; name:string; email:string; avatarColor?:string|null };
   onShift: boolean;
-  todayEntry: { clockIn: string; clockOut?: string | null } | null;
-  weekStats: { totalMin: number; daysWorked: number; lateCount: number };
-  schedule: { startTime: string; endTime: string; monday: boolean; tuesday: boolean; wednesday: boolean; thursday: boolean; friday: boolean; saturday: boolean; sunday: boolean } | null;
-  recentEntries: { id: string; clockIn: string; clockOut: string | null; durationMin: number | null }[];
+  todayEntry: { clockIn:string; clockOut?:string|null } | null;
+  weekStats: { totalMin:number; daysWorked:number; lateCount:number };
+  schedule: { startTime:string; endTime:string; monday:boolean; tuesday:boolean; wednesday:boolean; thursday:boolean; friday:boolean; saturday:boolean; sunday:boolean } | null;
+  recentEntries: { id:string; clockIn:string; clockOut:string|null; durationMin:number|null }[];
   geoEnabled: boolean;
   geoRadius: number;
 };
 
-export default function EmployeeDashboardClient({ user, onShift: initialOnShift, todayEntry, weekStats, schedule, recentEntries, geoEnabled, geoRadius }: Props) {
+export default function EmployeeDashboardClient({ user, onShift:initialOnShift, todayEntry, weekStats, schedule, recentEntries, geoEnabled, geoRadius }: Props) {
   const [onShift, setOnShift] = useState(initialOnShift);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [locating, setLocating] = useState(false);
-  const [distance, setDistance] = useState<number | null>(null);
+  const [distance, setDistance] = useState<number|null>(null);
+  const [time, setTime] = useState(new Date());
 
-  const days = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  useEffect(()=>{
+    const t = setInterval(()=>setTime(new Date()),1000);
+    return ()=>clearInterval(t);
+  },[]);
+
+  const days = ["D","L","M","X","J","V","S"];
   const dayKeys = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"] as const;
   const todayIdx = new Date().getDay();
 
   async function clock() {
-    setLoading(true);
-    setError("");
-    setSuccess("");
+    setLoading(true); setError(""); setSuccess("");
+    const action = onShift?"out":"in";
+    let body: any = { action };
 
-    const action = onShift ? "out" : "in";
-
-    if (geoEnabled) {
+    if(geoEnabled) {
       setLocating(true);
       try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+        const pos = await new Promise<GeolocationPosition>((res,rej)=>
+          navigator.geolocation.getCurrentPosition(res,rej,{timeout:10000})
         );
         setLocating(false);
-        const { latitude: lat, longitude: lng } = pos.coords;
-
-        const res = await fetch("/api/clock", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action, lat, lng }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Error");
-          if (data.distance) setDistance(data.distance);
-          setLoading(false);
-          return;
-        }
-        setOnShift(action === "in");
-        setSuccess(action === "in" ? "Entrada registrada" : "Salida registrada");
-      } catch (e: any) {
+        body.lat = pos.coords.latitude;
+        body.lng = pos.coords.longitude;
+      } catch {
         setLocating(false);
-        setError("No se pudo obtener tu ubicación. Activa el GPS.");
-        setLoading(false);
-        return;
+        setError("Activa el GPS para poder fichar.");
+        setLoading(false); return;
       }
-    } else {
-      const res = await fetch("/api/clock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Error"); setLoading(false); return; }
-      setOnShift(action === "in");
-      setSuccess(action === "in" ? "Entrada registrada" : "Salida registrada");
     }
 
+    const res = await fetch("/api/clock",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const data = await res.json();
     setLoading(false);
-    setTimeout(() => setSuccess(""), 3000);
+    if(!res.ok){
+      setError(data.error||"Error");
+      if(data.distance) setDistance(data.distance);
+      return;
+    }
+    setOnShift(action==="in");
+    setSuccess(action==="in"?"Entrada registrada":"Salida registrada");
+    setTimeout(()=>setSuccess(""),4000);
   }
 
-  const totalH = Math.floor(weekStats.totalMin / 60);
-  const totalM = weekStats.totalMin % 60;
+  const totalH = Math.floor(weekStats.totalMin/60);
+  const totalM = weekStats.totalMin%60;
+
+  const glassStyle = {background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)"};
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
-      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center bg-[var(--bg-primary)]">
-        <h1 className="text-sm font-black text-[var(--text-primary)]">Mi Panel</h1>
+    <div className="flex-1 overflow-y-auto" style={{background:"#0A0A0A", backgroundImage:"radial-gradient(ellipse at 30% 0%, rgba(201,168,76,0.05) 0%, transparent 50%)"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');`}</style>
+
+      {/* Header */}
+      <div className="px-6 py-4 flex items-center justify-between" style={{borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+        <p className="font-extrabold text-white text-sm" style={{fontFamily:"'Syne',sans-serif"}}>Mi Panel</p>
+        <p className="text-white/30 text-xs" style={{fontFamily:"'DM Sans',sans-serif"}}>
+          {time.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
+        </p>
       </div>
 
-      <div className="p-6 space-y-4 max-w-2xl mx-auto">
-        {/* Profile + Clock */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6">
+      <div className="p-6 space-y-4 max-w-xl mx-auto">
+        {/* Profile + Clock card */}
+        <div className="rounded-2xl p-6" style={glassStyle}>
           <div className="flex items-center gap-4 mb-6">
             <Avatar name={user.name} color={user.avatarColor} />
-            <div>
-              <p className="text-lg font-black text-[var(--text-primary)]">{user.name}</p>
-              <p className="text-xs text-[var(--text-muted)]">{user.email}</p>
-              <div className={`inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${onShift ? "bg-green-500/15 text-green-400 border border-green-500/25" : "bg-[var(--border)] text-[var(--text-muted)]"}`}>
-                {onShift && <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />}
-                {onShift ? "En turno" : "Fuera de turno"}
+            <div className="flex-1">
+              <p className="text-lg font-extrabold text-white" style={{fontFamily:"'Syne',sans-serif"}}>{user.name}</p>
+              <p className="text-xs text-white/30 mt-0.5" style={{fontFamily:"'DM Sans',sans-serif"}}>{user.email}</p>
+              <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-medium"
+                style={onShift
+                  ? {background:"rgba(52,211,153,0.1)", color:"#34D399", border:"1px solid rgba(52,211,153,0.2)"}
+                  : {background:"rgba(255,255,255,0.05)", color:"rgba(255,255,255,0.3)", border:"1px solid rgba(255,255,255,0.08)"}}>
+                {onShift && <span className="w-1.5 h-1.5 bg-green-400 rounded-full" style={{animation:"pulse 2s infinite"}} />}
+                <span style={{fontFamily:"'DM Sans',sans-serif"}}>{onShift?"En turno":"Fuera de turno"}</span>
               </div>
             </div>
           </div>
 
           {todayEntry && (
-            <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl p-3 mb-4 flex items-center justify-between">
+            <div className="rounded-xl p-3 mb-4 flex items-center gap-3"
+              style={{background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)"}}>
+              <div className="w-1 h-8 rounded-full" style={{background:GOLD}} />
               <div>
-                <p className="text-xs text-[var(--text-muted)]">Hoy</p>
-                <p className="text-sm font-bold text-[var(--text-primary)]">
-                  Entrada: {new Date(todayEntry.clockIn).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
-                  {todayEntry.clockOut && ` · Salida: ${new Date(todayEntry.clockOut).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}`}
+                <p className="text-xs text-white/30" style={{fontFamily:"'DM Sans',sans-serif"}}>Hoy</p>
+                <p className="text-sm font-semibold text-white" style={{fontFamily:"'DM Sans',sans-serif"}}>
+                  {new Date(todayEntry.clockIn).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
+                  {todayEntry.clockOut && ` — ${new Date(todayEntry.clockOut).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}`}
                 </p>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4">
-              <p className="text-red-400 text-sm">{error}</p>
-              {distance && <p className="text-red-400/70 text-xs mt-1">Distancia actual: {distance}m · Requerido: menos de {geoRadius}m</p>}
+            <div className="rounded-xl p-3 mb-4" style={{background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.15)"}}>
+              <p className="text-sm" style={{color:"#F87171", fontFamily:"'DM Sans',sans-serif"}}>{error}</p>
+              {distance && <p className="text-xs mt-1" style={{color:"rgba(248,113,113,0.6)", fontFamily:"'DM Sans',sans-serif"}}>Distancia: {distance}m · Máximo: {geoRadius}m</p>}
             </div>
           )}
           {success && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 mb-4">
-              <p className="text-green-400 text-sm font-semibold">{success}</p>
+            <div className="rounded-xl p-3 mb-4" style={{background:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.15)"}}>
+              <p className="text-sm font-semibold" style={{color:"#34D399", fontFamily:"'DM Sans',sans-serif"}}>{success}</p>
             </div>
           )}
 
-          <button onClick={clock} disabled={loading || locating}
-            className={`w-full py-4 rounded-2xl font-black text-base transition disabled:opacity-50 ${onShift ? "bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25" : "bg-[#E8B84B] text-black hover:bg-[#d4a43a]"}`}>
-            {locating ? "Obteniendo ubicación..." : loading ? "Registrando..." : onShift ? "Registrar Salida" : "Registrar Entrada"}
+          <button onClick={clock} disabled={loading||locating}
+            className="w-full py-4 rounded-2xl font-extrabold text-base transition-all duration-300 disabled:opacity-40"
+            style={onShift
+              ? {background:"rgba(248,113,113,0.1)", color:"#F87171", border:"1px solid rgba(248,113,113,0.2)", fontFamily:"'Syne',sans-serif"}
+              : {background:`linear-gradient(135deg,${GOLD},#F0D080)`, color:"#000", fontFamily:"'Syne',sans-serif",
+                 boxShadow:`0 0 40px ${GOLD}30`}}>
+            {locating?"Obteniendo ubicación...":loading?"Registrando...":onShift?"Registrar Salida":"Registrar Entrada"}
           </button>
 
           {geoEnabled && (
-            <p className="text-xs text-[var(--text-muted)] text-center mt-2">
-              Geofencing activo · debes estar a menos de {geoRadius}m de la empresa
+            <p className="text-xs text-center mt-3" style={{color:"rgba(255,255,255,0.2)", fontFamily:"'DM Sans',sans-serif"}}>
+              Geofencing activo · radio {geoRadius}m
             </p>
           )}
         </div>
 
-        {/* Week stats */}
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4 text-center">
-            <p className="text-2xl font-black text-[#E8B84B]">{totalH}h {totalM}m</p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">Esta semana</p>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4 text-center">
-            <p className="text-2xl font-black text-[var(--text-primary)]">{weekStats.daysWorked}</p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">Días trabajados</p>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4 text-center">
-            <p className={`text-2xl font-black ${weekStats.lateCount > 0 ? "text-red-400" : "text-green-400"}`}>{weekStats.lateCount}</p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">Tardanzas</p>
-          </div>
+          {[
+            {value:`${totalH}h${totalM>0?` ${totalM}m`:""}`, label:"Esta semana", color:GOLD},
+            {value:weekStats.daysWorked, label:"Días trabajados", color:"rgba(255,255,255,0.9)"},
+            {value:weekStats.lateCount, label:"Tardanzas", color:weekStats.lateCount>0?"#F87171":"#34D399"},
+          ].map(s=>(
+            <div key={s.label} className="rounded-2xl p-4 text-center" style={glassStyle}>
+              <p className="text-2xl font-extrabold" style={{color:s.color, fontFamily:"'Syne',sans-serif"}}>{s.value}</p>
+              <p className="text-xs mt-1" style={{color:"rgba(255,255,255,0.25)", fontFamily:"'DM Sans',sans-serif"}}>{s.label}</p>
+            </div>
+          ))}
         </div>
 
         {/* Schedule */}
         {schedule && (
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-5">
-            <p className="text-xs font-black text-[var(--text-muted)] uppercase tracking-wider mb-3">Mi Horario</p>
-            <div className="flex gap-2 mb-3">
-              {days.map((d, i) => {
+          <div className="rounded-2xl p-5" style={glassStyle}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{color:"rgba(255,255,255,0.25)", fontFamily:"'DM Sans',sans-serif"}}>Mi Horario</p>
+            <div className="flex gap-1.5 mb-4">
+              {days.map((d,i)=>{
                 const active = schedule[dayKeys[i]];
-                const isToday = i === todayIdx;
+                const isToday = i===todayIdx;
                 return (
-                  <div key={d} className={`flex-1 py-2 rounded-xl text-center text-xs font-bold transition ${
-                    isToday && active ? "bg-[#E8B84B] text-black" :
-                    active ? "bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border)]" :
-                    "bg-[var(--bg-primary)] text-[var(--text-muted)] opacity-40"
-                  }`}>{d}</div>
+                  <div key={d} className="flex-1 py-2.5 rounded-xl text-center text-xs font-bold"
+                    style={isToday&&active
+                      ? {background:`linear-gradient(135deg,${GOLD},#F0D080)`, color:"#000", fontFamily:"'Syne',sans-serif"}
+                      : active
+                      ? {background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.7)", fontFamily:"'Syne',sans-serif"}
+                      : {background:"rgba(255,255,255,0.02)", color:"rgba(255,255,255,0.15)", fontFamily:"'Syne',sans-serif"}}>
+                    {d}
+                  </div>
                 );
               })}
             </div>
-            <p className="text-xs text-[var(--text-muted)] text-center">{schedule.startTime} — {schedule.endTime}</p>
+            <p className="text-xs text-center" style={{color:"rgba(255,255,255,0.3)", fontFamily:"'DM Sans',sans-serif"}}>
+              {schedule.startTime} — {schedule.endTime}
+            </p>
           </div>
         )}
 
         {/* Recent entries */}
-        {recentEntries.length > 0 && (
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[var(--border)]">
-              <p className="text-xs font-black text-[var(--text-muted)] uppercase tracking-wider">Últimos registros</p>
+        {recentEntries.length>0 && (
+          <div className="rounded-2xl overflow-hidden" style={glassStyle}>
+            <div className="px-5 py-3.5" style={{borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+              <p className="text-xs font-bold uppercase tracking-widest" style={{color:"rgba(255,255,255,0.25)", fontFamily:"'DM Sans',sans-serif"}}>Registros recientes</p>
             </div>
-            {recentEntries.slice(0, 7).map(e => {
+            {recentEntries.slice(0,6).map(e=>{
               const ci = new Date(e.clockIn);
-              const h = Math.floor((e.durationMin || 0) / 60);
-              const m = (e.durationMin || 0) % 60;
+              const h = Math.floor((e.durationMin||0)/60);
+              const m = (e.durationMin||0)%60;
               return (
-                <div key={e.id} className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] last:border-0">
+                <div key={e.id} className="flex items-center justify-between px-5 py-3.5" style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                   <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">{ci.toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" })}</p>
-                    <p className="text-xs text-[var(--text-muted)]">
-                      {ci.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
-                      {e.clockOut && ` — ${new Date(e.clockOut).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}`}
+                    <p className="text-sm font-semibold text-white" style={{fontFamily:"'DM Sans',sans-serif"}}>{ci.toLocaleDateString("es",{weekday:"short",day:"numeric",month:"short"})}</p>
+                    <p className="text-xs mt-0.5" style={{color:"rgba(255,255,255,0.25)", fontFamily:"'DM Sans',sans-serif"}}>
+                      {ci.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
+                      {e.clockOut && ` — ${new Date(e.clockOut).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}`}
                     </p>
                   </div>
-                  <p className="text-sm font-bold text-[var(--text-primary)]">{e.durationMin ? `${h}h ${m}m` : "—"}</p>
+                  <p className="text-sm font-bold" style={{color:e.durationMin?GOLD:"rgba(255,255,255,0.3)", fontFamily:"'Syne',sans-serif"}}>
+                    {e.durationMin?`${h}h ${m}m`:"—"}
+                  </p>
                 </div>
               );
             })}
