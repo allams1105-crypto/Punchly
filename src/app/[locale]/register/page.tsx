@@ -5,20 +5,27 @@ import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name:"", orgName:"", email:"", pin:"" });
+  const [name, setName] = useState("");
+  const [orgName, setOrgName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!name||!orgName||!email||!password) { setError("Todos los campos son requeridos"); return; }
     setLoading(true); setError("");
     const res = await fetch("/api/register", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(form),
+      body: JSON.stringify({ name, orgName, email, password }),
     });
     const data = await res.json();
     setLoading(false);
     if (!res.ok) { setError(data.error||"Error al registrar"); return; }
+    // Auto login
+    const { signIn } = await import("next-auth/react");
+    await signIn("credentials", { email, password, redirect: false });
     router.push("/en/admin/dashboard");
   }
 
@@ -32,16 +39,10 @@ export default function RegisterPage() {
     <div style={{minHeight:"100vh",background:"#0A0A0A",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",
       backgroundImage:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 60%)"}}>
       <style>{`
-  .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
-  .glass-gold{background:rgba(201,168,76,0.08);backdrop-filter:blur(20px);border:1px solid rgba(201,168,76,0.2)}
-  .gold-text{background:linear-gradient(135deg,#C9A84C,#F0D080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .glow{box-shadow:0 0 40px rgba(201,168,76,0.2)}
-  .btn-gold{background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)}
-  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(201,168,76,0.3)}
-  .card-hover{transition:all 0.25s ease}
-  .card-hover:hover{transform:translateY(-2px);border-color:rgba(201,168,76,0.2)!important}
-  input,select{color-scheme:dark}
- input:focus{border:1px solid rgba(201,168,76,0.4)!important}`}</style>
+        .btn-gold{background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s ease;border:none;cursor:pointer}
+        .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(201,168,76,0.3)}
+        input:focus{border:1px solid rgba(201,168,76,0.4)!important;outline:none!important}
+      `}</style>
       <div style={{width:"100%",maxWidth:"420px"}}>
         <div style={{textAlign:"center",marginBottom:"32px"}}>
           <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"linear-gradient(135deg,#C9A84C,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 0 30px rgba(201,168,76,0.3)"}}>
@@ -54,20 +55,19 @@ export default function RegisterPage() {
         <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"24px",padding:"32px"}}>
           <form onSubmit={handleSubmit} style={{display:"flex",flexDirection:"column",gap:"16px"}}>
             {[
-              {key:"name",label:"Tu nombre",placeholder:"Juan Pérez",type:"text"},
-              {key:"orgName",label:"Nombre de la empresa",placeholder:"Mi Empresa S.A.",type:"text"},
-              {key:"email",label:"Email",placeholder:"juan@empresa.com",type:"email"},
-              {key:"pin",label:"PIN de acceso",placeholder:"••••••",type:"password"},
+              {label:"Tu nombre",value:name,set:setName,placeholder:"Juan Pérez",type:"text"},
+              {label:"Nombre de la empresa",value:orgName,set:setOrgName,placeholder:"Mi Empresa",type:"text"},
+              {label:"Email",value:email,set:setEmail,placeholder:"juan@empresa.com",type:"email"},
+              {label:"Contraseña",value:password,set:setPassword,placeholder:"••••••",type:"password"},
             ].map(f=>(
-              <div key={f.key}>
+              <div key={f.label}>
                 <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>{f.label}</label>
-                <input type={f.type} value={form[f.key as keyof typeof form]} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))}
-                  placeholder={f.placeholder} required style={inputStyle} />
+                <input type={f.type} value={f.value} onChange={e=>f.set(e.target.value)} placeholder={f.placeholder} required style={inputStyle} />
               </div>
             ))}
             {error && <p style={{color:"#F87171",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{error}</p>}
             <button type="submit" disabled={loading} className="btn-gold"
-              style={{padding:"14px",borderRadius:"14px",fontSize:"14px",border:"none",cursor:"pointer",marginTop:"4px",opacity:loading?0.6:1}}>
+              style={{padding:"14px",borderRadius:"14px",fontSize:"14px",marginTop:"4px",opacity:loading?0.6:1}}>
               {loading?"Creando cuenta...":"Crear cuenta gratis"}
             </button>
           </form>

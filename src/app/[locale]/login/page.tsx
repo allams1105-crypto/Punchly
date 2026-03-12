@@ -7,39 +7,33 @@ import Link from "next/link";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [pin, setPin] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError("");
-    const res = await signIn("credentials", { email, pin, redirect: false });
+    const res = await signIn("credentials", { email, password, redirect: false });
     setLoading(false);
-    if (res?.error) { setError("Email o PIN incorrectos"); return; }
+    if (res?.error) { setError("Email o contraseña incorrectos"); return; }
     router.push("/en/admin/dashboard");
   }
 
   const inputStyle = {
     width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
     borderRadius:"12px", padding:"12px 16px", color:"#FAFAFA", fontSize:"14px",
-    outline:"none", fontFamily:"var(--font-dm-sans)", transition:"border 0.2s"
+    outline:"none", fontFamily:"var(--font-dm-sans)", transition:"border 0.2s", boxSizing:"border-box" as const
   };
 
   return (
     <div style={{minHeight:"100vh",background:"#0A0A0A",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",
       backgroundImage:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 60%)"}}>
       <style>{`
-  .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
-  .glass-gold{background:rgba(201,168,76,0.08);backdrop-filter:blur(20px);border:1px solid rgba(201,168,76,0.2)}
-  .gold-text{background:linear-gradient(135deg,#C9A84C,#F0D080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .glow{box-shadow:0 0 40px rgba(201,168,76,0.2)}
-  .btn-gold{background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)}
-  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(201,168,76,0.3)}
-  .card-hover{transition:all 0.25s ease}
-  .card-hover:hover{transform:translateY(-2px);border-color:rgba(201,168,76,0.2)!important}
-  input,select{color-scheme:dark}
- input:focus{border:1px solid rgba(201,168,76,0.4)!important;box-shadow:0 0 0 3px rgba(201,168,76,0.06)}`}</style>
+        .btn-gold{background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s ease;border:none;cursor:pointer}
+        .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(201,168,76,0.3)}
+        input:focus{border:1px solid rgba(201,168,76,0.4)!important;box-shadow:0 0 0 3px rgba(201,168,76,0.06)!important;outline:none!important}
+      `}</style>
       <div style={{width:"100%",maxWidth:"400px"}}>
         <div style={{textAlign:"center",marginBottom:"32px"}}>
           <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"linear-gradient(135deg,#C9A84C,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 0 30px rgba(201,168,76,0.3)"}}>
@@ -56,12 +50,12 @@ export default function LoginPage() {
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@empresa.com" required style={inputStyle} />
             </div>
             <div>
-              <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>PIN</label>
-              <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="••••••" required style={inputStyle} />
+              <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>Contraseña</label>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" required style={inputStyle} />
             </div>
             {error && <p style={{color:"#F87171",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{error}</p>}
             <button type="submit" disabled={loading} className="btn-gold"
-              style={{padding:"14px",borderRadius:"14px",fontSize:"14px",border:"none",cursor:"pointer",marginTop:"4px",opacity:loading?0.6:1}}>
+              style={{padding:"14px",borderRadius:"14px",fontSize:"14px",marginTop:"4px",opacity:loading?0.6:1}}>
               {loading?"Iniciando...":"Iniciar sesión"}
             </button>
           </form>
