@@ -76,7 +76,7 @@ export default function KioskClient({ employees, token }: { employees: Employee[
     border:"1px solid rgba(201,168,76,0.2)"
   };
 
-  if(step==="success") return (
+  if(step==="pin") return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8"
       style={{background:"#0A0A0A", backgroundImage:"radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 70%)"}}>
       
@@ -142,9 +142,9 @@ export default function KioskClient({ employees, token }: { employees: Employee[
             boxShadow:pin.length===4 ? `0 0 40px ${GOLD}40` : "none"}}>
           {loading?"Verificando...":"Confirmar"}
         </button>
-      </div> {/* Closes w-full max-w-sm */}
-    </div> {/* Closes text-center */}
-  </div> {/* <-- ADD THIS TO CLOSE min-h-screen */}
+      </div>
+    </div>
+  </div>
 );
 
   return (
