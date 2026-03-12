@@ -51,6 +51,9 @@ model Organization {
   isPro         Boolean  @default(false)
   licenseKey    String?
   alertEmail    String?
+  lat            Float?
+  lng            Float?
+  geoRadius      Int      @default(100)
 }
 
 model User {

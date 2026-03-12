@@ -1,158 +1,107 @@
-import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import bcrypt from "bcryptjs";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Usamos 'any' en action para evitar conflictos con el Enum de Prisma en el build
-async function logActivity(orgId: string, userId: string, userName: string, action: any, details?: string) {
-  try {
-    await prisma.activityLog.create({
-      data: { organizationId: orgId, userId, userName, action, details },
-    });
-  } catch (error) {
-    console.error("Error logging activity:", error);
-  }
+function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) ** 2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  
-  // Verificación robusta de sesión
-  if (!session?.user) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    
+    const userId = (session.user as any).id;
+    const orgId = (session.user as any).organizationId;
+    const { action, lat, lng } = await req.json();
 
-  // Cast a any para acceder a propiedades personalizadas de NextAuth
-  const userId = (session.user as any).id;
-  const orgId = (session.user as any).organizationId;
-  
-  if (!userId || !orgId) {
-    return NextResponse.json({ error: "Faltan datos de sesión (ID/Org)" }, { status: 400 });
-  }
+    const [user, org] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, include: { schedule: true } }),
+      prisma.organization.findUnique({ where: { id: orgId } }),
+    ]);
 
-  const { action, entryId } = await req.json();
+    if (!user || !org) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { organization: true },
-  });
+    // Geofencing check
+    const orgLat = (org as any).lat;
+    const orgLng = (org as any).lng;
+    const geoRadius = (org as any).geoRadius || 100;
 
-  if (!user) {
-    return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
-  }
-
-  const orgName = user.organization?.name || "Punchly";
-  const userName = user.name || "Usuario";
-
-  // --- LOGICA DE ENTRADA (CLOCK IN) ---
-  if (action === "in") {
-    const existing = await prisma.timeEntry.findFirst({
-      where: { userId, status: "CLOCKED_IN" },
-    });
-
-    if (existing) {
-      return NextResponse.json({ error: "Ya tienes una entrada activa" }, { status: 400 });
+    if (orgLat && orgLng && lat && lng) {
+      const distance = haversine(lat, lng, orgLat, orgLng);
+      if (distance > geoRadius) {
+        return NextResponse.json({ 
+          error: `Estás muy lejos de la empresa (${Math.round(distance)}m). Debes estar a menos de ${geoRadius}m.`,
+          distance: Math.round(distance),
+          required: geoRadius
+        }, { status: 403 });
+      }
     }
 
-    const entry = await prisma.timeEntry.create({
-      data: { organizationId: orgId, userId, clockIn: new Date(), source: "web", status: "CLOCKED_IN" },
-    });
+    if (action === "in") {
+      const existing = await prisma.timeEntry.findFirst({ where: { userId, organizationId: orgId, clockOut: null } });
+      if (existing) return NextResponse.json({ error: "Ya estás en turno" }, { status: 400 });
 
-    const clockInTime = new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
-    const dateStr = new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" });
-
-    // Registro de actividad
-    await logActivity(orgId, userId, userName, "CLOCK_IN", `Entró a las ${clockInTime}`);
-
-    // Notificación a Admins
-    const admins = await prisma.user.findMany({
-      where: { organizationId: orgId, role: { in: ["OWNER", "ADMIN"] } },
-    });
-
-    const emailPromises = admins.map(async (admin) => {
-      if (!admin.email) return;
-      return resend.emails.send({
-        from: "Punchly <onboarding@resend.dev>",
-        to: admin.email,
-        subject: `${userName} entró al trabajo`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-            <h2 style="color: #111; margin-bottom: 4px;">Punchly</h2>
-            <p style="color: #666; font-size: 14px; margin-bottom: 24px;">${orgName}</p>
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-              <p style="margin: 0; font-size: 16px; font-weight: 600; color: #15803d;">Entrada registrada</p>
-              <p style="margin: 8px 0 0; color: #166534; font-size: 14px;">${userName} entró a las ${clockInTime}</p>
-            </div>
-            <p style="color: #999; font-size: 12px;">${dateStr}</p>
-          </div>
-        `,
+      const entry = await prisma.timeEntry.create({
+        data: { userId, organizationId: orgId, clockIn: new Date(), source: "mobile" },
       });
-    });
 
-    // Ejecutar envíos sin bloquear la respuesta al usuario
-    Promise.all(emailPromises).catch(err => console.error("Resend Error:", err));
-
-    return NextResponse.json({ success: true, entry });
-  }
-
-  // --- LOGICA DE SALIDA (CLOCK OUT) ---
-  if (action === "out") {
-    if (!entryId) {
-      return NextResponse.json({ error: "EntryId requerido" }, { status: 400 });
-    }
-
-    const entry = await prisma.timeEntry.findFirst({
-      where: { id: entryId, userId, status: "CLOCKED_IN" },
-    });
-
-    if (!entry) {
-      return NextResponse.json({ error: "Entrada no encontrada" }, { status: 404 });
-    }
-
-    const clockOut = new Date();
-    const durationMin = Math.floor((clockOut.getTime() - entry.clockIn.getTime()) / 60000);
-
-    const updated = await prisma.timeEntry.update({
-      where: { id: entryId },
-      data: { clockOut, status: "CLOCKED_OUT", durationMin },
-    });
-
-    const hours = Math.floor(durationMin / 60);
-    const minutes = durationMin % 60;
-    const clockOutTime = clockOut.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
-
-    await logActivity(orgId, userId, userName, "CLOCK_OUT", `Salió a las ${clockOutTime} — ${hours}h ${minutes}m`);
-
-    const admins = await prisma.user.findMany({
-      where: { organizationId: orgId, role: { in: ["OWNER", "ADMIN"] } },
-    });
-
-    const emailPromises = admins.map(async (admin) => {
-      if (!admin.email) return;
-      return resend.emails.send({
-        from: "Punchly <onboarding@resend.dev>",
-        to: admin.email,
-        subject: `${userName} salió del trabajo`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-            <h2 style="color: #111; margin-bottom: 4px;">Punchly</h2>
-            <p style="color: #666; font-size: 14px; margin-bottom: 24px;">${orgName}</p>
-            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-              <p style="margin: 0; font-size: 16px; font-weight: 600; color: #1d4ed8;">Salida registrada</p>
-              <p style="margin: 8px 0 0; color: #1e40af; font-size: 14px;">${userName} salió a las ${clockOutTime}</p>
-              <p style="margin: 4px 0 0; color: #1e40af; font-size: 14px;">Total trabajado: ${hours}h ${minutes}m</p>
-            </div>
-          </div>
-        `,
+      await prisma.activityLog.create({
+        data: { organizationId: orgId, userId, userName: user.name, action: "CLOCK_IN", details: "Entrada desde móvil" },
       });
-    });
 
-    Promise.all(emailPromises).catch(err => console.error("Resend Error:", err));
+      // Check late
+      const schedule = user.schedule;
+      if (schedule) {
+        const now = new Date();
+        const dayMap: Record<number, keyof typeof schedule> = { 0:"sunday",1:"monday",2:"tuesday",3:"wednesday",4:"thursday",5:"friday",6:"saturday" };
+        const dayKey = dayMap[now.getDay()];
+        if (schedule[dayKey]) {
+          const [h, m] = schedule.startTime.split(":").map(Number);
+          const start = new Date(now); start.setHours(h, m, 0, 0);
+          const lateMin = Math.floor((now.getTime() - start.getTime()) / 60000) - schedule.toleranceMin;
+          if (lateMin > 0) {
+            await prisma.activityLog.create({
+              data: { organizationId: orgId, userId, userName: user.name, action: "LATE",
+                details: `Tardanza de ${lateMin} minutos (móvil)` },
+            });
+            const owner = await prisma.user.findFirst({ where: { organizationId: orgId, role: "OWNER" } });
+            if (owner?.email) {
+              try {
+                await resend.emails.send({
+                  from: "Punchly.Clock <onboarding@resend.dev>",
+                  to: [owner.email],
+                  subject: `⚠️ Tardanza — ${user.name}`,
+                  html: `<p><strong>${user.name}</strong> llegó <strong>${lateMin} min tarde</strong> desde su móvil.</p>`,
+                });
+              } catch(e) {}
+            }
+          }
+        }
+      }
 
-    return NextResponse.json({ success: true, entry: updated });
+      return NextResponse.json({ success: true, action: "in", entryId: entry.id });
+
+    } else {
+      const entry = await prisma.timeEntry.findFirst({ where: { userId, organizationId: orgId, clockOut: null }, orderBy: { clockIn: "desc" } });
+      if (!entry) return NextResponse.json({ error: "No estás en turno" }, { status: 400 });
+      const now = new Date();
+      const durationMin = Math.floor((now.getTime() - entry.clockIn.getTime()) / 60000);
+      await prisma.timeEntry.update({ where: { id: entry.id }, data: { clockOut: now, durationMin } });
+      await prisma.activityLog.create({
+        data: { organizationId: orgId, userId, userName: user.name, action: "CLOCK_OUT", details: `Salida desde móvil — ${durationMin} min` },
+      });
+      return NextResponse.json({ success: true, action: "out" });
+    }
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
-
-  return NextResponse.json({ error: "Acción inválida" }, { status: 400 });
 }
