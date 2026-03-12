@@ -55,7 +55,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <Sidebar orgName={org.name || "Mi Empresa"} />
       <div className="flex-1 flex flex-col overflow-hidden pt-14 md:pt-0">
         {/* Pasamos daysLeft como número simple */}
-        {!isPro && <TrialBanner daysLeft={daysLeft} expired={trialExpired} />}
+        {!isPro && <TrialBanner daysLeft={daysLeft} />}
         {children}
       </div>
     </div>
