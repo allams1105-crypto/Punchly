@@ -1,8 +1,4 @@
-import { writeFileSync, mkdirSync } from "fs";
-
-mkdirSync("src/app/api/kiosk/info", { recursive: true });
-
-writeFileSync("src/app/api/kiosk/info/route.ts", `import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -10,8 +6,4 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   const orgId = (session.user as any).organizationId;
   return NextResponse.json({ orgId });
-}`);
-
-console.log("Listo!");
-
-
+}
