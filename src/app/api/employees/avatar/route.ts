@@ -3,19 +3,20 @@ import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  const orgId = (session.user as any).organizationId;
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const orgId = (session.user as any).organizationId;
+    const { userId, avatarColor } = await req.json();
 
-  const { userId, avatarUrl, avatarColor } = await req.json();
+    const user = await prisma.user.update({
+      where: { id: userId, organizationId: orgId },
+      data: { avatarColor } as any,
+    });
 
-  const user = await prisma.user.findFirst({ where: { id: userId, organizationId: orgId } });
-  if (!user) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { avatarUrl, avatarColor } as any,
-  });
-
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ user });
+  } catch (e: any) {
+    console.error("Avatar error:", e);
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
 }

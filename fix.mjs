@@ -1,59 +1,153 @@
-import { writeFileSync, readFileSync } from "fs";
+import { writeFileSync } from "fs";
 
-// Remove ThemeToggle from landing
-let landing = readFileSync("src/app/[locale]/page.tsx", "utf8");
-landing = landing.replace(`import ThemeToggle from "@/components/ThemeToggle";`, "");
-landing = landing.replace(`<ThemeToggle />`, "");
-writeFileSync("src/app/[locale]/page.tsx", landing);
+const employeesApi = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
-// Fix kiosk — the real issue is prisma not finding org by token
-// The kiosk URL uses orgId as token, let's verify
-const kioskPage = `import { prisma } from "@/lib/db";
-import { notFound } from "next/navigation";
-import KioskClient from "@/components/kiosk/KioskClient";
+export async function PATCH(req: NextRequest, { params }: { params: any }) {
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const orgId = (session.user as any).organizationId;
+    const { id } = await params;
+    const body = await req.json();
+    const { name, email, hourlyRate, isActive, kioskPin } = body;
 
-export default async function KioskPage({ params }: { params: any }) {
-  let token: string;
-  try { const p = await params; token = p.token; } 
-  catch { const p = params; token = p.token; }
+    const updateData: any = {
+      name,
+      email,
+      isActive,
+      hourlyRate: hourlyRate !== undefined ? parseFloat(hourlyRate) : undefined,
+    };
 
-  if (!token) notFound();
+    if (kioskPin && String(kioskPin).length === 4) {
+      updateData.kioskPin = await bcrypt.hash(String(kioskPin), 10);
+    }
 
-  const org = await prisma.organization.findFirst({
-    where: { OR: [{ id: token }, { slug: token }] },
-  });
-  if (!org) notFound();
+    // Remove undefined fields
+    Object.keys(updateData).forEach(k => updateData[k] === undefined && delete updateData[k]);
 
-  const today = new Date(); today.setHours(0,0,0,0);
+    const user = await prisma.user.update({
+      where: { id, organizationId: orgId },
+      data: updateData,
+    });
 
-  const [employees, activeEntries] = await Promise.all([
-    prisma.user.findMany({
-      where: { organizationId: org.id, isActive: true, role: { not: "OWNER" } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.timeEntry.findMany({
-      where: { organizationId: org.id, clockOut: null, clockIn: { gte: today } },
-    }),
-  ]);
+    return NextResponse.json({ user });
+  } catch (e: any) {
+    console.error("PATCH employee error:", e);
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
 
-  const activeIds = new Set(activeEntries.map(e => e.userId));
+export async function DELETE(req: NextRequest, { params }: { params: any }) {
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const orgId = (session.user as any).organizationId;
+    const { id } = await params;
 
-  return (
-    <KioskClient
-      token={org.id}
-      employees={employees.map(e => ({
-        id: e.id,
-        name: e.name || "",
-        avatarColor: (e as any).avatarColor || null,
-        onShift: activeIds.has(e.id),
-        clockInTime: activeEntries.find(a => a.userId === e.id)?.clockIn?.toISOString() || null,
-      }))}
-    />
-  );
+    await prisma.timeEntry.deleteMany({ where: { userId: id, organizationId: orgId } });
+    await prisma.activityLog.deleteMany({ where: { userId: id, organizationId: orgId } });
+    await prisma.schedule.deleteMany({ where: { userId: id, organizationId: orgId } });
+    await prisma.user.delete({ where: { id, organizationId: orgId } });
+
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    console.error("DELETE employee error:", e);
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
 }`;
 
-writeFileSync("src/app/[locale]/kiosk/[token]/page.tsx", kioskPage);
+const avatarApi = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const orgId = (session.user as any).organizationId;
+    const { userId, avatarColor } = await req.json();
+
+    const user = await prisma.user.update({
+      where: { id: userId, organizationId: orgId },
+      data: { avatarColor } as any,
+    });
+
+    return NextResponse.json({ user });
+  } catch (e: any) {
+    console.error("Avatar error:", e);
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}`;
+
+// Fix time-entries manual registration - employees dropdown
+const timeEntriesApi = `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const orgId = (session.user as any).organizationId;
+
+    const employees = await prisma.user.findMany({
+      where: { organizationId: orgId, role: { not: "OWNER" }, isActive: true },
+      select: { id: true, name: true, email: true },
+      orderBy: { name: "asc" },
+    });
+
+    const entries = await prisma.timeEntry.findMany({
+      where: { organizationId: orgId },
+      include: { user: { select: { name: true, email: true } } },
+      orderBy: { clockIn: "desc" },
+      take: 100,
+    });
+
+    return NextResponse.json({ employees, entries });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const orgId = (session.user as any).organizationId;
+    const body = await req.json();
+    const { userId, clockIn, clockOut, note } = body;
+
+    if (!userId || !clockIn) return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
+
+    const clockInDate = new Date(clockIn);
+    const clockOutDate = clockOut ? new Date(clockOut) : null;
+    const durationMin = clockOutDate
+      ? Math.floor((clockOutDate.getTime() - clockInDate.getTime()) / 60000)
+      : null;
+
+    const entry = await prisma.timeEntry.create({
+      data: {
+        organizationId: orgId,
+        userId,
+        clockIn: clockInDate,
+        clockOut: clockOutDate,
+        durationMin,
+        note,
+        source: "manual",
+        status: clockOutDate ? "CLOCKED_OUT" : "CLOCKED_IN",
+      },
+    });
+
+    return NextResponse.json({ entry });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}`;
+
+writeFileSync("src/app/api/employees/[id]/route.ts", employeesApi);
+writeFileSync("src/app/api/employees/avatar/route.ts", avatarApi);
+writeFileSync("src/app/api/time-entries/route.ts", timeEntriesApi);
 console.log("Listo!");
-
-
-
