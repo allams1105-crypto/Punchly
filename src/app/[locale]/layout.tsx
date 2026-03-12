@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning className="dark">
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -42,8 +42,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="Punchly.Clock" />
         <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
-      <body className={`${syne.variable} ${dmSans.variable} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
+      <body className={`${syne.variable} ${dmSans.variable} antialiased`} style={{background:"#0A0A0A"}}>
+        <ThemeProvider>
           <LangProvider>
             {children}
           </LangProvider>
