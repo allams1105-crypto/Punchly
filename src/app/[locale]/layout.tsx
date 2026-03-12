@@ -1,17 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Syne, DM_Sans } from "next/font/google";
 import "../globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LangProvider } from "@/lib/LangContext";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const syne = Syne({ 
+  variable: "--font-syne", 
+  subsets: ["latin"],
+  weight: ["400","500","600","700","800"]
+});
+
+const dmSans = DM_Sans({ 
+  variable: "--font-dm-sans", 
+  subsets: ["latin"],
+  weight: ["300","400","500","600"]
+});
 
 export const metadata: Metadata = {
   title: "Punchly.Clock",
   description: "Control de asistencia para tu equipo",
   manifest: "/manifest.json",
-  themeColor: "#E8B84B",
+  themeColor: "#C9A84C",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -33,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="Punchly.Clock" />
         <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${syne.variable} ${dmSans.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <LangProvider>
             {children}

@@ -3,26 +3,7 @@ import Link from "next/link";
 export default function LandingPage() {
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-        * { font-family: 'DM Sans', sans-serif; }
-        .font-syne { font-family: 'Syne', sans-serif; }
-        .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
-        .glass-gold { background: rgba(201,168,76,0.08); backdrop-filter: blur(20px); border: 1px solid rgba(201,168,76,0.2); }
-        .gold-text { background: linear-gradient(135deg, #C9A84C, #F0D080, #C9A84C); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .grid-bg { background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 80px 80px; }
-        .glow { box-shadow: 0 0 60px rgba(201,168,76,0.15), 0 0 120px rgba(201,168,76,0.05); }
-        .card-3d { transition: transform 0.4s ease, box-shadow 0.4s ease; transform-style: preserve-3d; }
-        .card-3d:hover { transform: translateY(-4px) rotateX(2deg); box-shadow: 0 24px 60px rgba(0,0,0,0.4), 0 0 40px rgba(201,168,76,0.1); }
-        @keyframes float { 0%,100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-12px) rotate(1deg); } }
-        @keyframes fade-up { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
-        .float { animation: float 6s ease-in-out infinite; }
-        .fade-up { animation: fade-up 0.8s ease forwards; }
-        .fade-up-2 { animation: fade-up 0.8s ease 0.15s forwards; opacity: 0; }
-        .fade-up-3 { animation: fade-up 0.8s ease 0.3s forwards; opacity: 0; }
-        .fade-up-4 { animation: fade-up 0.8s ease 0.45s forwards; opacity: 0; }
-        .orb { border-radius: 50%; filter: blur(80px); position: absolute; pointer-events: none; }
-      `}</style>
+      
 
       <div className="min-h-screen bg-[#0A0A0A] text-white overflow-hidden">
         {/* Background orbs */}

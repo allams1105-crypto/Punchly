@@ -8,7 +8,7 @@ function Avatar({ name, color }: { name: string; color?: string | null }) {
   const bg = color || COLORS[(name?.charCodeAt(0)||0) % COLORS.length];
   return (
     <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-extrabold"
-      style={{background:`${bg}15`, border:`2px solid ${bg}25`, color:bg, fontFamily:"'Syne',sans-serif"}}>
+      style={{background:`${bg}15`, border:`2px solid ${bg}25`, color:bg, fontFamily:"var(--font-syne)"}}>
       {(name||"?").charAt(0).toUpperCase()}
     </div>
   );
@@ -84,12 +84,12 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
 
   return (
     <div className="flex-1 overflow-y-auto" style={{background:"#0A0A0A", backgroundImage:"radial-gradient(ellipse at 30% 0%, rgba(201,168,76,0.05) 0%, transparent 50%)"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');`}</style>
+      
 
       {/* Header */}
       <div className="px-6 py-4 flex items-center justify-between" style={{borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-        <p className="font-extrabold text-white text-sm" style={{fontFamily:"'Syne',sans-serif"}}>Mi Panel</p>
-        <p className="text-white/30 text-xs" style={{fontFamily:"'DM Sans',sans-serif"}}>
+        <p className="font-extrabold text-white text-sm" style={{fontFamily:"var(--font-syne)"}}>Mi Panel</p>
+        <p className="text-white/30 text-xs" style={{fontFamily:"var(--font-dm-sans)"}}>
           {time.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
         </p>
       </div>
@@ -100,14 +100,14 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
           <div className="flex items-center gap-4 mb-6">
             <Avatar name={user.name} color={user.avatarColor} />
             <div className="flex-1">
-              <p className="text-lg font-extrabold text-white" style={{fontFamily:"'Syne',sans-serif"}}>{user.name}</p>
-              <p className="text-xs text-white/30 mt-0.5" style={{fontFamily:"'DM Sans',sans-serif"}}>{user.email}</p>
+              <p className="text-lg font-extrabold text-white" style={{fontFamily:"var(--font-syne)"}}>{user.name}</p>
+              <p className="text-xs text-white/30 mt-0.5" style={{fontFamily:"var(--font-dm-sans)"}}>{user.email}</p>
               <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-medium"
                 style={onShift
                   ? {background:"rgba(52,211,153,0.1)", color:"#34D399", border:"1px solid rgba(52,211,153,0.2)"}
                   : {background:"rgba(255,255,255,0.05)", color:"rgba(255,255,255,0.3)", border:"1px solid rgba(255,255,255,0.08)"}}>
                 {onShift && <span className="w-1.5 h-1.5 bg-green-400 rounded-full" style={{animation:"pulse 2s infinite"}} />}
-                <span style={{fontFamily:"'DM Sans',sans-serif"}}>{onShift?"En turno":"Fuera de turno"}</span>
+                <span style={{fontFamily:"var(--font-dm-sans)"}}>{onShift?"En turno":"Fuera de turno"}</span>
               </div>
             </div>
           </div>
@@ -117,8 +117,8 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
               style={{background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)"}}>
               <div className="w-1 h-8 rounded-full" style={{background:GOLD}} />
               <div>
-                <p className="text-xs text-white/30" style={{fontFamily:"'DM Sans',sans-serif"}}>Hoy</p>
-                <p className="text-sm font-semibold text-white" style={{fontFamily:"'DM Sans',sans-serif"}}>
+                <p className="text-xs text-white/30" style={{fontFamily:"var(--font-dm-sans)"}}>Hoy</p>
+                <p className="text-sm font-semibold text-white" style={{fontFamily:"var(--font-dm-sans)"}}>
                   {new Date(todayEntry.clockIn).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
                   {todayEntry.clockOut && ` — ${new Date(todayEntry.clockOut).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}`}
                 </p>
@@ -128,27 +128,27 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
 
           {error && (
             <div className="rounded-xl p-3 mb-4" style={{background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.15)"}}>
-              <p className="text-sm" style={{color:"#F87171", fontFamily:"'DM Sans',sans-serif"}}>{error}</p>
-              {distance && <p className="text-xs mt-1" style={{color:"rgba(248,113,113,0.6)", fontFamily:"'DM Sans',sans-serif"}}>Distancia: {distance}m · Máximo: {geoRadius}m</p>}
+              <p className="text-sm" style={{color:"#F87171", fontFamily:"var(--font-dm-sans)"}}>{error}</p>
+              {distance && <p className="text-xs mt-1" style={{color:"rgba(248,113,113,0.6)", fontFamily:"var(--font-dm-sans)"}}>Distancia: {distance}m · Máximo: {geoRadius}m</p>}
             </div>
           )}
           {success && (
             <div className="rounded-xl p-3 mb-4" style={{background:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.15)"}}>
-              <p className="text-sm font-semibold" style={{color:"#34D399", fontFamily:"'DM Sans',sans-serif"}}>{success}</p>
+              <p className="text-sm font-semibold" style={{color:"#34D399", fontFamily:"var(--font-dm-sans)"}}>{success}</p>
             </div>
           )}
 
           <button onClick={clock} disabled={loading||locating}
             className="w-full py-4 rounded-2xl font-extrabold text-base transition-all duration-300 disabled:opacity-40"
             style={onShift
-              ? {background:"rgba(248,113,113,0.1)", color:"#F87171", border:"1px solid rgba(248,113,113,0.2)", fontFamily:"'Syne',sans-serif"}
-              : {background:`linear-gradient(135deg,${GOLD},#F0D080)`, color:"#000", fontFamily:"'Syne',sans-serif",
+              ? {background:"rgba(248,113,113,0.1)", color:"#F87171", border:"1px solid rgba(248,113,113,0.2)", fontFamily:"var(--font-syne)"}
+              : {background:`linear-gradient(135deg,${GOLD},#F0D080)`, color:"#000", fontFamily:"var(--font-syne)",
                  boxShadow:`0 0 40px ${GOLD}30`}}>
             {locating?"Obteniendo ubicación...":loading?"Registrando...":onShift?"Registrar Salida":"Registrar Entrada"}
           </button>
 
           {geoEnabled && (
-            <p className="text-xs text-center mt-3" style={{color:"rgba(255,255,255,0.2)", fontFamily:"'DM Sans',sans-serif"}}>
+            <p className="text-xs text-center mt-3" style={{color:"rgba(255,255,255,0.2)", fontFamily:"var(--font-dm-sans)"}}>
               Geofencing activo · radio {geoRadius}m
             </p>
           )}
@@ -162,8 +162,8 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
             {value:weekStats.lateCount, label:"Tardanzas", color:weekStats.lateCount>0?"#F87171":"#34D399"},
           ].map(s=>(
             <div key={s.label} className="rounded-2xl p-4 text-center" style={glassStyle}>
-              <p className="text-2xl font-extrabold" style={{color:s.color, fontFamily:"'Syne',sans-serif"}}>{s.value}</p>
-              <p className="text-xs mt-1" style={{color:"rgba(255,255,255,0.25)", fontFamily:"'DM Sans',sans-serif"}}>{s.label}</p>
+              <p className="text-2xl font-extrabold" style={{color:s.color, fontFamily:"var(--font-syne)"}}>{s.value}</p>
+              <p className="text-xs mt-1" style={{color:"rgba(255,255,255,0.25)", fontFamily:"var(--font-dm-sans)"}}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -171,7 +171,7 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
         {/* Schedule */}
         {schedule && (
           <div className="rounded-2xl p-5" style={glassStyle}>
-            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{color:"rgba(255,255,255,0.25)", fontFamily:"'DM Sans',sans-serif"}}>Mi Horario</p>
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{color:"rgba(255,255,255,0.25)", fontFamily:"var(--font-dm-sans)"}}>Mi Horario</p>
             <div className="flex gap-1.5 mb-4">
               {days.map((d,i)=>{
                 const active = schedule[dayKeys[i]];
@@ -179,16 +179,16 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
                 return (
                   <div key={d} className="flex-1 py-2.5 rounded-xl text-center text-xs font-bold"
                     style={isToday&&active
-                      ? {background:`linear-gradient(135deg,${GOLD},#F0D080)`, color:"#000", fontFamily:"'Syne',sans-serif"}
+                      ? {background:`linear-gradient(135deg,${GOLD},#F0D080)`, color:"#000", fontFamily:"var(--font-syne)"}
                       : active
-                      ? {background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.7)", fontFamily:"'Syne',sans-serif"}
-                      : {background:"rgba(255,255,255,0.02)", color:"rgba(255,255,255,0.15)", fontFamily:"'Syne',sans-serif"}}>
+                      ? {background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.7)", fontFamily:"var(--font-syne)"}
+                      : {background:"rgba(255,255,255,0.02)", color:"rgba(255,255,255,0.15)", fontFamily:"var(--font-syne)"}}>
                     {d}
                   </div>
                 );
               })}
             </div>
-            <p className="text-xs text-center" style={{color:"rgba(255,255,255,0.3)", fontFamily:"'DM Sans',sans-serif"}}>
+            <p className="text-xs text-center" style={{color:"rgba(255,255,255,0.3)", fontFamily:"var(--font-dm-sans)"}}>
               {schedule.startTime} — {schedule.endTime}
             </p>
           </div>
@@ -198,7 +198,7 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
         {recentEntries.length>0 && (
           <div className="rounded-2xl overflow-hidden" style={glassStyle}>
             <div className="px-5 py-3.5" style={{borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-              <p className="text-xs font-bold uppercase tracking-widest" style={{color:"rgba(255,255,255,0.25)", fontFamily:"'DM Sans',sans-serif"}}>Registros recientes</p>
+              <p className="text-xs font-bold uppercase tracking-widest" style={{color:"rgba(255,255,255,0.25)", fontFamily:"var(--font-dm-sans)"}}>Registros recientes</p>
             </div>
             {recentEntries.slice(0,6).map(e=>{
               const ci = new Date(e.clockIn);
@@ -207,13 +207,13 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
               return (
                 <div key={e.id} className="flex items-center justify-between px-5 py-3.5" style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                   <div>
-                    <p className="text-sm font-semibold text-white" style={{fontFamily:"'DM Sans',sans-serif"}}>{ci.toLocaleDateString("es",{weekday:"short",day:"numeric",month:"short"})}</p>
-                    <p className="text-xs mt-0.5" style={{color:"rgba(255,255,255,0.25)", fontFamily:"'DM Sans',sans-serif"}}>
+                    <p className="text-sm font-semibold text-white" style={{fontFamily:"var(--font-dm-sans)"}}>{ci.toLocaleDateString("es",{weekday:"short",day:"numeric",month:"short"})}</p>
+                    <p className="text-xs mt-0.5" style={{color:"rgba(255,255,255,0.25)", fontFamily:"var(--font-dm-sans)"}}>
                       {ci.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
                       {e.clockOut && ` — ${new Date(e.clockOut).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}`}
                     </p>
                   </div>
-                  <p className="text-sm font-bold" style={{color:e.durationMin?GOLD:"rgba(255,255,255,0.3)", fontFamily:"'Syne',sans-serif"}}>
+                  <p className="text-sm font-bold" style={{color:e.durationMin?GOLD:"rgba(255,255,255,0.3)", fontFamily:"var(--font-syne)"}}>
                     {e.durationMin?`${h}h ${m}m`:"—"}
                   </p>
                 </div>
