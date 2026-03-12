@@ -1,64 +1,51 @@
 "use client";
 import { useState } from "react";
-import { useLang } from "@/lib/LangContext";
-
-const features = ["paywall.f1","paywall.f2","paywall.f3","paywall.f4","paywall.f5"];
 
 export default function PaywallPage() {
-  const { t } = useLang();
   const [loading, setLoading] = useState(false);
 
-  async function handleUpgrade() {
+  async function handleCheckout() {
     setLoading(true);
-    const res = await fetch("/api/stripe/checkout", { method: "POST" });
+    const res = await fetch("/api/stripe/checkout", { method:"POST" });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
     else setLoading(false);
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-2.5 mb-10">
-          <div className="w-9 h-9 bg-[#E8B84B] rounded-xl flex items-center justify-center">
-            <span className="text-black font-black text-base">P</span>
-          </div>
-          <span className="text-white font-black text-xl">Punchly.Clock</span>
+    <div style={{minHeight:"100vh",background:"#0A0A0A",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",
+      backgroundImage:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 60%)"}}>
+      <style>{`
+        .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
+        .gold-text{background:linear-gradient(135deg,#C9A84C,#F0D080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .btn-gold{background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s ease}
+        .btn-gold:hover{transform:translateY(-2px);box-shadow:0 20px 40px rgba(201,168,76,0.3)}
+      `}</style>
+      <div style={{width:"100%",maxWidth:"440px",textAlign:"center"}}>
+        <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"linear-gradient(135deg,#C9A84C,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",boxShadow:"0 0 30px rgba(201,168,76,0.3)"}}>
+          <span style={{color:"#000",fontWeight:900,fontSize:"18px",fontFamily:"var(--font-syne)"}}>P</span>
         </div>
+        <h1 style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"32px",color:"#FAFAFA",marginBottom:"8px"}}>Tu prueba ha terminado</h1>
+        <p style={{color:"rgba(255,255,255,0.3)",fontSize:"14px",marginBottom:"32px",fontFamily:"var(--font-dm-sans)"}}>Activa tu licencia para seguir usando Punchly.Clock</p>
 
-        <div className="bg-[#111] border border-white/10 rounded-3xl overflow-hidden">
-          <div className="px-8 pt-8 pb-6 border-b border-white/10">
-            <h1 className="text-2xl font-black text-white mb-2">{t("paywall.title")}</h1>
-            <p className="text-white/50 text-sm">{t("paywall.desc")}</p>
+        <div className="glass" style={{borderRadius:"24px",padding:"36px",marginBottom:"20px"}}>
+          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:"8px",marginBottom:"6px"}}>
+            <span className="gold-text" style={{fontFamily:"var(--font-syne)",fontSize:"72px",fontWeight:800,lineHeight:1}}>$49</span>
+            <span style={{color:"rgba(255,255,255,0.2)",marginBottom:"10px",fontSize:"14px",fontFamily:"var(--font-dm-sans)"}}>pago único</span>
           </div>
-
-          <div className="px-8 py-6 border-b border-white/10">
-            <div className="flex items-end gap-2 mb-1">
-              <span className="text-5xl font-black text-[#E8B84B]">$49</span>
-              <span className="text-white/40 text-sm mb-2">{t("paywall.price.note")}</span>
-            </div>
-            <p className="text-xs text-white/30">{t("paywall.price.sub")}</p>
-          </div>
-
-          <div className="px-8 py-6 space-y-3 border-b border-white/10">
-            {features.map(key => (
-              <div key={key} className="flex items-center gap-3">
-                <div className="w-5 h-5 bg-[#E8B84B]/10 border border-[#E8B84B]/30 rounded-md flex items-center justify-center shrink-0">
-                  <span className="text-[#E8B84B] text-xs">✓</span>
-                </div>
-                <p className="text-sm text-white/70">{t(key)}</p>
-              </div>
+          <p style={{color:"rgba(255,255,255,0.2)",fontSize:"12px",marginBottom:"24px",fontFamily:"var(--font-dm-sans)"}}>Sin mensualidades. Sin sorpresas.</p>
+          <ul style={{listStyle:"none",padding:0,marginBottom:"28px",textAlign:"left"}}>
+            {["Empleados ilimitados","Kiosk con PIN","Geofencing móvil","Alertas por email","Nómina automática","Soporte incluido"].map(f=>(
+              <li key={f} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",color:"rgba(255,255,255,0.5)",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>
+                <div style={{width:"5px",height:"5px",background:"#C9A84C",borderRadius:"50%",flexShrink:0}} />
+                {f}
+              </li>
             ))}
-          </div>
-
-          <div className="px-8 py-6 space-y-3">
-            <button onClick={handleUpgrade} disabled={loading}
-              className="w-full bg-[#E8B84B] text-black py-4 rounded-2xl font-black text-sm hover:bg-[#d4a43a] transition disabled:opacity-50">
-              {loading ? "Redirigiendo..." : t("paywall.cta")}
-            </button>
-            <p className="text-center text-xs text-white/30">{t("paywall.secure")}</p>
-            <a href="/api/auth/signout" className="block text-center text-xs text-white/30 hover:text-white/50 transition">{t("paywall.logout")}</a>
-          </div>
+          </ul>
+          <button onClick={handleCheckout} disabled={loading} className="btn-gold"
+            style={{width:"100%",padding:"16px",borderRadius:"14px",fontSize:"15px",border:"none",cursor:"pointer",opacity:loading?0.7:1}}>
+            {loading?"Redirigiendo...":"Activar licencia — $49"}
+          </button>
         </div>
       </div>
     </div>

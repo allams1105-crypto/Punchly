@@ -1,78 +1,76 @@
 "use client";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useLang } from "@/lib/LangContext";
-import LangToggle from "@/components/LangToggle";
 
 export default function LoginPage() {
-  const { t } = useLang();
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-    const result = await signIn("credentials", { email, password, redirect: false });
-    if (result?.ok) {
-      window.location.href = "/en/admin/dashboard";
-    } else {
-      setError("Email o contraseña incorrectos");
-      setLoading(false);
-    }
+    setLoading(true); setError("");
+    const res = await signIn("credentials", { email, pin, redirect: false });
+    setLoading(false);
+    if (res?.error) { setError("Email o PIN incorrectos"); return; }
+    router.push("/en/admin/dashboard");
   }
 
+  const inputStyle = {
+    width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
+    borderRadius:"12px", padding:"12px 16px", color:"#FAFAFA", fontSize:"14px",
+    outline:"none", fontFamily:"var(--font-dm-sans)", transition:"border 0.2s"
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex">
-      <div className="hidden lg:flex w-1/2 bg-[#E8B84B] flex-col justify-between p-12">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center">
-            <span className="text-[#E8B84B] font-black text-base">P</span>
+    <div style={{minHeight:"100vh",background:"#0A0A0A",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",
+      backgroundImage:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 60%)"}}>
+      <style>{`
+  .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
+  .glass-gold{background:rgba(201,168,76,0.08);backdrop-filter:blur(20px);border:1px solid rgba(201,168,76,0.2)}
+  .gold-text{background:linear-gradient(135deg,#C9A84C,#F0D080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .glow{box-shadow:0 0 40px rgba(201,168,76,0.2)}
+  .btn-gold{background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(201,168,76,0.3)}
+  .card-hover{transition:all 0.25s ease}
+  .card-hover:hover{transform:translateY(-2px);border-color:rgba(201,168,76,0.2)!important}
+  input,select{color-scheme:dark}
+ input:focus{border:1px solid rgba(201,168,76,0.4)!important;box-shadow:0 0 0 3px rgba(201,168,76,0.06)}`}</style>
+      <div style={{width:"100%",maxWidth:"400px"}}>
+        <div style={{textAlign:"center",marginBottom:"32px"}}>
+          <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"linear-gradient(135deg,#C9A84C,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 0 30px rgba(201,168,76,0.3)"}}>
+            <span style={{color:"#000",fontWeight:900,fontSize:"18px",fontFamily:"var(--font-syne)"}}>P</span>
           </div>
-          <span className="text-black font-black text-xl">Punchly.Clock</span>
+          <h1 style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"24px",color:"#FAFAFA",marginBottom:"6px"}}>Bienvenido</h1>
+          <p style={{color:"rgba(255,255,255,0.3)",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>Inicia sesión en Punchly.Clock</p>
         </div>
-        <div>
-          <h2 className="text-4xl font-black text-black leading-tight mb-4">{t("login.left.title")}</h2>
-          <p className="text-black/60 text-lg">{t("login.left.sub")}</p>
-        </div>
-        <div className="flex gap-6">
-          <div><p className="text-3xl font-black text-black">7</p><p className="text-black/60 text-sm">{t("landing.stats.trial")}</p></div>
-          <div><p className="text-3xl font-black text-black">$49</p><p className="text-black/60 text-sm">{t("landing.stats.price")}</p></div>
-        </div>
-      </div>
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm">
-          <div className="flex justify-end mb-6">
-            <LangToggle />
-          </div>
-          <div className="mb-8">
-            <h1 className="text-2xl font-black text-[var(--text-primary)] mb-1">{t("login.title")}</h1>
-            <p className="text-[var(--text-muted)] text-sm">{t("login.subtitle")}</p>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
+
+        <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"24px",padding:"32px"}}>
+          <form onSubmit={handleSubmit} style={{display:"flex",flexDirection:"column",gap:"16px"}}>
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("login.email")}</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
+              <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>Email</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@empresa.com" required style={inputStyle} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{t("login.password")}</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" required />
+              <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>PIN</label>
+              <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="••••••" required style={inputStyle} />
             </div>
-            {error && <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"><p className="text-red-400 text-sm">{error}</p></div>}
-            <button type="submit" disabled={loading}
-              className="w-full bg-[#E8B84B] text-black py-3 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
-              {loading ? t("login.loading") : t("login.btn")}
+            {error && <p style={{color:"#F87171",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{error}</p>}
+            <button type="submit" disabled={loading} className="btn-gold"
+              style={{padding:"14px",borderRadius:"14px",fontSize:"14px",border:"none",cursor:"pointer",marginTop:"4px",opacity:loading?0.6:1}}>
+              {loading?"Iniciando...":"Iniciar sesión"}
             </button>
           </form>
-          <p className="text-center text-xs text-[var(--text-muted)] mt-6">
-            {t("login.register")} <Link href="/en/register" className="text-[#E8B84B] font-semibold hover:underline">{t("login.register.link")}</Link>
-          </p>
         </div>
+
+        <p style={{textAlign:"center",marginTop:"20px",fontSize:"13px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-dm-sans)"}}>
+          ¿No tienes cuenta?{" "}
+          <Link href="/en/register" style={{color:"#C9A84C",textDecoration:"none",fontWeight:600}}>Regístrate</Link>
+        </p>
       </div>
     </div>
   );

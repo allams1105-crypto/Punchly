@@ -1,116 +1,68 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import LangToggle from "@/components/LangToggle";
-import { useLang } from "@/lib/LangContext";
-import { useState, useEffect } from "react";
 
-export default function Sidebar({ orgName }: { orgName: string }) {
-  const pathname = usePathname();
-  const { t } = useLang();
-  const [open, setOpen] = useState(false);
+const links = [
+  { href:"/en/admin/dashboard", label:"Dashboard", icon:"M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
+  { href:"/en/admin/employees", label:"Empleados", icon:"M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
+  { href:"/en/admin/employees/new", label:"Nuevo empleado", icon:"M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" },
+  { href:"/en/admin/attendance", label:"Asistencia", icon:"M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
+  { href:"/en/admin/payroll", label:"Nómina", icon:"M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" },
+  { href:"/en/admin/activity", label:"Actividad", icon:"M13 10V3L4 14h7v7l9-11h-7z" },
+  { href:"/en/admin/kiosk", label:"Kiosk", icon:"M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" },
+  { href:"/en/admin/settings", label:"Configuración", icon:"M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
+];
 
-  const links = [
-    { href: "/en/admin/dashboard", label: t("sidebar.dashboard"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
-    { href: "/en/admin/payroll", label: t("sidebar.payroll"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> },
-    { href: "/en/admin/activity", label: t("sidebar.activity"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
-    { href: "/en/admin/attendance", label: "Asistencia", icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg> },
-    { href: "/en/admin/employees", label: "Empleados", icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-    { href: "/en/admin/employees/new", label: t("sidebar.new.employee"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> },
-    { href: "/en/admin/kiosk", label: t("sidebar.kiosk"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> },
-    { href: "/en/admin/settings", label: t("sidebar.settings"), icon: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
-  ];
+export default function Sidebar({ orgName }: { orgName?: string }) {
+  const path = usePathname();
+  return (
+    <div style={{width:"220px",minHeight:"100vh",background:"rgba(255,255,255,0.02)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",flexShrink:0}}>
+      {/* Logo */}
+      <div style={{padding:"20px 16px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>
+          <div style={{width:"32px",height:"32px",borderRadius:"10px",background:"linear-gradient(135deg,#C9A84C,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <span style={{color:"#000",fontWeight:900,fontSize:"14px",fontFamily:"var(--font-syne)"}}>P</span>
+          </div>
+          <span style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Punchly.Clock</span>
+        </div>
+        {orgName && <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:"rgba(255,255,255,0.25)",paddingLeft:"42px"}}>{orgName}</p>}
+      </div>
 
-  useEffect(() => { setOpen(false); }, [pathname]);
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
-  const NavContent = () => (
-    <>
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-widest px-3 mb-3 opacity-50">Menu</p>
-        {links.map((link) => {
-          const active = pathname === link.href;
+      {/* Nav */}
+      <nav style={{flex:1,padding:"12px 8px",overflowY:"auto"}}>
+        <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"10px",fontWeight:600,color:"rgba(255,255,255,0.2)",textTransform:"uppercase",letterSpacing:"1.5px",padding:"4px 8px 8px"}}>Menu</p>
+        {links.map(l=>{
+          const active = path === l.href || path.startsWith(l.href+"/");
           return (
-            <Link key={link.href} href={link.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all font-medium ${active ? "bg-[#E8B84B] text-black font-bold" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)]"}`}>
-              {link.icon}
-              {link.label}
+            <Link key={l.href} href={l.href}
+              style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"12px",textDecoration:"none",marginBottom:"2px",
+                background:active?"rgba(201,168,76,0.12)":"transparent",
+                border:active?"1px solid rgba(201,168,76,0.2)":"1px solid transparent",
+                color:active?"#C9A84C":"rgba(255,255,255,0.4)",
+                fontSize:"13px",fontFamily:"var(--font-dm-sans)",fontWeight:active?600:400,
+                transition:"all 0.15s ease"}}>
+              <svg style={{width:"15px",height:"15px",flexShrink:0}} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d={l.icon}/>
+              </svg>
+              {l.label}
             </Link>
           );
         })}
       </nav>
-      <div className="px-2 py-3 border-t border-[var(--border)] space-y-1">
-        <div className="px-3 py-1 flex items-center gap-2">
-          
-          <LangToggle />
-        </div>
-        <a href="/api/auth/signout"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-all w-full">
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          {t("sidebar.logout")}
-        </a>
-      </div>
-    </>
-  );
 
-  return (
-    <>
-      <div className="hidden md:flex w-60 shrink-0 h-screen flex-col bg-[var(--bg-card)] border-r border-[var(--border)]">
-        <div className="px-4 py-4 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center shrink-0">
-              <span className="text-black font-black text-sm">P</span>
-            </div>
-            <div>
-              <p className="text-[var(--text-primary)] font-black text-sm leading-none">Punchly.Clock</p>
-              <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate max-w-[130px]">{orgName}</p>
-            </div>
-          </div>
-        </div>
-        <NavContent />
-      </div>
-
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-[var(--bg-card)] border-b border-[var(--border)] flex items-center justify-between px-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#E8B84B] rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-black font-black text-xs">P</span>
-          </div>
-          <p className="text-[var(--text-primary)] font-black text-sm">Punchly.Clock</p>
-        </div>
-        <button onClick={() => setOpen(true)}
-          className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      {/* Bottom */}
+      <div style={{padding:"12px 8px 16px",borderTop:"1px solid rgba(255,255,255,0.06)"}}>
+        <LangToggle />
+        <button onClick={()=>signOut({callbackUrl:"/en"})}
+          style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"12px",width:"100%",border:"none",background:"transparent",color:"rgba(255,255,255,0.3)",fontSize:"13px",fontFamily:"var(--font-dm-sans)",cursor:"pointer",marginTop:"4px",transition:"all 0.15s"}}>
+          <svg style={{width:"15px",height:"15px"}} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          Sign out
         </button>
       </div>
-
-      {open && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="relative w-72 h-full bg-[var(--bg-card)] border-r border-[var(--border)] flex flex-col">
-            <div className="px-4 py-4 border-b border-[var(--border)] flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-[#E8B84B] rounded-xl flex items-center justify-center shrink-0">
-                  <span className="text-black font-black text-sm">P</span>
-                </div>
-                <div>
-                  <p className="text-[var(--text-primary)] font-black text-sm leading-none">Punchly.Clock</p>
-                  <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate max-w-[130px]">{orgName}</p>
-                </div>
-              </div>
-              <button onClick={() => setOpen(false)}
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border)] transition">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <NavContent />
-          </div>
-        </div>
-      )}
-      <div className="md:hidden h-14 shrink-0" />
-    </>
+    </div>
   );
 }
