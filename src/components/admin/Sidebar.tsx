@@ -17,13 +17,25 @@ const links = [
 
 export default function Sidebar({ orgName }: { orgName?: string }) {
   const path = usePathname();
+  const gold = "#D4AF37"; // El nuevo dorado premium
+
+  // Handler para asegurar que el logout se ejecute correctamente
+  const handleLogout = async () => {
+    try {
+      await signOut({ callbackUrl: "/en" });
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Fallback manual si NextAuth falla
+      window.location.href = "/en";
+    }
+  };
   
   return (
-    <div style={{width:"220px",minHeight:"100vh",background:"rgba(255,255,255,0.02)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",flexShrink:0}}>
+    <div style={{width:"220px",minHeight:"100vh",background:"rgba(255,255,255,0.01)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",flexShrink:0}}>
       {/* Logo */}
       <div style={{padding:"20px 16px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>
-          <div style={{width:"32px",height:"32px",borderRadius:"10px",background:"linear-gradient(135deg,#C9A84C,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <div style={{width:"32px",height:"32px",borderRadius:"10px",background:`linear-gradient(135deg, ${gold}, #8B6914)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0, boxShadow: `0 0 15px ${gold}33`}}>
             <span style={{color:"#000",fontWeight:900,fontSize:"14px",fontFamily:"var(--font-syne)"}}>P</span>
           </div>
           <span style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Punchly.Clock</span>
@@ -33,22 +45,18 @@ export default function Sidebar({ orgName }: { orgName?: string }) {
 
       {/* Nav */}
       <nav style={{flex:1,padding:"12px 8px",overflowY:"auto"}}>
-        <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"10px",fontWeight:600,color:"rgba(255,255,255,0.2)",textTransform:"uppercase",letterSpacing:"1.5px",padding:"4px 8px 8px"}}>Menu</p>
+        <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"10px",fontWeight:600,color:"rgba(255,255,255,0.15)",textTransform:"uppercase",letterSpacing:"1.5px",padding:"4px 8px 8px"}}>Menu</p>
         {links.map(l=>{
-          // FIX: Lógica mejorada para evitar colisiones en rutas hijas
           const isExact = path === l.href;
           const isSubPath = path.startsWith(l.href + "/") && !path.startsWith(l.href + "/new");
-          
-          // Caso especial: "Nuevo empleado" solo brilla si es la ruta exacta
-          // Caso "Empleados": brilla si es la ruta exacta o un sub-path (como un ID), PERO NO si es /new
           const active = l.href.endsWith("/new") ? isExact : (isExact || isSubPath);
 
           return (
             <Link key={l.href} href={l.href}
               style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"12px",textDecoration:"none",marginBottom:"2px",
-                background:active?"rgba(201,168,76,0.12)":"transparent",
-                border:active?"1px solid rgba(201,168,76,0.2)":"1px solid transparent",
-                color:active?"#C9A84C":"rgba(255,255,255,0.4)",
+                background:active?`${gold}15`:"transparent",
+                border:active?`1px solid ${gold}33`:"1px solid transparent",
+                color:active?gold:"rgba(255,255,255,0.4)",
                 fontSize:"13px",fontFamily:"var(--font-dm-sans)",fontWeight:active?600:400,
                 transition:"all 0.15s ease"}}>
               <svg style={{width:"15px",height:"15px",flexShrink:0}} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -61,14 +69,20 @@ export default function Sidebar({ orgName }: { orgName?: string }) {
       </nav>
 
       {/* Bottom */}
-      <div style={{padding:"12px 8px 16px",borderTop:"1px solid rgba(255,255,255,0.06)"}}>
-        <LangToggle />
-        <button onClick={()=>signOut({callbackUrl:"/en"})}
-          style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"12px",width:"100%",border:"none",background:"transparent",color:"rgba(255,255,255,0.3)",fontSize:"13px",fontFamily:"var(--font-dm-sans)",cursor:"pointer",marginTop:"4px",transition:"all 0.15s"}}>
+      <div style={{padding:"12px 8px 16px",borderTop:"1px solid rgba(255,255,255,0.06)", display:"flex", flexDirection:"column", gap:"8px"}}>
+        {/* Cambiador de Idioma */}
+        <div style={{marginBottom:"4px"}}>
+          <LangToggle />
+        </div>
+        
+        {/* Botón Logout arreglado */}
+        <button 
+          onClick={handleLogout}
+          style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"12px",width:"100%",border:"none",background:"transparent",color:"rgba(255,255,255,0.3)",fontSize:"13px",fontFamily:"var(--font-dm-sans)",cursor:"pointer",transition:"all 0.15s"}}>
           <svg style={{width:"15px",height:"15px"}} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
           </svg>
-          Sign out
+          Cerrar sesión
         </button>
       </div>
     </div>

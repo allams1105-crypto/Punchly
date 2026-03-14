@@ -26,10 +26,13 @@ export default async function EmployeePage({ params }: { params: any }) {
     <div style={{flex:1,overflowY:"auto",background:"#0A0A0A"}}>
       <style>{`
         @media(max-width:768px){.grid-mobile-1{grid-template-columns:1fr!important}}
+        /* Arreglo del Hover con CSS en vez de JavaScript */
+        .back-link { color: rgba(255,255,255,0.3); transition: color 0.15s; }
+        .back-link:hover { color: #FAFAFA !important; }
       `}</style>
+      
       <div style={{height:"56px",borderBottom:"1px solid rgba(255,255,255,0.08)",padding:"0 24px",display:"flex",alignItems:"center",gap:"12px"}}>
-        <Link href="/en/admin/employees" style={{color:"rgba(255,255,255,0.3)",textDecoration:"none",fontSize:"13px",fontFamily:"var(--font-dm-sans)",display:"flex",alignItems:"center",gap:"6px",transition:"color 0.15s"}}
-          onMouseEnter={(e:any)=>e.currentTarget.style.color="#FAFAFA"} onMouseLeave={(e:any)=>e.currentTarget.style.color="rgba(255,255,255,0.3)"}>
+        <Link href="/en/admin/employees" className="back-link" style={{textDecoration:"none",fontSize:"13px",fontFamily:"var(--font-dm-sans)",display:"flex",alignItems:"center",gap:"6px"}}>
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           Empleados
         </Link>

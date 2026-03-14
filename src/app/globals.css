@@ -3,44 +3,54 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --bg-primary: #0A0A0A;
-  --bg-card: rgba(255,255,255,0.04);
-  --border: rgba(255,255,255,0.08);
-  --text-primary: #FAFAFA;
-  --text-muted: rgba(255,255,255,0.35);
-  --font-heading: var(--font-syne), 'Syne', system-ui, sans-serif;
-  --font-body: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
-  color-scheme: light dark;
+  /* Paleta Premium - Menos contraste agresivo */
+  --bg-primary: #09090b;
+  --bg-card: #121214;
+  --border: rgba(255, 255, 255, 0.06);
+  --text-primary: #fafafa;
+  --text-muted: #a1a1aa;
+  --accent: #D4AF37; /* Dorado Champagne, más elegante */
+  
+  --font-heading: var(--font-syne), sans-serif;
+  --font-body: var(--font-dm-sans), sans-serif;
 }
 
-/* Dark mode - default */
-.dark {
-  --bg-primary: #000000;
-  --bg-card: rgba(255,255,255,0.05);
-  --border: rgba(255,255,255,0.08);
-  --text-primary: #ffffff;
-  --text-muted: rgba(255,255,255,0.4);
-  --accent: #E8B84B;
-}
-
-/* Light mode */
-:root:not(.dark) {
-  --bg-primary: #fafafa;
-  --bg-card: #ffffff;
-  --border: rgba(0,0,0,0.08);
-  --text-primary: #0a0a0a;
-  --text-muted: rgba(0,0,0,0.4);
-  --accent: #E8B84B;
+/* Matar el cuadro blanco fantasma de Radix/Shadcn */
+[data-radix-popper-content-wrapper], 
+[role="tooltip"], 
+.radix-themes {
+  display: none !important;
 }
 
 body {
   font-family: var(--font-body);
-  background: var(--bg-primary);
+  background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: Arial, Helvetica, sans-serif;
-  transition: background 0.2s, color 0.2s;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
-.font-syne { font-family: var(--font-syne) !important; }
-.font-dm { font-family: var(--font-dm-sans) !important; }
 
-html, body { color-scheme: dark; background: #0A0A0A !important; }
+/* Clases de utilidad para un look más "Apple/Linear" */
+.glass {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border) !important;
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #D4AF37 0%, #F1D27B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Scrollbars sutiles */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
