@@ -2,108 +2,92 @@
 import { useLang } from "@/lib/LangContext";
 import { useEffect, useState } from "react";
 
-const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-
 export default function PayrollPage() {
   const { lang } = useLang();
-  const t = lang === "es" ? { title: "Nómina", period: "Período", employee: "Empleado", hours: "Horas", overtime: "Extras", rate: "Tarifa", total: "Total", export: "Exportar CSV", exportPdf: "Exportar PDF", noData: "Sin registros" } : { title: "Payroll", period: "Period", employee: "Employee", hours: "Hours", overtime: "Overtime", rate: "Rate", total: "Total", export: "Export CSV", exportPdf: "Export PDF", noData: "No records" };
-  const now = new Date();
-  const [month, setMonth] = useState(now.getMonth());
-  const [year, setYear] = useState(now.getFullYear());
-  const [half, setHalf] = useState(now.getDate() <= 15 ? 1 : 2);
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState("current");
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/payroll?month=${month}&year=${year}&half=${half}`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); });
-  }, [month, year, half]);
+    fetch("/api/payroll?period="+period).then(r=>r.json()).then(d=>{
+      setData(d.employees||d||[]);
+      setLoading(false);
+    });
+  }, [period]);
 
-  const total = data?.employees?.reduce((acc: number, e: any) => acc + e.totalPay, 0) || 0;
-  const periodLabel = half === 1 ? `1 — 15 ${MONTHS[month]} ${year}` : `16 — fin ${MONTHS[month]} ${year}`;
+  const total = data.reduce((a,e)=>a+(e.totalPay||0),0);
 
   function exportCSV() {
-    window.open(`/api/payroll/export?format=csv&month=${month}&year=${year}&half=${half}`, "_blank");
+    const rows = [["Empleado","Horas","Extras","Tarifa","Total"]];
+    data.forEach(e=>rows.push([e.name,e.totalHours?.toFixed(1)||0,e.overtimeHours?.toFixed(1)||0,e.hourlyRate||0,(e.totalPay||0).toFixed(2)]));
+    const csv = rows.map(r=>r.join(",")).join("\n");
+    const a = document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download="nomina.csv"; a.click();
   }
 
-  function exportPDF() {
-    window.open(`/api/payroll/export?format=html&month=${month}&year=${year}&half=${half}`, "_blank");
-  }
+  const inputStyle = {background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"9px 14px",color:text,fontSize:"13px",fontFamily:"var(--font-dm-sans)"};
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
-      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center justify-between bg-[var(--bg-primary)]">
+    <div style={{flex:1,overflowY:"auto",background:bg}}>
+      <style>{`
+  .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
+  .btn-gold{background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-family:var(--font-syne);font-weight:700;border:none;cursor:pointer;transition:all 0.3s ease}
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(201,168,76,0.3)}
+  .row-hover{transition:background 0.15s ease}
+  .row-hover:hover{background:rgba(255,255,255,0.04)!important}
+  input,select,textarea{color-scheme:dark}
+  input:focus,select:focus{border:1px solid rgba(201,168,76,0.4)!important;outline:none}
+  @media(max-width:768px){.hide-mobile{display:none!important}.stack-mobile{flex-direction:column!important}.full-mobile{width:100%!important}.grid-mobile-1{grid-template-columns:1fr!important}}
+`}</style>
+      <div style={{height:"56px",borderBottom:"1px solid "+border,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
-          <h1 className="text-sm font-black text-[var(--text-primary)]">Nómina</h1>
-          <p className="text-xs text-[var(--text-muted)]">{periodLabel}</p>
+          <h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:text}}>{lang==="es"?"Nómina":"Payroll"}</h1>
+          <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:muted}}>{data.length} empleados</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-black text-[#E8B84B] mr-2">${total.toLocaleString()}</span>
-          <button onClick={exportCSV}
-            className="flex items-center gap-1.5 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-lg text-xs font-semibold transition">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            CSV
-          </button>
-          <button onClick={exportPDF}
-            className="flex items-center gap-1.5 bg-[#E8B84B] text-black px-3 py-1.5 rounded-lg text-xs font-black hover:bg-[#d4a43a] transition">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            PDF
-          </button>
-        </div>
+        <button onClick={exportCSV} className="btn-gold" style={{padding:"8px 16px",borderRadius:"12px",fontSize:"12px"}}>
+          {lang==="es"?"Exportar CSV":"Export CSV"}
+        </button>
       </div>
-      <div className="p-6 space-y-4">
-        <div className="flex gap-2 flex-wrap">
-          <select value={month} onChange={e => setMonth(Number(e.target.value))}
-            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B]">
-            {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+
+      <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:"14px"}}>
+        <div style={{display:"flex",gap:"10px",alignItems:"center",flexWrap:"wrap"}} className="stack-mobile">
+          <select value={period} onChange={e=>setPeriod(e.target.value)} style={inputStyle}>
+            <option value="current">Quincena actual</option>
+            <option value="previous">Quincena anterior</option>
           </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))}
-            className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B]">
-            {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <div className="flex bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
-            <button onClick={() => setHalf(1)}
-              className={`px-4 py-2 text-sm font-medium transition ${half === 1 ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>
-              1 — 15
-            </button>
-            <button onClick={() => setHalf(2)}
-              className={`px-4 py-2 text-sm font-medium transition ${half === 2 ? "bg-[#E8B84B] text-black" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>
-              16 — fin
-            </button>
+          <div style={{background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.2)",borderRadius:"14px",padding:"10px 18px",marginLeft:"auto"}}>
+            <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:"rgba(201,168,76,0.6)",marginBottom:"2px"}}>Total estimado</p>
+            <p style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"20px",color:gold}}>${total.toLocaleString("en",{maximumFractionDigits:2})}</p>
           </div>
         </div>
 
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-          <div className="grid grid-cols-5 gap-4 px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/50">
-            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider col-span-2">Empleado</p>
-            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider text-right">Horas</p>
-            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider text-right">Extras</p>
-            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider text-right">Total</p>
-          </div>
+        <div style={{background:card,backdropFilter:"blur(20px)",border:"1px solid "+border,borderRadius:"20px",overflow:"hidden"}}>
           {loading ? (
-            <div className="p-8 text-center text-sm text-[var(--text-muted)]">Cargando...</div>
-          ) : !data?.employees?.length ? (
-            <div className="p-8 text-center text-sm text-[var(--text-muted)]">Sin registros para este período</div>
-          ) : data.employees.map((emp: any) => (
-            <div key={emp.id} className="grid grid-cols-5 gap-4 px-5 py-4 border-b border-[var(--border)] last:border-0 hover:bg-[var(--border)]/30 transition">
-              <div className="col-span-2">
-                <p className="text-sm font-semibold text-[var(--text-primary)]">{emp.name}</p>
-                <p className="text-xs text-[var(--text-muted)]">${emp.hourlyRate}/h</p>
+            <div style={{padding:"48px",textAlign:"center"}}><p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Cargando...</p></div>
+          ) : data.length===0 ? (
+            <div style={{padding:"48px",textAlign:"center"}}><p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Sin registros en este período</p></div>
+          ) : (
+            <>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 100px",padding:"10px 20px",borderBottom:"1px solid "+border}} className="hide-mobile">
+                {["Empleado","Horas","Extras","Tarifa","Total"].map(h=>(
+                  <p key={h} style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:"1px"}}>{h}</p>
+                ))}
               </div>
-              <p className="text-sm text-[var(--text-primary)] text-right self-center">{emp.totalHours}h</p>
-              <p className="text-sm text-right self-center">
-                {emp.overtimeHours > 0 ? <span className="text-orange-400">{emp.overtimeHours}h</span> : <span className="text-[var(--text-muted)]">—</span>}
-              </p>
-              <p className="text-sm font-black text-[#E8B84B] text-right self-center">${emp.totalPay.toLocaleString()}</p>
-            </div>
-          ))}
-          {data?.employees?.length > 0 && (
-            <div className="grid grid-cols-5 gap-4 px-5 py-4 bg-[#E8B84B]/5 border-t border-[#E8B84B]/20">
-              <p className="text-sm font-black text-[var(--text-primary)] col-span-4">Total nómina</p>
-              <p className="text-sm font-black text-[#E8B84B] text-right">${total.toLocaleString()}</p>
-            </div>
+              {data.map(e=>(
+                <div key={e.id||e.name} className="row-hover" style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 100px",padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,0.04)",alignItems:"center"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                    <div style={{width:"32px",height:"32px",borderRadius:"10px",background:gold+"15",border:"1px solid "+gold+"25",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-syne)",fontWeight:700,color:gold,fontSize:"12px",flexShrink:0}}>
+                      {(e.name||"?").charAt(0)}
+                    </div>
+                    <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"13px",color:text,fontWeight:500}}>{e.name}</p>
+                  </div>
+                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>{(e.totalHours||0).toFixed(1)}h</p>
+                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:e.overtimeHours>0?"#FB923C":muted}}>{(e.overtimeHours||0).toFixed(1)}h</p>
+                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>${e.hourlyRate||0}/h</p>
+                  <p style={{fontFamily:"var(--font-syne)",fontSize:"14px",fontWeight:800,color:gold}}>${(e.totalPay||0).toFixed(2)}</p>
+                </div>
+              ))}
+            </>
           )}
         </div>
       </div>
