@@ -7,6 +7,12 @@ export default function PayrollPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("current");
+  const bg = "var(--bg-primary, #0A0A0A)";
+  const card = "var(--bg-card, #111111)";
+  const border = "var(--border, rgba(255,255,255,0.08))";
+  const text = "var(--text-primary, #FAFAFA)";
+  const muted = "var(--text-muted, #A1A1AA)";
+  const gold = "#C9A84C";
 
   useEffect(() => {
     setLoading(true);
