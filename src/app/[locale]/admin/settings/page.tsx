@@ -33,7 +33,11 @@ export default async function SettingsPage() {
             <PushRegister />
           </div>
         </div>
-        <SettingsClient org={{ name: org?.name, alertEmail: (org as any)?.alertEmail }} isPro={isPro} daysLeft={daysLeft} />
+        {/* Aquí está la corrección: pasamos user y quitamos isPro y daysLeft */}
+        <SettingsClient 
+          org={{ name: org?.name, alertEmail: (org as any)?.alertEmail }} 
+          user={session.user} 
+        />
       </div>
     </div>
   );
