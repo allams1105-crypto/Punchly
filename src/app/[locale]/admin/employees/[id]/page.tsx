@@ -1,41 +1,62 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
-import ScheduleEditor from "@/components/admin/ScheduleEditor";
+import { redirect, notFound } from "next/navigation";
 import EmployeeEditClient from "@/components/admin/EmployeeEditClient";
+import ScheduleEditor from "@/components/admin/ScheduleEditor";
+import Link from "next/link";
 
-export default async function EmployeeEditPage({ params }: { params: any }) {
+export default async function EmployeePage({ params }: { params: any }) {
   const session = await auth();
   if (!session) redirect("/en/login");
   const orgId = (session.user as any).organizationId;
-  const { id } = params;
+  const { id } = await params;
 
-  const employee = await prisma.user.findFirst({
+  const employee = await prisma.user.findUnique({
     where: { id, organizationId: orgId },
+    include: { schedule: true },
+  });
+  if (!employee) notFound();
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const activeEntry = await prisma.timeEntry.findFirst({
+    where: { userId: id, organizationId: orgId, clockOut: null, clockIn: { gte: today } },
   });
 
-  if (!employee) redirect("/en/admin/dashboard");
-
   return (
-    <div className="flex-1 overflow-y-auto bg-[var(--bg-primary)]">
-      <div className="h-14 border-b border-[var(--border)] px-6 flex items-center bg-[var(--bg-primary)]">
-        <div>
-          <h1 className="text-sm font-black text-[var(--text-primary)]">Editar empleado</h1>
-          <p className="text-xs text-[var(--text-muted)]">{employee.name}</p>
-        </div>
+    <div style={{flex:1,overflowY:"auto",background:"#0A0A0A"}}>
+      <style>{`
+        @media(max-width:768px){.grid-mobile-1{grid-template-columns:1fr!important}}
+      `}</style>
+      <div style={{height:"56px",borderBottom:"1px solid rgba(255,255,255,0.08)",padding:"0 24px",display:"flex",alignItems:"center",gap:"12px"}}>
+        <Link href="/en/admin/employees" style={{color:"rgba(255,255,255,0.3)",textDecoration:"none",fontSize:"13px",fontFamily:"var(--font-dm-sans)",display:"flex",alignItems:"center",gap:"6px",transition:"color 0.15s"}}
+          onMouseEnter={(e:any)=>e.currentTarget.style.color="#FAFAFA"} onMouseLeave={(e:any)=>e.currentTarget.style.color="rgba(255,255,255,0.3)"}>
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Empleados
+        </Link>
+        <span style={{color:"rgba(255,255,255,0.15)"}}>·</span>
+        <h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>{employee.name}</h1>
+        {activeEntry && (
+          <span style={{marginLeft:"auto",fontSize:"11px",color:"#34D399",background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.2)",padding:"4px 10px",borderRadius:"100px",fontFamily:"var(--font-dm-sans)"}}>En turno</span>
+        )}
       </div>
-      <div className="p-6 space-y-4 max-w-2xl">
+
+      <div style={{padding:"24px",display:"grid",gridTemplateColumns:"1fr 360px",gap:"20px",alignItems:"start"}} className="grid-mobile-1">
         <EmployeeEditClient employee={{
           id: employee.id,
           name: employee.name,
           email: employee.email,
-          role: employee.role,
           hourlyRate: (employee as any).hourlyRate || 0,
           isActive: employee.isActive,
-          avatarUrl: (employee as any).avatarUrl || null,
           avatarColor: (employee as any).avatarColor || null,
         }} />
-        <ScheduleEditor userId={employee.id} employeeName={employee.name} />
+        <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"20px",overflow:"hidden"}}>
+          <div style={{padding:"16px 20px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+            <h3 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Horario</h3>
+          </div>
+          <div style={{padding:"20px"}}>
+            <ScheduleEditor userId={employee.id} initialSchedule={employee.schedule} />
+          </div>
+        </div>
       </div>
     </div>
   );
