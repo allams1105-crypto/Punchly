@@ -10,8 +10,16 @@ export async function POST(req: NextRequest) {
   const company = body.company || body.orgName;
   const { name, email, password } = body;
 
-  if (!company || !name || !email || !password) {
-    return NextResponse.json({ error: "Todos los campos son requeridos" }, { status: 400 });
+ if (!company || !name || !email || !password) {
+    const missing = [];
+    if (!company) missing.push("Empresa");
+    if (!name) missing.push("Nombre");
+    if (!email) missing.push("Email");
+    if (!password) missing.push("Password");
+    
+    return NextResponse.json({ 
+      error: `Faltan campos obligatorios: ${missing.join(", ")}` 
+    }, { status: 400 });
   }
 
   const existing = await prisma.user.findFirst({ where: { email } });

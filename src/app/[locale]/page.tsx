@@ -1,120 +1,164 @@
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { HeroGeometric } from "@/components/ui/shape-landing-hero";
+import AttendanceChart from "@/components/admin/AttendanceChart";
+import NotificationBell from "@/components/admin/NotificationBell";
 
-export default function LandingPage() {
+export default async function DashboardPage() {
+  const session = await auth();
+  if (!session?.user) redirect("/en/login");
+  const orgId = (session.user as any).organizationId as string;
+
+  const now = new Date();
+  const periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 1 : 16);
+  const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
+
+  const [employees, activeEntries, periodEntries, org] = await Promise.all([
+    prisma.user.findMany({ where: { organizationId: orgId, isActive: true, role: { not: "OWNER" } }, orderBy: { name: "asc" } }),
+    prisma.timeEntry.findMany({ where: { organizationId: orgId, clockOut: null } }),
+    prisma.timeEntry.findMany({ where: { organizationId: orgId, clockIn: { gte: periodStart } } }),
+    prisma.organization.findUnique({ where: { id: orgId } }),
+  ]);
+
+  const activeIds = new Set(activeEntries.map(e => e.userId));
+  const totalHours = Math.floor(periodEntries.reduce((a,e) => a + (e.durationMin||0), 0) / 60);
+  const estimatedPayroll = periodEntries.reduce((a,e) => {
+    const emp = employees.find(u => u.id === e.userId);
+    return a + ((e.durationMin||0)/60) * ((emp as any)?.hourlyRate||0);
+  }, 0);
+
+  const onShiftEmps = employees.filter(e => activeIds.has(e.id));
+  const offShiftEmps = employees.filter(e => !activeIds.has(e.id)).slice(0, 6);
+
   const gold = "#D4AF37";
 
   return (
-    <div style={{ background: "#030303", color: "#FAFAFA", minHeight: "100vh", fontFamily: "var(--font-dm-sans)", overflowX: "hidden" }}>
+    <div className="flex-1 overflow-y-auto" style={{background:"#030303"}}>
       <style>{`
-        .nav-blur { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(3,3,3,0.7); border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .apple-card { background: #0A0A0A; border: 1px solid rgba(255,255,255,0.03); border-radius: 24px; transition: all 0.3s ease; }
-        .apple-card:hover { border-color: rgba(255,255,255,0.08); background: #0D0D0D; }
-        .btn-white { background: #FAFAFA; color: #000; padding: 12px 24px; border-radius: 14px; font-weight: 700; font-size: 14px; text-decoration: none; transition: 0.2s; display: inline-flex; align-items: center; }
-        .btn-white:hover { transform: scale(1.02); opacity: 0.9; }
-        .btn-ghost { color: rgba(255,255,255,0.4); text-decoration: none; font-size: 14px; font-weight: 600; transition: 0.2s; }
-        .btn-ghost:hover { color: #FAFAFA; }
-        .label-stealth { font-size: 10px; font-weight: 800; color: ${gold}; text-transform: uppercase; letter-spacing: 2px; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .float-subtle { animation: float 6s ease-in-out infinite; }
+        .apple-card { background: #0A0A0A; border: 1px solid rgba(255,255,255,0.03); border-radius: 20px; transition: all 0.2s ease; }
+        .stat-label { font-family: var(--font-dm-sans); font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 1.5px; }
+        .stat-value { font-family: var(--font-syne); font-size: 28px; font-weight: 800; color: #FAFAFA; line-height: 1; }
+        .btn-white { background: #FAFAFA; color: #000; padding: 8px 18px; border-radius: 12px; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; }
+        .action-link { transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 14px; text-decoration: none; color: rgba(255,255,255,0.3); font-size: 13px; font-weight: 600; background: #0A0A0A; border: 1px solid rgba(255,255,255,0.03); }
+        .action-link:hover { background: rgba(255,255,255,0.05); color: #FAFAFA; }
       `}</style>
 
-      {/* Navigation */}
-      <nav className="nav-blur" style={{ position: "fixed", top: 0, width: "100%", zIndex: 100 }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "16px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ width: "28px", height: "28px", background: "#FAFAFA", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: "#000", fontWeight: 900, fontSize: "12px", fontFamily: "var(--font-syne)" }}>P</span>
-            </div>
-            <span style={{ fontFamily: "var(--font-syne)", fontWeight: 800, fontSize: "16px", letterSpacing: "-0.5px" }}>Punchly.</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
-            <Link href="/en/login" className="btn-ghost">Login</Link>
-            <Link href="/en/register" className="btn-white">Comenzar</Link>
-          </div>
+      {/* Header Original */}
+      <div style={{height:"64px", borderBottom:"1px solid rgba(255,255,255,0.04)", padding:"0 24px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+        <div>
+          <h1 style={{fontFamily:"var(--font-syne)", fontWeight:700, fontSize:"14px", color:"white"}}>Dashboard</h1>
+          <p style={{fontFamily:"var(--font-dm-sans)", fontSize:"11px", color:"rgba(255,255,255,0.25)", marginTop:"1px"}}>{(org as any)?.name}</p>
         </div>
-      </nav>
+        <div style={{display:"flex", alignItems:"center", gap:"12px"}}>
+          <NotificationBell orgId={orgId} />
+          <Link href="/en/admin/employees/new" className="btn-white font-syne">
+            + Empleado
+          </Link>
+        </div>
+      </div>
 
-      {/* Hero Section */}
-      <HeroGeometric 
-        badge="Punchly.Clock v2.0"
-        title1="Asistencia de personal"
-        title2="simplificada."
-      />
+      <div style={{padding:"24px", display:"flex", flexDirection:"column", gap:"20px", maxWidth:"1400px", margin:"0 auto"}}>
+        {/* KPIs con tus nombres originales */}
+        <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"12px"}}>
+          {[
+            {label:"Empleados activos", value:employees.length, sub:"en nómina", color:"rgba(255,255,255,0.9)"},
+            {label:"En turno ahora", value:activeEntries.length, sub:"trabajando", color:"#34D399", isLive: true},
+            {label:"Horas quincena", value:totalHours+"h", sub:"período actual", color:gold},
+            {label:"Nómina estimada", value:"$"+estimatedPayroll.toLocaleString("en",{maximumFractionDigits:0}), sub:"este período", color:gold},
+          ].map(k=>(
+            <div key={k.label} className="apple-card" style={{padding:"20px", position:"relative"}}>
+              {k.isLive && <div style={{position:"absolute", top:"20px", right:"20px", width:"6px", height:"6px", background:"#34D399", borderRadius:"50%", boxShadow:"0 0 10px #34D399"}} />}
+              <p className="stat-label" style={{marginBottom:"10px"}}>{k.label}</p>
+              <p className="stat-value" style={{color:k.color}}>{k.value}</p>
+              <p style={{fontFamily:"var(--font-dm-sans)", fontSize:"11px", color:"rgba(255,255,255,0.15)", marginTop:"6px"}}>{k.sub}</p>
+            </div>
+          ))}
+        </div>
 
-      {/* Content Wrapper */}
-      <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 40px" }}>
-        
-        {/* Mockup Preview - Minimalist Style */}
-        <section style={{ marginTop: "-12vh", position: "relative", zIndex: 20 }}>
-          <div className="apple-card float-subtle" style={{ padding: "40px", maxWidth: "900px", margin: "0 auto", boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "40px" }}>
-              <div>
-                <p className="label-stealth">Live Terminal</p>
-                <h2 style={{ fontSize: "48px", fontWeight: 800, fontFamily: "var(--font-syne)", marginTop: "8px" }}>09:41</h2>
-                <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "14px" }}>Marzo 14, 2026</p>
+        {/* Main grid */}
+        <div style={{display:"grid", gridTemplateColumns:"1fr 280px", gap:"20px"}}>
+          <div style={{display:"flex", flexDirection:"column", gap:"16px"}}>
+            {/* Chart */}
+            <div className="apple-card" style={{overflow:"hidden"}}>
+              <div style={{padding:"16px 20px", borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                <p className="stat-label" style={{color:"white"}}>Asistencia — últimos 7 días</p>
               </div>
-              <div style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)", padding: "8px 16px", borderRadius: "100px", color: "#34D399", fontSize: "12px", fontWeight: 700 }}>
-                • 3 Empleados activos
+              <div style={{padding:"24px"}}>
+                <AttendanceChart />
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-              {[
-                { name: "Ana Garcia", init: "AG", active: true },
-                { name: "Luis Mendez", init: "LM", active: true },
-                { name: "Sofia Rosa", init: "SR", active: false }
-              ].map(u => (
-                <div key={u.name} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "16px", padding: "20px" }}>
-                  <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: u.active ? gold : "#111", color: u.active ? "#000" : "#444", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "12px", marginBottom: "12px" }}>{u.init}</div>
-                  <p style={{ fontSize: "14px", fontWeight: 700 }}>{u.name}</p>
-                  <p style={{ fontSize: "11px", color: u.active ? "#34D399" : "rgba(255,255,255,0.1)", fontWeight: 700, marginTop: "4px" }}>{u.active ? "En turno" : "Inactivo"}</p>
+
+            {/* On shift - Texto Original */}
+            <div className="apple-card" style={{overflow:"hidden"}}>
+              <div style={{padding:"16px 20px", borderBottom:"1px solid rgba(255,255,255,0.04)", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+                <p className="stat-label" style={{color:"white"}}>En turno ahora</p>
+                <span style={{fontFamily:"var(--font-dm-sans)", fontSize:"11px", color:"#34D399", fontWeight:700}}>{onShiftEmps.length} activos</span>
+              </div>
+              {onShiftEmps.length === 0 ? (
+                <div style={{padding:"32px", textAlign:"center"}}>
+                  <p style={{fontFamily:"var(--font-dm-sans)", fontSize:"13px", color:"rgba(255,255,255,0.15)"}}>Nadie en turno ahora</p>
                 </div>
+              ) : (
+                onShiftEmps.map(emp => {
+                  const entry = activeEntries.find(e => e.userId === emp.id);
+                  const mins = entry ? Math.floor((now.getTime() - entry.clockIn.getTime())/60000) : 0;
+                  return (
+                    <div key={emp.id} style={{padding:"12px 20px", borderBottom:"1px solid rgba(255,255,255,0.02)", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+                      <div style={{display:"flex", alignItems:"center", gap:"12px"}}>
+                        <div style={{width:"32px", height:"32px", borderRadius:"8px", background:"#111", border:"1px solid rgba(255,255,255,0.05)", display:"flex", alignItems:"center", justifyContent:"center", color:gold, fontWeight:800, fontSize:"12px"}}>
+                          {(emp.name||"?").charAt(0)}
+                        </div>
+                        <div>
+                          <p style={{fontWeight:600, fontSize:"13px", color:"white"}}>{emp.name}</p>
+                          <p style={{fontSize:"10px", color:"rgba(255,255,255,0.2)"}}>Entrada: {entry?.clockIn.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}</p>
+                        </div>
+                      </div>
+                      <p style={{fontFamily:"var(--font-syne)", fontWeight:700, fontSize:"14px", color:gold}}>{Math.floor(mins/60)}h {mins%60}m</p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar Original */}
+          <div style={{display:"flex", flexDirection:"column", gap:"16px"}}>
+            <div className="apple-card" style={{padding:"8px"}}>
+              <p className="stat-label" style={{padding:"12px 8px 8px", color:"white"}}>Acciones</p>
+              {[
+                {href:"/en/admin/employees/new",label:"Nuevo empleado"},
+                {href:"/en/admin/employees",label:"Ver empleados"},
+                {href:"/en/admin/kiosk",label:"Abrir Kiosk"},
+                {href:"/en/admin/payroll",label:"Nómina"},
+                {href:"/en/admin/attendance",label:"Asistencia"},
+                {href:"/en/admin/activity",label:"Actividad"},
+                {href:"/en/admin/settings",label:"Configuración"},
+              ].map(a=>(
+                <Link key={a.href} href={a.href} className="action-link">
+                  <div style={{width:"6px", height:"6px", background:gold, borderRadius:"50%", opacity:0.4}} />
+                  {a.label}
+                </Link>
               ))}
             </div>
-          </div>
-        </section>
 
-        {/* Features Grid - No icons, just Typography */}
-        <section style={{ padding: "160px 0" }}>
-          <div style={{ textAlign: "center", marginBottom: "80px" }}>
-            <p className="label-stealth">Propuesta de valor</p>
-            <h2 style={{ fontSize: "40px", fontWeight: 800, fontFamily: "var(--font-syne)", marginTop: "16px" }}>Diseñado para la eficiencia.</h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "64px" }}>
-            {[
-              { t: "Kiosk Mode", d: "Terminal centralizada con acceso por PIN único para cada empleado." },
-              { t: "Geofencing", d: "Validación GPS automática. Solo fichajes dentro del radio de la empresa." },
-              { t: "Reportes One-Click", d: "Exportación de nómina y horas extras en segundos. Sin fricción." },
-              { t: "Sin Suscripción", d: "Paga $49 una vez. Es tuyo para siempre con todas las actualizaciones." },
-              { t: "Multi-sucursal", d: "Administra múltiples centros de trabajo desde un solo panel maestro." },
-              { t: "Notificaciones", d: "Alertas inmediatas de tardanzas enviadas directamente a tu email." }
-            ].map(f => (
-              <div key={f.t} style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "24px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "12px" }}>{f.t}</h3>
-                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "14px", lineHeight: 1.6 }}>{f.d}</p>
+            {/* Fuera de turno - Texto Original */}
+            {offShiftEmps.length > 0 && (
+              <div className="apple-card" style={{padding:"8px"}}>
+                <p className="stat-label" style={{padding:"12px 8px 8px", color:"white"}}>Fuera de turno</p>
+                {offShiftEmps.map(emp=>(
+                  <div key={emp.id} style={{padding:"8px 12px", display:"flex", alignItems:"center", gap:"10px"}}>
+                    <div style={{width:"24px", height:"24px", borderRadius:"6px", background:"#111", display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(255,255,255,0.2)", fontSize:"10px", fontWeight:800}}>
+                      {(emp.name||"?").charAt(0)}
+                    </div>
+                    <p style={{fontSize:"12px", color:"rgba(255,255,255,0.35)"}}>{emp.name}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        </section>
-
-        {/* Pricing CTA */}
-        <section style={{ paddingBottom: "160px" }}>
-          <div className="apple-card" style={{ padding: "80px", textAlign: "center", border: `1px solid ${gold}20`, background: `radial-gradient(circle at center, ${gold}08 0%, transparent 70%)` }}>
-            <p className="label-stealth" style={{ marginBottom: "24px" }}>Acceso Vitalicio</p>
-            <h2 style={{ fontSize: "88px", fontWeight: 800, fontFamily: "var(--font-syne)", letterSpacing: "-4px", lineHeight: 1 }}>$49</h2>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "18px", marginTop: "16px" }}>Paga una vez, úsalo para siempre.</p>
-            <div style={{ marginTop: "48px" }}>
-              <Link href="/en/register" className="btn-white" style={{ padding: "16px 48px", fontSize: "16px" }}>Empezar 7 días gratis</Link>
-            </div>
-            <p style={{ color: "rgba(255,255,255,0.15)", fontSize: "12px", marginTop: "24px" }}>No se requiere tarjeta de crédito para el periodo de prueba.</p>
-          </div>
-        </section>
-
-      </main>
-
-      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "40px", textAlign: "center" }}>
-        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.2)", letterSpacing: "1px", textTransform: "uppercase", fontWeight: 700 }}>Punchly.Clock — Industrial Security Standards</p>
-      </footer>
+        </div>
+      </div>
     </div>
   );
 }
