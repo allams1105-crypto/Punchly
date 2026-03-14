@@ -9,31 +9,46 @@
   --border: rgba(255, 255, 255, 0.06);
   --text-primary: #fafafa;
   --text-muted: #a1a1aa;
-  --accent: #D4AF37; /* Dorado Champagne, más elegante */
+  --accent: #D4AF37; /* Dorado Champagne */
   
   --font-heading: var(--font-syne), sans-serif;
   --font-body: var(--font-dm-sans), sans-serif;
+  
+  color-scheme: dark !important;
 }
 
-/* Matar el cuadro blanco fantasma de Radix/Shadcn */
+/* --- ANIKILADOR DE CUADROS BLANCOS --- */
+/* Esto mata Tooltips, Menus y Popovers de Shadcn que se quedan pegados */
 [data-radix-popper-content-wrapper], 
 [role="tooltip"], 
-.radix-themes {
+[role="status"],
+[data-radix-portal],
+.radix-themes,
+[cmdk-root],
+.fixed.inset-0.z-50.bg-background\/80 {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-body {
-  font-family: var(--font-body);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+/* Forzado de fondo oscuro total */
+html, body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
-/* Clases de utilidad para un look más "Apple/Linear" */
+body {
+  font-family: var(--font-body);
+}
+
+/* --- CLASES DE UTILIDAD PREMIUM --- */
 .glass {
   background: rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid var(--border) !important;
 }
 
@@ -43,14 +58,46 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* Scrollbars sutiles */
+/* Botones estilo Apple/Linear */
+.btn-premium {
+  background: linear-gradient(135deg, #D4AF37, #8B6914);
+  color: #000;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-premium:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+}
+
+/* --- SCROLLBARS --- */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Desactivar cualquier transición de modo claro */
+* {
+  transition-property: color, background-color, border-color !important;
+  transition-duration: 200ms !important;
+}
+
+/* Forzar fuentes */
+.font-syne { font-family: var(--font-syne) !important; }
+.font-dm { font-family: var(--font-body) !important; }
