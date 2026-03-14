@@ -16,8 +16,16 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
   const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const inputS = {width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"10px 14px",color:"#FAFAFA",fontSize:"13px",fontFamily:"var(--font-dm-sans)",transition:"border 0.2s",boxSizing:"border-box"};
-  const labelS = {display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"};
+  // Colores para TypeScript
+  const bg = "var(--bg-primary, #0A0A0A)";
+  const card = "var(--bg-card, #111111)";
+  const border = "var(--border, rgba(255,255,255,0.08))";
+  const text = "var(--text-primary, #FAFAFA)";
+  const muted = "var(--text-muted, #A1A1AA)";
+  const gold = "#C9A84C";
+
+  const inputS = {width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"10px 14px",color:"#FAFAFA",fontSize:"13px",fontFamily:"var(--font-dm-sans)",transition:"border 0.2s",boxSizing:"border-box" as const};
+  const labelS = {display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase" as const,letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"};
 
   async function save() {
     setSaving(true);
@@ -43,7 +51,7 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
   const initials = name.split(" ").map((n:string)=>n.charAt(0)).join("").substring(0,2).toUpperCase();
 
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
+    <div style={{display:"flex",flexDirection:"column",gap:"16px", background: bg}}>
       <style>{`
   .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
   .btn-gold{background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-family:var(--font-syne);font-weight:700;border:none;cursor:pointer;transition:all 0.3s ease}

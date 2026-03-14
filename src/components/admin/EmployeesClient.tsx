@@ -5,7 +5,9 @@ import Link from "next/link";
 const COLORS = ["#C9A84C","#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80"];
 
 function Avatar({ name, color }: { name: string; color?: string | null }) {
+  // Aseguramos que el componente Avatar tenga las variables globales por si acaso
   const bg = color || COLORS[(name?.charCodeAt(0)||0) % COLORS.length];
+  
   return (
     <div style={{width:"44px",height:"44px",borderRadius:"12px",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"16px",flexShrink:0,background:bg+"15",border:"1.5px solid "+bg+"25",color:bg}}>
       {(name||"?").charAt(0).toUpperCase()}
@@ -16,6 +18,14 @@ function Avatar({ name, color }: { name: string; color?: string | null }) {
 export default function EmployeesClient({ employees }: { employees: any[] }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+
+  // Colores para TypeScript
+  const bg = "var(--bg-primary, #0A0A0A)";
+  const card = "var(--bg-card, #111111)";
+  const border = "var(--border, rgba(255,255,255,0.08))";
+  const text = "var(--text-primary, #FAFAFA)";
+  const muted = "var(--text-muted, #A1A1AA)";
+  const gold = "#C9A84C";
 
   const filtered = (employees||[]).filter(e => {
     const q = (search||"").toLowerCase();
@@ -58,8 +68,8 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
       <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:"16px"}}>
         {/* Stats */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"10px"}} className="grid-mobile-2">
-          {stats.map(s=>(
-            <div key={s.label} className="glass" style={{borderRadius:"16px",padding:"16px",textAlign:"center"}}>
+          {stats.map((s, idx)=>(
+            <div key={idx} className="glass" style={{borderRadius:"16px",padding:"16px",textAlign:"center"}}>
               <p style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"24px",color:s.color}}>{s.value}</p>
               <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:muted,marginTop:"4px"}}>{s.label}</p>
             </div>
