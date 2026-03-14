@@ -1,14 +1,25 @@
-import { writeFileSync } from "fs";
+import { writeFileSync, readFileSync, mkdirSync } from "fs";
 
 const S = `
   .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
+  .glass-gold{background:rgba(201,168,76,0.08);backdrop-filter:blur(20px);border:1px solid rgba(201,168,76,0.2)}
   .btn-gold{background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-family:var(--font-syne);font-weight:700;border:none;cursor:pointer;transition:all 0.3s ease}
   .btn-gold:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(201,168,76,0.3)}
-  .row-hover{transition:background 0.15s ease}
-  .row-hover:hover{background:rgba(255,255,255,0.04)!important}
-  input,select,textarea{color-scheme:dark}
+  .card-hover{transition:all 0.25s ease}
+  .card-hover:hover{transform:translateY(-2px);border-color:rgba(201,168,76,0.2)!important}
+  .emp-card{transition:all 0.2s cubic-bezier(0.34,1.3,0.64,1)}
+  .emp-card:hover{transform:translateY(-2px) scale(1.02)}
+  .emp-card:active{transform:scale(0.97)}
+  input,select{color-scheme:dark}
   input:focus,select:focus{border:1px solid rgba(201,168,76,0.4)!important;outline:none}
-  @media(max-width:768px){.hide-mobile{display:none!important}.stack-mobile{flex-direction:column!important}.full-mobile{width:100%!important}.grid-mobile-1{grid-template-columns:1fr!important}}
+  @media(max-width:768px){
+    .hide-mobile{display:none!important}
+    .stack-mobile{flex-direction:column!important}
+    .full-mobile{width:100%!important}
+    .grid-mobile-1{grid-template-columns:1fr!important}
+    .grid-mobile-2{grid-template-columns:1fr 1fr!important}
+    .pad-mobile{padding:16px!important}
+  }
 `;
 
 const bg = "#0A0A0A";
@@ -18,416 +29,355 @@ const text = "#FAFAFA";
 const muted = "rgba(255,255,255,0.35)";
 const gold = "#C9A84C";
 
+const inputStyle = `{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"10px 14px",color:"#FAFAFA",fontSize:"13px",fontFamily:"var(--font-dm-sans)",transition:"border 0.2s",boxSizing:"border-box" as const}`;
+const labelStyle = `{display:"block",fontSize:"11px",fontWeight:600 as const,color:"rgba(255,255,255,0.3)",textTransform:"uppercase" as const,letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}`;
+
 // ============================================================
-// ATTENDANCE PAGE
+// 1. EMPLOYEE EDIT CLIENT — redesign
 // ============================================================
-writeFileSync("src/app/[locale]/admin/attendance/page.tsx", `"use client";
-import { useLang } from "@/lib/LangContext";
-import { useEffect, useState } from "react";
+writeFileSync("src/components/admin/EmployeeEditClient.tsx", `"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function AttendancePage() {
-  const { lang } = useLang();
-  const [data, setData] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [days, setDays] = useState("30");
+const COLORS = ["#C9A84C","#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80","#E879F9","#94A3B8"];
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      fetch("/api/attendance?days="+days).then(r=>r.json()),
-      fetch("/api/employees").then(r=>r.json()),
-    ]).then(([a,e]) => {
-      setData(a.entries||a||[]);
-      setEmployees(e.employees||[]);
-      setLoading(false);
-    });
-  }, [days]);
+export default function EmployeeEditClient({ employee }: { employee: any }) {
+  const router = useRouter();
+  const [name, setName] = useState(employee.name||"");
+  const [email, setEmail] = useState(employee.email||"");
+  const [hourlyRate, setHourlyRate] = useState(employee.hourlyRate||"");
+  const [isActive, setIsActive] = useState(employee.isActive);
+  const [avatarColor, setAvatarColor] = useState(employee.avatarColor||"#C9A84C");
+  const [kioskPin, setKioskPin] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [msg, setMsg] = useState("");
 
-  const filtered = data.filter(e =>
-    (e.userName||e.user?.name||"").toLowerCase().includes((search||"").toLowerCase())
-  );
+  const initials = (name||"?").split(" ").map((n:string)=>n.charAt(0)).join("").substring(0,2).toUpperCase();
 
-  function exportCSV() {
-    const rows = [["Empleado","Fecha","Entrada","Salida","Horas","Estado"]];
-    filtered.forEach(e => {
-      const ci = new Date(e.clockIn);
-      const co = e.clockOut ? new Date(e.clockOut) : null;
-      const h = e.durationMin ? (e.durationMin/60).toFixed(1) : "-";
-      rows.push([e.user?.name||e.userName||"",ci.toLocaleDateString("es"),ci.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),co?co.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}):"-",h,e.status||""]);
-    });
-    const csv = rows.map(r=>r.join(",")).join("\\n");
-    const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download = "asistencia.csv"; a.click();
+  const iStyle = {width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"10px 14px",color:"#FAFAFA",fontSize:"13px",fontFamily:"var(--font-dm-sans)",transition:"border 0.2s",boxSizing:"border-box" as const};
+  const lStyle = {display:"block",fontSize:"11px",fontWeight:600 as const,color:"rgba(255,255,255,0.3)",textTransform:"uppercase" as const,letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"};
+
+  async function save() {
+    setSaving(true);
+    const body: any = { name, email, hourlyRate: Number(hourlyRate)||0, isActive };
+    if (kioskPin.length===4) body.kioskPin = kioskPin;
+    const [r1, r2] = await Promise.all([
+      fetch(\`/api/employees/\${employee.id}\`, { method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) }),
+      fetch("/api/employees/avatar", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({userId:employee.id,avatarColor}) }),
+    ]);
+    setMsg(r1.ok?"Guardado":"Error al guardar");
+    setSaving(false);
+    if (kioskPin) setKioskPin("");
+    setTimeout(()=>setMsg(""),3000);
   }
 
-  const inputStyle = {background:card,border:"1px solid "+border,borderRadius:"12px",padding:"9px 14px",color:text,fontSize:"13px",fontFamily:"var(--font-dm-sans)",transition:"border 0.2s"};
-
-  return (
-    <div style={{flex:1,overflowY:"auto",background:bg}}>
-      <style>{\`${S}\`}</style>
-      <div style={{height:"56px",borderBottom:"1px solid "+border,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div>
-          <h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:text}}>{lang==="es"?"Asistencia":"Attendance"}</h1>
-          <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:muted}}>{filtered.length} registros</p>
-        </div>
-        <button onClick={exportCSV} className="btn-gold" style={{padding:"8px 16px",borderRadius:"12px",fontSize:"12px"}}>
-          {lang==="es"?"Exportar CSV":"Export CSV"}
-        </button>
-      </div>
-
-      <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:"14px"}}>
-        <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}} className="stack-mobile">
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={lang==="es"?"Buscar empleado...":"Search employee..."} style={inputStyle} className="full-mobile" />
-          <select value={days} onChange={e=>setDays(e.target.value)} style={inputStyle}>
-            <option value="7">7 días</option>
-            <option value="15">15 días</option>
-            <option value="30">30 días</option>
-            <option value="90">90 días</option>
-          </select>
-        </div>
-
-        <div style={{background:card,backdropFilter:"blur(20px)",border:"1px solid "+border,borderRadius:"20px",overflow:"hidden"}}>
-          {loading ? (
-            <div style={{padding:"48px",textAlign:"center"}}>
-              <p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Cargando...</p>
-            </div>
-          ) : filtered.length===0 ? (
-            <div style={{padding:"48px",textAlign:"center"}}>
-              <p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Sin registros</p>
-            </div>
-          ) : (
-            <>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 120px 100px 100px 80px",padding:"10px 20px",borderBottom:"1px solid "+border}} className="hide-mobile">
-                {["Empleado","Fecha","Entrada","Salida","Horas"].map(h=>(
-                  <p key={h} style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:"1px"}}>{h}</p>
-                ))}
-              </div>
-              {filtered.map(e => {
-                const ci = new Date(e.clockIn);
-                const co = e.clockOut ? new Date(e.clockOut) : null;
-                const h = Math.floor((e.durationMin||0)/60);
-                const m = (e.durationMin||0)%60;
-                return (
-                  <div key={e.id} className="row-hover" style={{display:"grid",gridTemplateColumns:"1fr 120px 100px 100px 80px",padding:"12px 20px",borderBottom:"1px solid rgba(255,255,255,0.04)",alignItems:"center"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                      <div style={{width:"32px",height:"32px",borderRadius:"10px",background:gold+"15",border:"1px solid "+gold+"25",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-syne)",fontWeight:700,color:gold,fontSize:"12px",flexShrink:0}}>
-                        {(e.user?.name||e.userName||"?").charAt(0)}
-                      </div>
-                      <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"13px",color:text,fontWeight:500}}>{e.user?.name||e.userName}</p>
-                    </div>
-                    <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>{ci.toLocaleDateString("es",{day:"numeric",month:"short"})}</p>
-                    <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:"#34D399"}}>{ci.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}</p>
-                    <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:co?"#60A5FA":muted}}>{co?co.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}):"—"}</p>
-                    <p style={{fontFamily:"var(--font-syne)",fontSize:"12px",fontWeight:700,color:e.durationMin?gold:muted}}>{e.durationMin?\`\${h}h\${m>0?" "+m+"m":""}\`:"—"}</p>
-                  </div>
-                );
-              })}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}`);
-
-// ============================================================
-// PAYROLL PAGE
-// ============================================================
-writeFileSync("src/app/[locale]/admin/payroll/page.tsx", `"use client";
-import { useLang } from "@/lib/LangContext";
-import { useEffect, useState } from "react";
-
-export default function PayrollPage() {
-  const { lang } = useLang();
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState("current");
-
-  useEffect(() => {
-    setLoading(true);
-    fetch("/api/payroll?period="+period).then(r=>r.json()).then(d=>{
-      setData(d.employees||d||[]);
-      setLoading(false);
-    });
-  }, [period]);
-
-  const total = data.reduce((a,e)=>a+(e.totalPay||0),0);
-
-  function exportCSV() {
-    const rows = [["Empleado","Horas","Extras","Tarifa","Total"]];
-    data.forEach(e=>rows.push([e.name,e.totalHours?.toFixed(1)||0,e.overtimeHours?.toFixed(1)||0,e.hourlyRate||0,(e.totalPay||0).toFixed(2)]));
-    const csv = rows.map(r=>r.join(",")).join("\\n");
-    const a = document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download="nomina.csv"; a.click();
+  async function del() {
+    if (!confirm("¿Eliminar este empleado? No se puede deshacer.")) return;
+    setDeleting(true);
+    await fetch(\`/api/employees/\${employee.id}\`, { method:"DELETE" });
+    router.push("/en/admin/employees");
   }
 
-  const inputStyle = {background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"9px 14px",color:text,fontSize:"13px",fontFamily:"var(--font-dm-sans)"};
-
   return (
-    <div style={{flex:1,overflowY:"auto",background:bg}}>
-      <style>{\`${S}\`}</style>
-      <div style={{height:"56px",borderBottom:"1px solid "+border,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div>
-          <h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:text}}>{lang==="es"?"Nómina":"Payroll"}</h1>
-          <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:muted}}>{data.length} empleados</p>
-        </div>
-        <button onClick={exportCSV} className="btn-gold" style={{padding:"8px 16px",borderRadius:"12px",fontSize:"12px"}}>
-          {lang==="es"?"Exportar CSV":"Export CSV"}
-        </button>
-      </div>
+    <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
+      <style>{\`
+        input:focus,select:focus{border:1px solid rgba(201,168,76,0.4)!important;outline:none}
+        input,select{color-scheme:dark}
+        @media(max-width:768px){.grid-mobile-1{grid-template-columns:1fr!important}}
+      \`}</style>
 
-      <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:"14px"}}>
-        <div style={{display:"flex",gap:"10px",alignItems:"center",flexWrap:"wrap"}} className="stack-mobile">
-          <select value={period} onChange={e=>setPeriod(e.target.value)} style={inputStyle}>
-            <option value="current">Quincena actual</option>
-            <option value="previous">Quincena anterior</option>
-          </select>
-          <div style={{background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.2)",borderRadius:"14px",padding:"10px 18px",marginLeft:"auto"}}>
-            <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:"rgba(201,168,76,0.6)",marginBottom:"2px"}}>Total estimado</p>
-            <p style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"20px",color:gold}}>\${total.toLocaleString("en",{maximumFractionDigits:2})}</p>
+      {/* Avatar */}
+      <div style={{background:card,backdropFilter:"blur(20px)",border:"1px solid "+border,borderRadius:"20px",overflow:"hidden"}}>
+        <div style={{padding:"16px 20px",borderBottom:"1px solid "+border}}>
+          <h3 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:text}}>Avatar</h3>
+        </div>
+        <div style={{padding:"20px",display:"flex",alignItems:"center",gap:"20px",flexWrap:"wrap"}}>
+          <div style={{width:"64px",height:"64px",borderRadius:"18px",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"22px",flexShrink:0,transition:"all 0.3s",background:avatarColor+"18",border:"2px solid "+avatarColor+"30",color:avatarColor}}>
+            {initials}
+          </div>
+          <div>
+            <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted,marginBottom:"10px"}}>Color del avatar</p>
+            <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+              {COLORS.map(c=>(
+                <button key={c} onClick={()=>setAvatarColor(c)}
+                  style={{width:"24px",height:"24px",borderRadius:"8px",background:c,border:avatarColor===c?"2px solid white":"2px solid transparent",cursor:"pointer",transition:"all 0.2s",transform:avatarColor===c?"scale(1.2)":"scale(1)"}} />
+              ))}
+            </div>
           </div>
         </div>
-
-        <div style={{background:card,backdropFilter:"blur(20px)",border:"1px solid "+border,borderRadius:"20px",overflow:"hidden"}}>
-          {loading ? (
-            <div style={{padding:"48px",textAlign:"center"}}><p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Cargando...</p></div>
-          ) : data.length===0 ? (
-            <div style={{padding:"48px",textAlign:"center"}}><p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Sin registros en este período</p></div>
-          ) : (
-            <>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 100px",padding:"10px 20px",borderBottom:"1px solid "+border}} className="hide-mobile">
-                {["Empleado","Horas","Extras","Tarifa","Total"].map(h=>(
-                  <p key={h} style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:"1px"}}>{h}</p>
-                ))}
-              </div>
-              {data.map(e=>(
-                <div key={e.id||e.name} className="row-hover" style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 100px",padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,0.04)",alignItems:"center"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                    <div style={{width:"32px",height:"32px",borderRadius:"10px",background:gold+"15",border:"1px solid "+gold+"25",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-syne)",fontWeight:700,color:gold,fontSize:"12px",flexShrink:0}}>
-                      {(e.name||"?").charAt(0)}
-                    </div>
-                    <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"13px",color:text,fontWeight:500}}>{e.name}</p>
-                  </div>
-                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>{(e.totalHours||0).toFixed(1)}h</p>
-                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:e.overtimeHours>0?"#FB923C":muted}}>{(e.overtimeHours||0).toFixed(1)}h</p>
-                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>\${e.hourlyRate||0}/h</p>
-                  <p style={{fontFamily:"var(--font-syne)",fontSize:"14px",fontWeight:800,color:gold}}>\${(e.totalPay||0).toFixed(2)}</p>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}`);
-
-// ============================================================
-// ACTIVITY PAGE
-// ============================================================
-writeFileSync("src/app/[locale]/admin/activity/page.tsx", `"use client";
-import { useLang } from "@/lib/LangContext";
-import { useEffect, useState } from "react";
-
-type Entry = { id:string; userId:string; clockIn:string; clockOut:string|null; durationMin:number|null; status:string; user:{name:string} };
-type Employee = { id:string; name:string };
-type Log = { id:string; action:string; userName:string; details:string; createdAt:string };
-
-export default function ActivityPage() {
-  const { lang } = useLang();
-  const [tab, setTab] = useState<"entries"|"logs">("entries");
-  const [logs, setLogs] = useState<Log[]>([]);
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState("");
-  const [modal, setModal] = useState<"edit"|"create"|"delete"|null>(null);
-  const [selectedEntry, setSelectedEntry] = useState<Entry|null>(null);
-  const [password, setPassword] = useState("");
-  const [passError, setPassError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [formUserId, setFormUserId] = useState("");
-  const [formClockIn, setFormClockIn] = useState("");
-  const [formClockOut, setFormClockOut] = useState("");
-
-  useEffect(()=>{
-    fetch("/api/employees").then(r=>r.json()).then(d=>setEmployees(d.employees||[]));
-  },[]);
-
-  useEffect(()=>{
-    setLoading(true);
-    if(tab==="logs"){
-      fetch("/api/activity").then(r=>r.json()).then(d=>{setLogs(d.logs||[]);setLoading(false);});
-    } else {
-      const url = selectedUser?"/api/time-entries?userId="+selectedUser:"/api/time-entries";
-      fetch(url).then(r=>r.json()).then(d=>{setEntries(d.entries||[]);setLoading(false);});
-    }
-  },[tab,selectedUser]);
-
-  function toLocalInput(iso:string){const d=new Date(iso);const p=(n:number)=>String(n).padStart(2,"0");return \`\${d.getFullYear()}-\${p(d.getMonth()+1)}-\${p(d.getDate())}T\${p(d.getHours())}:\${p(d.getMinutes())}\`;}
-
-  function openCreate(){
-    setFormUserId(employees[0]?.id||"");
-    setFormClockIn(toLocalInput(new Date().toISOString()));
-    setFormClockOut(""); setPassword(""); setPassError(""); setModal("create");
-  }
-
-  async function handleSave(){
-    setSaving(true); setPassError("");
-    const body:any={password};
-    if(modal==="edit"){body.action="update";body.entryId=selectedEntry?.id;body.clockIn=new Date(formClockIn).toISOString();body.clockOut=formClockOut?new Date(formClockOut).toISOString():null;}
-    else if(modal==="create"){body.action="create";body.userId=formUserId;body.clockIn=new Date(formClockIn).toISOString();body.clockOut=formClockOut?new Date(formClockOut).toISOString():null;}
-    else if(modal==="delete"){body.action="delete";body.entryId=selectedEntry?.id;}
-    const res=await fetch("/api/time-entries/edit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    const d=await res.json();
-    if(!res.ok){setPassError(d.error||"Error");setSaving(false);return;}
-    fetch(selectedUser?"/api/time-entries?userId="+selectedUser:"/api/time-entries").then(r=>r.json()).then(d=>setEntries(d.entries||[]));
-    setModal(null); setSaving(false);
-  }
-
-  const actionColors:Record<string,string> = {CLOCK_IN:"#34D399",CLOCK_OUT:"#60A5FA",LATE:"#F87171",ABSENT:"#F87171",EMPLOYEE_CREATED:"#C9A84C",EMPLOYEE_UPDATED:"#A78BFA"};
-
-  const inputStyle = {width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"10px 14px",color:"#FAFAFA",fontSize:"13px",fontFamily:"var(--font-dm-sans)",transition:"border 0.2s",boxSizing:"border-box" as const};
-
-  return (
-    <div style={{flex:1,overflowY:"auto",background:bg}}>
-      <style>{\`${S}\`}</style>
-      <div style={{height:"56px",borderBottom:"1px solid "+border,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:text}}>Actividad</h1>
-        {tab==="entries" && (
-          <button onClick={openCreate} className="btn-gold" style={{padding:"8px 16px",borderRadius:"12px",fontSize:"12px"}}>+ Registro</button>
-        )}
       </div>
 
-      <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:"14px"}}>
-        <div style={{display:"flex",gap:"4px",background:card,border:"1px solid "+border,borderRadius:"12px",padding:"4px",width:"fit-content"}}>
-          {([["entries","Registros"],["logs","Eventos"]] as const).map(([k,l])=>(
-            <button key={k} onClick={()=>setTab(k)}
-              style={{padding:"8px 16px",borderRadius:"10px",fontSize:"12px",fontFamily:"var(--font-dm-sans)",fontWeight:tab===k?600:400,border:"none",cursor:"pointer",transition:"all 0.15s",
-                background:tab===k?"linear-gradient(135deg,#C9A84C,#F0D080)":"transparent",color:tab===k?"#000":muted}}>
-              {l}
-            </button>
-          ))}
+      {/* Info */}
+      <div style={{background:card,backdropFilter:"blur(20px)",border:"1px solid "+border,borderRadius:"20px",overflow:"hidden"}}>
+        <div style={{padding:"16px 20px",borderBottom:"1px solid "+border}}>
+          <h3 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:text}}>Información</h3>
         </div>
-
-        {tab==="entries" && (
-          <select value={selectedUser} onChange={e=>setSelectedUser(e.target.value)}
-            style={{background:card,border:"1px solid "+border,borderRadius:"12px",padding:"9px 14px",color:text,fontSize:"13px",fontFamily:"var(--font-dm-sans)",width:"220px"}}>
-            <option value="">Todos los empleados</option>
-            {employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
-          </select>
-        )}
-
-        <div style={{background:card,backdropFilter:"blur(20px)",border:"1px solid "+border,borderRadius:"20px",overflow:"hidden"}}>
-          {loading ? <div style={{padding:"48px",textAlign:"center"}}><p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Cargando...</p></div>
-          : tab==="logs" ? (
-            logs.length===0 ? <div style={{padding:"48px",textAlign:"center"}}><p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Sin actividad</p></div>
-            : logs.map(log=>{
-              const c = actionColors[log.action]||muted;
-              return (
-                <div key={log.id} className="row-hover" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                    <span style={{fontSize:"11px",padding:"3px 10px",borderRadius:"100px",fontFamily:"var(--font-dm-sans)",fontWeight:600,background:c+"15",color:c,border:"1px solid "+c+"25",flexShrink:0}}>{log.action.replace("_"," ")}</span>
-                    <div>
-                      <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"13px",color:text,fontWeight:500}}>{log.userName}</p>
-                      {log.details && <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:muted,marginTop:"2px"}}>{log.details}</p>}
-                    </div>
-                  </div>
-                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:muted,flexShrink:0,marginLeft:"12px"}}>{new Date(log.createdAt).toLocaleDateString("es",{day:"numeric",month:"short"})} {new Date(log.createdAt).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}</p>
-                </div>
-              );
-            })
-          ) : (
-            entries.length===0 ? <div style={{padding:"48px",textAlign:"center"}}><p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Sin registros</p></div>
-            : entries.map(e=>{
-              const ci=new Date(e.clockIn); const co=e.clockOut?new Date(e.clockOut):null;
-              const h=Math.floor((e.durationMin||0)/60); const m=(e.durationMin||0)%60;
-              return (
-                <div key={e.id} className="row-hover" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                    <div style={{width:"32px",height:"32px",borderRadius:"10px",background:gold+"15",border:"1px solid "+gold+"25",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-syne)",fontWeight:700,color:gold,fontSize:"12px",flexShrink:0}}>
-                      {(e.user?.name||"?").charAt(0)}
-                    </div>
-                    <div>
-                      <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"13px",color:text,fontWeight:500}}>{e.user?.name}</p>
-                      <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:muted,marginTop:"2px"}}>
-                        {ci.toLocaleDateString("es",{day:"numeric",month:"short"})} · {ci.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
-                        {co && \` — \${co.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}\`}
-                      </p>
-                    </div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                    <p style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"13px",color:e.durationMin?gold:muted}}>{e.durationMin?\`\${h}h \${m>0?m+"m":""}\`:"—"}</p>
-                    <button onClick={()=>{setSelectedEntry(e);setFormClockIn(toLocalInput(e.clockIn));setFormClockOut(e.clockOut?toLocalInput(e.clockOut):"");setPassword("");setPassError("");setModal("edit");}}
-                      style={{background:"transparent",border:"none",cursor:"pointer",color:muted,padding:"6px",borderRadius:"8px",transition:"all 0.15s"}}
-                      onMouseEnter={el=>(el.currentTarget.style.color=gold)} onMouseLeave={el=>(el.currentTarget.style.color=muted)}>
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button onClick={()=>{setSelectedEntry(e);setPassword("");setPassError("");setModal("delete");}}
-                      style={{background:"transparent",border:"none",cursor:"pointer",color:muted,padding:"6px",borderRadius:"8px",transition:"all 0.15s"}}
-                      onMouseEnter={el=>(el.currentTarget.style.color="#F87171")} onMouseLeave={el=>(el.currentTarget.style.color=muted)}>
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Modal */}
-      {modal && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50,padding:"20px"}}>
-          <div style={{background:"#111",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"24px",padding:"28px",width:"100%",maxWidth:"420px",boxShadow:"0 40px 80px rgba(0,0,0,0.6)"}}>
-            <h2 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"16px",color:text,marginBottom:"6px"}}>
-              {modal==="edit"?"Editar registro":modal==="create"?"Agregar registro":"Eliminar registro"}
-            </h2>
-            <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted,marginBottom:"20px"}}>
-              {modal==="delete"?"Esta acción no se puede deshacer.":"Los cambios quedan en el log de actividad."}
-            </p>
-            <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"16px"}}>
-              {modal==="create" && (
-                <div>
-                  <label style={{display:"block",fontSize:"11px",color:muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>Empleado</label>
-                  <select value={formUserId} onChange={e=>setFormUserId(e.target.value)} style={inputStyle}>
-                    {employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
-                  </select>
-                </div>
-              )}
-              {modal!=="delete" && (
-                <>
-                  <div>
-                    <label style={{display:"block",fontSize:"11px",color:muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>Hora de entrada</label>
-                    <input type="datetime-local" value={formClockIn} onChange={e=>setFormClockIn(e.target.value)} style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={{display:"block",fontSize:"11px",color:muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>Hora de salida (opcional)</label>
-                    <input type="datetime-local" value={formClockOut} onChange={e=>setFormClockOut(e.target.value)} style={inputStyle} />
-                  </div>
-                </>
-              )}
-              <div>
-                <label style={{display:"block",fontSize:"11px",color:muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>Contraseña admin</label>
-                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={inputStyle} />
-                {passError && <p style={{color:"#F87171",fontSize:"12px",marginTop:"6px",fontFamily:"var(--font-dm-sans)"}}>{passError}</p>}
-              </div>
+        <div style={{padding:"20px",display:"flex",flexDirection:"column",gap:"14px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}} className="grid-mobile-1">
+            <div>
+              <label style={lStyle}>Nombre</label>
+              <input value={name} onChange={e=>setName(e.target.value)} style={iStyle} />
             </div>
-            <div style={{display:"flex",gap:"10px"}}>
-              <button onClick={()=>setModal(null)} style={{flex:1,padding:"12px",borderRadius:"12px",border:"1px solid rgba(255,255,255,0.08)",background:"transparent",color:muted,fontSize:"13px",fontFamily:"var(--font-dm-sans)",cursor:"pointer"}}>Cancelar</button>
-              <button onClick={handleSave} disabled={saving} className="btn-gold"
-                style={{flex:1,padding:"12px",borderRadius:"12px",fontSize:"13px",opacity:saving?0.6:1,
-                  background:modal==="delete"?"#F87171":"linear-gradient(135deg,#C9A84C,#F0D080)",
-                  color:modal==="delete"?"white":"#000"}}>
-                {saving?"Guardando...":modal==="delete"?"Eliminar":"Guardar"}
+            <div>
+              <label style={lStyle}>Email</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={iStyle} />
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}} className="grid-mobile-1">
+            <div>
+              <label style={lStyle}>Tarifa por hora ($)</label>
+              <input type="number" value={hourlyRate} onChange={e=>setHourlyRate(e.target.value)} style={iStyle} />
+            </div>
+            <div>
+              <label style={lStyle}>Estado</label>
+              <select value={isActive?"1":"0"} onChange={e=>setIsActive(e.target.value==="1")} style={iStyle}>
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style={lStyle}>PIN del Kiosk (4 dígitos)</label>
+            <input type="password" value={kioskPin} onChange={e=>setKioskPin(e.target.value.replace(/\\D/g,"").substring(0,4))}
+              placeholder="Dejar vacío para no cambiar" maxLength={4} style={iStyle} />
+            <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:"rgba(255,255,255,0.2)",marginTop:"6px"}}>El empleado usará este PIN para fichar en el kiosk</p>
+          </div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingTop:"4px",flexWrap:"wrap",gap:"10px"}}>
+            <button onClick={del} disabled={deleting}
+              style={{background:"transparent",border:"none",cursor:"pointer",color:"#F87171",fontSize:"13px",fontFamily:"var(--font-dm-sans)",fontWeight:500,opacity:deleting?0.5:1}}>
+              {deleting?"Eliminando...":"Eliminar empleado"}
+            </button>
+            <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+              {msg && <p style={{fontSize:"12px",color:msg==="Guardado"?"#34D399":"#F87171",fontFamily:"var(--font-dm-sans)"}}>{msg}</p>}
+              <button onClick={save} disabled={saving}
+                style={{background:"linear-gradient(135deg,#C9A84C,#F0D080)",color:"#000",padding:"10px 20px",borderRadius:"12px",fontSize:"13px",fontFamily:"var(--font-syne)",fontWeight:700,border:"none",cursor:"pointer",opacity:saving?0.6:1,transition:"all 0.3s"}}>
+                {saving?"Guardando...":"Guardar"}
               </button>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }`);
+
+// ============================================================
+// 2. KIOSK CLIENT — full luxury redesign, responsive
+// ============================================================
+writeFileSync("src/components/kiosk/KioskClient.tsx", `"use client";
+import { useState, useEffect } from "react";
+
+const GOLD = "#C9A84C";
+const COLORS = [GOLD,"#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80"];
+
+function Avatar({ name, color, size="md" }: { name:string; color?:string|null; size?:"sm"|"md"|"lg" }) {
+  const bg = color || COLORS[(name?.charCodeAt(0)||0)%COLORS.length];
+  const sz = size==="lg"?{width:"80px",height:"80px",fontSize:"28px",borderRadius:"22px"}:size==="md"?{width:"52px",height:"52px",fontSize:"18px",borderRadius:"14px"}:{width:"36px",height:"36px",fontSize:"13px",borderRadius:"10px"};
+  return (
+    <div style={{...sz,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-syne)",fontWeight:800,flexShrink:0,background:bg+"15",border:"1.5px solid "+bg+"30",color:bg}}>
+      {(name||"?").charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+type Employee = {id:string;name:string;avatarColor?:string|null;onShift:boolean;clockInTime?:string|null};
+type Step = "list"|"pin"|"success";
+
+export default function KioskClient({ employees, token }: { employees:Employee[]; token:string }) {
+  const [time, setTime] = useState(new Date());
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Employee|null>(null);
+  const [step, setStep] = useState<Step>("list");
+  const [pin, setPin] = useState("");
+  const [action, setAction] = useState<"in"|"out">("in");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+
+  useEffect(()=>{const t=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(t);},[]);
+
+  const filtered = employees.filter(e=>(e.name||"").toLowerCase().includes((search||"").toLowerCase()));
+  const onShiftNow = employees.filter(e=>e.onShift);
+
+  function select(emp:Employee){setSelected(emp);setAction(emp.onShift?"out":"in");setPin("");setError("");setStep("pin");}
+  function addDigit(d:string){if(pin.length<4)setPin(p=>p+d);}
+  function removeDigit(){setPin(p=>p.slice(0,-1));}
+
+  async function confirm(){
+    if(pin.length!==4){setError("Ingresa tu PIN de 4 dígitos");return;}
+    setLoading(true);setError("");
+    const res=await fetch("/api/kiosk/clock",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:selected!.id,organizationId:token,action,pin})});
+    const data=await res.json();
+    setLoading(false);
+    if(!res.ok){setError(data.error||"Error");return;}
+    setSuccessMsg(action==="in"?"Entrada registrada":"Salida registrada");
+    setStep("success");
+    setTimeout(()=>{setStep("list");setSelected(null);setPin("");setSearch("");setSuccessMsg("");},3000);
+  }
+
+  const timeStr=time.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const dateStr=time.toLocaleDateString("es",{weekday:"long",day:"numeric",month:"long"});
+
+  const glass={background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)"} as React.CSSProperties;
+  const glassGold={background:"rgba(201,168,76,0.08)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(201,168,76,0.2)"} as React.CSSProperties;
+
+  if(step==="success") return (
+    <div style={{minHeight:"100vh",background:bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px",
+      backgroundImage:"radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 70%)"}}>
+      <style>{\`@keyframes scale-in{from{opacity:0;transform:scale(0.7)}to{opacity:1;transform:scale(1)}}\`}</style>
+      <div style={{textAlign:"center",animation:"scale-in 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards"}}>
+        <div style={{...glassGold,width:"96px",height:"96px",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",boxShadow:"0 0 60px rgba(201,168,76,0.3)"}}>
+          <svg style={{color:GOLD,width:"40px",height:"40px"}} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <p style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"clamp(28px,5vw,40px)",color:text,marginBottom:"8px"}}>{successMsg}</p>
+        <p style={{fontFamily:"var(--font-syne)",fontWeight:600,fontSize:"20px",color:GOLD}}>{selected?.name}</p>
+        <p style={{fontFamily:"var(--font-dm-sans)",color:muted,marginTop:"8px",fontSize:"14px"}}>{timeStr}</p>
+      </div>
+    </div>
+  );
+
+  if(step==="pin") return (
+    <div style={{minHeight:"100vh",background:bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",
+      backgroundImage:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 60%)"}}>
+      <button onClick={()=>setStep("list")} style={{position:"absolute",top:"24px",left:"24px",display:"flex",alignItems:"center",gap:"6px",background:"transparent",border:"none",cursor:"pointer",color:muted,fontSize:"13px",fontFamily:"var(--font-dm-sans)",transition:"color 0.2s"}}
+        onMouseEnter={e=>e.currentTarget.style.color=text} onMouseLeave={e=>e.currentTarget.style.color=muted}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Volver
+      </button>
+      <div style={{width:"100%",maxWidth:"360px"}}>
+        <div style={{textAlign:"center",marginBottom:"32px"}}>
+          <Avatar name={selected!.name} color={selected?.avatarColor} size="lg" />
+          <p style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"22px",color:text,marginTop:"16px"}}>{selected!.name}</p>
+          <div style={{display:"inline-block",marginTop:"10px",padding:"6px 16px",borderRadius:"100px",fontSize:"13px",fontFamily:"var(--font-dm-sans)",fontWeight:500,
+            ...(action==="in"?{background:"rgba(52,211,153,0.1)",color:"#34D399",border:"1px solid rgba(52,211,153,0.2)"}:{background:"rgba(248,113,113,0.1)",color:"#F87171",border:"1px solid rgba(248,113,113,0.2)"})}}>
+            {action==="in"?"Registrar Entrada":"Registrar Salida"}
+          </div>
+        </div>
+
+        {/* PIN dots */}
+        <div style={{display:"flex",justifyContent:"center",gap:"16px",marginBottom:"32px"}}>
+          {[0,1,2,3].map(i=>(
+            <div key={i} style={{width:"14px",height:"14px",borderRadius:"50%",transition:"all 0.2s",
+              background:i<pin.length?GOLD:"rgba(255,255,255,0.15)",
+              transform:i<pin.length?"scale(1.3)":"scale(1)",
+              boxShadow:i<pin.length?"0 0 12px "+GOLD+"60":"none"}} />
+          ))}
+        </div>
+
+        {error && <p style={{textAlign:"center",color:"#F87171",fontSize:"13px",fontFamily:"var(--font-dm-sans)",marginBottom:"16px"}}>{error}</p>}
+
+        {/* Numpad */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"12px"}}>
+          {["1","2","3","4","5","6","7","8","9","","0","del"].map((d,i)=>(
+            <button key={i} onClick={()=>d==="del"?removeDigit():d?addDigit(d):null}
+              disabled={!d&&d!=="0"}
+              style={{height:"64px",borderRadius:"16px",fontSize:"20px",fontFamily:"var(--font-syne)",fontWeight:700,border:"none",cursor:d?"pointer":"default",transition:"all 0.15s",
+                background:d?"rgba(255,255,255,0.06)":"transparent",
+                color:d==="-"?muted:text,
+                opacity:!d&&d!=="0"?0:"1"}}
+              onMouseEnter={e=>{if(d)e.currentTarget.style.background="rgba(255,255,255,0.1)"}}
+              onMouseLeave={e=>{if(d)e.currentTarget.style.background="rgba(255,255,255,0.06)"}}>
+              {d==="del"
+                ? <svg width="20" height="20" style={{margin:"0 auto",display:"block"}} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+                : d}
+            </button>
+          ))}
+        </div>
+
+        <button onClick={confirm} disabled={loading||pin.length!==4}
+          style={{width:"100%",padding:"16px",borderRadius:"16px",fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"16px",border:"none",cursor:"pointer",transition:"all 0.3s",
+            background:pin.length===4?"linear-gradient(135deg,#C9A84C,#F0D080)":"rgba(255,255,255,0.06)",
+            color:pin.length===4?"#000":muted,
+            boxShadow:pin.length===4?"0 0 40px rgba(201,168,76,0.3)":"none",
+            opacity:loading?0.7:1}}>
+          {loading?"Verificando...":"Confirmar"}
+        </button>
+      </div>
+    </div>
+  );
+
+  // MAIN LIST
+  return (
+    <div style={{minHeight:"100vh",background:bg,color:text,
+      backgroundImage:"radial-gradient(ellipse at 20% 0%, rgba(201,168,76,0.05) 0%, transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(255,255,255,0.02) 0%, transparent 40%)"}}>
+      <style>{\`
+        .emp-card{transition:all 0.2s cubic-bezier(0.34,1.3,0.64,1);cursor:pointer}
+        .emp-card:hover{transform:translateY(-3px) scale(1.02)}
+        .emp-card:active{transform:scale(0.97)}
+        input{color-scheme:dark}
+        input:focus{border:1px solid rgba(201,168,76,0.4)!important;outline:none}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+      \`}</style>
+
+      {/* Header */}
+      <div style={{padding:"clamp(16px,4vw,32px)",display:"flex",alignItems:"flex-start",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+        <div>
+          <p style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"clamp(32px,6vw,60px)",color:text,lineHeight:1}}>{timeStr}</p>
+          <p style={{color:muted,fontSize:"clamp(11px,2vw,14px)",marginTop:"4px",textTransform:"capitalize",fontFamily:"var(--font-dm-sans)"}}>{dateStr}</p>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"4px"}}>
+          <div style={{width:"28px",height:"28px",borderRadius:"9px",background:"linear-gradient(135deg,#C9A84C,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <span style={{color:"#000",fontWeight:900,fontSize:"12px",fontFamily:"var(--font-syne)"}}>P</span>
+          </div>
+          <span style={{fontFamily:"var(--font-syne)",fontWeight:600,fontSize:"13px",color:"rgba(255,255,255,0.6)"}}>Punchly.Clock</span>
+        </div>
+      </div>
+
+      {/* On shift */}
+      {onShiftNow.length>0 && (
+        <div style={{padding:"10px clamp(16px,4vw,32px)",display:"flex",alignItems:"center",gap:"10px",overflowX:"auto",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+          <span style={{fontSize:"11px",color:muted,flexShrink:0,fontFamily:"var(--font-dm-sans)"}}>En turno:</span>
+          {onShiftNow.map(e=>(
+            <div key={e.id} style={{display:"flex",alignItems:"center",gap:"6px",padding:"5px 12px",borderRadius:"100px",flexShrink:0,background:"rgba(52,211,153,0.08)",border:"1px solid rgba(52,211,153,0.15)"}}>
+              <span style={{width:"6px",height:"6px",background:"#34D399",borderRadius:"50%",animation:"pulse 2s infinite",display:"block"}} />
+              <span style={{fontSize:"12px",color:"#34D399",fontFamily:"var(--font-dm-sans)",fontWeight:500}}>{e.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Search */}
+      <div style={{padding:"16px clamp(16px,4vw,32px)"}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Busca tu nombre..."
+          style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"16px",padding:"clamp(12px,2vw,16px) 20px",color:text,fontSize:"clamp(14px,2vw,18px)",fontFamily:"var(--font-dm-sans)",transition:"border 0.2s",boxSizing:"border-box"}} />
+      </div>
+
+      {/* Grid */}
+      <div style={{padding:"0 clamp(16px,4vw,32px) clamp(16px,4vw,32px)"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(clamp(130px,20vw,180px),1fr))",gap:"12px"}}>
+          {filtered.map(emp=>(
+            <button key={emp.id} onClick={()=>select(emp)} className="emp-card"
+              style={{padding:"clamp(14px,2vw,20px)",borderRadius:"20px",textAlign:"left",border:"none",
+                background:emp.onShift?"rgba(52,211,153,0.06)":"rgba(255,255,255,0.04)",
+                borderTop:emp.onShift?"1px solid rgba(52,211,153,0.15)":"1px solid rgba(255,255,255,0.08)",
+                borderLeft:emp.onShift?"1px solid rgba(52,211,153,0.15)":"1px solid rgba(255,255,255,0.08)",
+                borderRight:emp.onShift?"1px solid rgba(52,211,153,0.15)":"1px solid rgba(255,255,255,0.08)",
+                borderBottom:emp.onShift?"1px solid rgba(52,211,153,0.15)":"1px solid rgba(255,255,255,0.08)"}}>
+              <Avatar name={emp.name} color={emp.avatarColor} size="md" />
+              <p style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"clamp(12px,1.5vw,14px)",color:text,marginTop:"12px",lineHeight:1.3}}>{emp.name}</p>
+              {emp.onShift
+                ? <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"6px"}}>
+                    <span style={{width:"5px",height:"5px",background:"#34D399",borderRadius:"50%",animation:"pulse 2s infinite",display:"block"}} />
+                    <span style={{fontSize:"11px",color:"#34D399",fontFamily:"var(--font-dm-sans)"}}>En turno</span>
+                  </div>
+                : <span style={{fontSize:"11px",color:muted,marginTop:"6px",display:"block",fontFamily:"var(--font-dm-sans)"}}>Toca para fichar</span>}
+            </button>
+          ))}
+        </div>
+        {filtered.length===0 && (
+          <div style={{textAlign:"center",padding:"60px 0"}}>
+            <p style={{color:muted,fontSize:"14px",fontFamily:"var(--font-dm-sans)"}}>No se encontraron empleados</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const bg="#0A0A0A",text="#FAFAFA",muted="rgba(255,255,255,0.35)";`);
 
 console.log("Listo!");
 
