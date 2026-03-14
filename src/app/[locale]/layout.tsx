@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Syne, DM_Sans } from "next/font/google";
 import "../globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -16,11 +16,18 @@ const dmSans = DM_Sans({
   weight: ["300","400","500","600"]
 });
 
+// Configuración de Viewport (Corrige los avisos de Next.js)
+export const viewport: Viewport = {
+  themeColor: "#D4AF37",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: "Punchly.Clock",
   description: "Control de asistencia para tu equipo",
   manifest: "/manifest.json",
-  themeColor: "#C9A84C",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -32,9 +39,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ 
+  children, 
+  params 
+}: { 
+  children: React.ReactNode;
+  params: { locale: string };
+}) {
+  // Extraemos el locale de los params de la ruta
+  const { locale } = await params;
+
   return (
-    <html lang={params.locale} className="dark" style={{ colorScheme: 'dark' }}>
+    <html lang={locale} className="dark" style={{ colorScheme: 'dark' }}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -42,7 +58,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="Punchly.Clock" />
         <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
-      <body className={`${syne.variable} ${dmSans.variable} antialiased`} style={{background:"#0A0A0A"}}>
+      <body 
+        className={`${syne.variable} ${dmSans.variable} antialiased`} 
+        style={{ background: "#09090b", color: "white" }}
+      >
         <ThemeProvider>
           <LangProvider>
             {children}
