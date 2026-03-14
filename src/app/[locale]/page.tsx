@@ -66,7 +66,7 @@ export default function LandingPage() {
               7 días gratis 
             </div>
             <h1 className="fade-up-2" style={{fontFamily:"var(--font-syne)",fontSize:"clamp(48px,8vw,88px)",fontWeight:800,lineHeight:1,letterSpacing:"-2px",marginBottom:"24px"}}>
-              Control de<br/><span className="gold-text">asistencia</span><br/>sin excusas
+              Control de<br/><span className="gold-text">asistencia</span><br/>
             </h1>
             <p className="fade-up-3" style={{color:"rgba(255,255,255,0.35)",fontSize:"18px",maxWidth:"480px",margin:"0 auto 40px",lineHeight:1.7,fontWeight:300}}>
               Kiosk con PIN, geofencing móvil y reportes automáticos. Todo por un pago único de $49.
