@@ -23,6 +23,14 @@ export default function ActivityPage() {
   const [formClockIn, setFormClockIn] = useState("");
   const [formClockOut, setFormClockOut] = useState("");
 
+  // Variables de color para solucionar el error de TypeScript
+  const bg = "var(--bg-primary, #0A0A0A)";
+  const card = "var(--bg-card, #111111)";
+  const border = "var(--border, rgba(255,255,255,0.08))";
+  const text = "var(--text-primary, #FAFAFA)";
+  const muted = "var(--text-muted, #A1A1AA)";
+  const gold = "#C9A84C";
+
   useEffect(()=>{
     fetch("/api/employees").then(r=>r.json()).then(d=>setEmployees(d.employees||[]));
   },[]);
