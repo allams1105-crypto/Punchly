@@ -17,6 +17,7 @@ const links = [
 
 export default function Sidebar({ orgName }: { orgName?: string }) {
   const path = usePathname();
+  
   return (
     <div style={{width:"220px",minHeight:"100vh",background:"rgba(255,255,255,0.02)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",flexShrink:0}}>
       {/* Logo */}
@@ -34,7 +35,14 @@ export default function Sidebar({ orgName }: { orgName?: string }) {
       <nav style={{flex:1,padding:"12px 8px",overflowY:"auto"}}>
         <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"10px",fontWeight:600,color:"rgba(255,255,255,0.2)",textTransform:"uppercase",letterSpacing:"1.5px",padding:"4px 8px 8px"}}>Menu</p>
         {links.map(l=>{
-          const active = path === l.href || path.startsWith(l.href+"/");
+          // FIX: Lógica mejorada para evitar colisiones en rutas hijas
+          const isExact = path === l.href;
+          const isSubPath = path.startsWith(l.href + "/") && !path.startsWith(l.href + "/new");
+          
+          // Caso especial: "Nuevo empleado" solo brilla si es la ruta exacta
+          // Caso "Empleados": brilla si es la ruta exacta o un sub-path (como un ID), PERO NO si es /new
+          const active = l.href.endsWith("/new") ? isExact : (isExact || isSubPath);
+
           return (
             <Link key={l.href} href={l.href}
               style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"12px",textDecoration:"none",marginBottom:"2px",

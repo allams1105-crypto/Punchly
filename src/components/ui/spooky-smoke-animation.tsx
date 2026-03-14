@@ -64,10 +64,10 @@ void main(){gl_Position=position;}`;
   }
 
   updateScale() {
-    // Protección para que no se rompa el SSR en Next.js
     if (typeof window === "undefined") return; 
     
-    const dpr = Math.max(1, window.devicePixelRatio);
+   
+    const dpr = 1; 
     const { innerWidth: width, innerHeight: height } = window;
     this.canvas.width = width * dpr;
     this.canvas.height = height * dpr;
