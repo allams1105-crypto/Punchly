@@ -17,14 +17,23 @@ export default function PayrollPage() {
   useEffect(() => {
     setLoading(true);
     fetch("/api/payroll?period="+period).then(r=>r.json()).then(d=>{
-      setData(d.employees||d||[]);
+      // Asegurarnos de que siempre seteamos un array, pase lo que pase con la respuesta
+      const empData = d.employees || d;
+      setData(Array.isArray(empData) ? empData : []);
+      setLoading(false);
+    }).catch(() => {
+      // Por si la API falla, no rompemos la app
+      setData([]);
       setLoading(false);
     });
   }, [period]);
 
-  const total = data.reduce((a,e)=>a+(e.totalPay||0),0);
+  // Aquí está el FIX del .reduce: 
+  // Nos aseguramos de que sea un array antes de intentar reducirlo
+  const total = Array.isArray(data) ? data.reduce((a,e)=>a+(e.totalPay||0),0) : 0;
 
   function exportCSV() {
+    if (!Array.isArray(data)) return;
     const rows = [["Empleado","Horas","Extras","Tarifa","Total"]];
     data.forEach(e=>rows.push([e.name,e.totalHours?.toFixed(1)||0,e.overtimeHours?.toFixed(1)||0,e.hourlyRate||0,(e.totalPay||0).toFixed(2)]));
     const csv = rows.map(r=>r.join(",")).join("\n");
@@ -43,12 +52,20 @@ export default function PayrollPage() {
   .row-hover:hover{background:rgba(255,255,255,0.04)!important}
   input,select,textarea{color-scheme:dark}
   input:focus,select:focus{border:1px solid rgba(201,168,76,0.4)!important;outline:none}
-  @media(max-width:768px){.hide-mobile{display:none!important}.stack-mobile{flex-direction:column!important}.full-mobile{width:100%!important}.grid-mobile-1{grid-template-columns:1fr!important}}
+  .payroll-grid { display: grid; grid-template-columns: 1fr 80px 80px 80px 100px; }
+  @media(max-width:768px){
+    .hide-mobile{display:none!important}
+    .stack-mobile{flex-direction:column!important}
+    .full-mobile{width:100%!important}
+    .payroll-grid { display: flex; flex-direction: column; gap: 8px; }
+    .payroll-grid > p:not(:first-child) { display: none; }
+    .mobile-row { display: flex; justify-content: space-between; width: 100%; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 8px; margin-top: 8px; }
+  }
 `}</style>
       <div style={{height:"56px",borderBottom:"1px solid "+border,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
           <h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:text}}>{lang==="es"?"Nómina":"Payroll"}</h1>
-          <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:muted}}>{data.length} empleados</p>
+          <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:muted}}>{Array.isArray(data) ? data.length : 0} empleados</p>
         </div>
         <button onClick={exportCSV} className="btn-gold" style={{padding:"8px 16px",borderRadius:"12px",fontSize:"12px"}}>
           {lang==="es"?"Exportar CSV":"Export CSV"}
@@ -61,7 +78,7 @@ export default function PayrollPage() {
             <option value="current">Quincena actual</option>
             <option value="previous">Quincena anterior</option>
           </select>
-          <div style={{background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.2)",borderRadius:"14px",padding:"10px 18px",marginLeft:"auto"}}>
+          <div style={{background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.2)",borderRadius:"14px",padding:"10px 18px",marginLeft:"auto"}} className="full-mobile">
             <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:"rgba(201,168,76,0.6)",marginBottom:"2px"}}>Total estimado</p>
             <p style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"20px",color:gold}}>${total.toLocaleString("en",{maximumFractionDigits:2})}</p>
           </div>
@@ -70,27 +87,36 @@ export default function PayrollPage() {
         <div style={{background:card,backdropFilter:"blur(20px)",border:"1px solid "+border,borderRadius:"20px",overflow:"hidden"}}>
           {loading ? (
             <div style={{padding:"48px",textAlign:"center"}}><p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Cargando...</p></div>
-          ) : data.length===0 ? (
+          ) : !Array.isArray(data) || data.length===0 ? (
             <div style={{padding:"48px",textAlign:"center"}}><p style={{color:muted,fontFamily:"var(--font-dm-sans)",fontSize:"13px"}}>Sin registros en este período</p></div>
           ) : (
             <>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 100px",padding:"10px 20px",borderBottom:"1px solid "+border}} className="hide-mobile">
+              <div className="payroll-grid hide-mobile" style={{padding:"10px 20px",borderBottom:"1px solid "+border}}>
                 {["Empleado","Horas","Extras","Tarifa","Total"].map(h=>(
                   <p key={h} style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:"1px"}}>{h}</p>
                 ))}
               </div>
               {data.map(e=>(
-                <div key={e.id||e.name} className="row-hover" style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 100px",padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,0.04)",alignItems:"center"}}>
+                <div key={e.id||e.name} className="row-hover payroll-grid" style={{padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,0.04)",alignItems:"center"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
                     <div style={{width:"32px",height:"32px",borderRadius:"10px",background:gold+"15",border:"1px solid "+gold+"25",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-syne)",fontWeight:700,color:gold,fontSize:"12px",flexShrink:0}}>
                       {(e.name||"?").charAt(0)}
                     </div>
                     <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"13px",color:text,fontWeight:500}}>{e.name}</p>
                   </div>
-                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>{(e.totalHours||0).toFixed(1)}h</p>
-                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:e.overtimeHours>0?"#FB923C":muted}}>{(e.overtimeHours||0).toFixed(1)}h</p>
-                  <p style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>${e.hourlyRate||0}/h</p>
-                  <p style={{fontFamily:"var(--font-syne)",fontSize:"14px",fontWeight:800,color:gold}}>${(e.totalPay||0).toFixed(2)}</p>
+                  
+                  {/* Vista móvil para los datos */}
+                  <div className="mobile-row">
+                    <p className="hide-desktop" style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>Horas: {(e.totalHours||0).toFixed(1)}h</p>
+                    <p className="hide-desktop" style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:e.overtimeHours>0?"#FB923C":muted}}>Extras: {(e.overtimeHours||0).toFixed(1)}h</p>
+                  </div>
+                  
+                  {/* Vista desktop para los datos */}
+                  <p className="hide-mobile" style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>{(e.totalHours||0).toFixed(1)}h</p>
+                  <p className="hide-mobile" style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:e.overtimeHours>0?"#FB923C":muted}}>{(e.overtimeHours||0).toFixed(1)}h</p>
+                  <p className="hide-mobile" style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:muted}}>${e.hourlyRate||0}/h</p>
+                  
+                  <p style={{fontFamily:"var(--font-syne)",fontSize:"14px",fontWeight:800,color:gold, textAlign: "right"}}>${(e.totalPay||0).toFixed(2)}</p>
                 </div>
               ))}
             </>
