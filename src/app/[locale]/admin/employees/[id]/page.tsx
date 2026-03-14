@@ -54,7 +54,7 @@ export default async function EmployeePage({ params }: { params: any }) {
             <h3 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Horario</h3>
           </div>
           <div style={{padding:"20px"}}>
-            <ScheduleEditor userId={employee.id} initialSchedule={employee.schedule} />
+            <ScheduleEditor userId={employee.id} employeeName={employee?.name || 'Empleado'} />
           </div>
         </div>
       </div>
