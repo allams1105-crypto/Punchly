@@ -16,7 +16,7 @@ const dmSans = DM_Sans({
   weight: ["300","400","500","600"]
 });
 
-// Configuración de Viewport (Corrige los avisos de Next.js)
+// Configuración de Viewport
 export const viewport: Viewport = {
   themeColor: "#D4AF37",
   width: "device-width",
@@ -39,14 +39,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ 
-  children, 
-  params 
-}: { 
+// La clave está en definir params como una Promise para cumplir con Next.js 15/16
+export default async function RootLayout(props: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
-  // Extraemos el locale de los params de la ruta
+  // Extraemos children y esperamos la resolución de params
+  const { children, params } = props;
   const { locale } = await params;
 
   return (
@@ -60,7 +59,7 @@ export default async function RootLayout({
       </head>
       <body 
         className={`${syne.variable} ${dmSans.variable} antialiased`} 
-        style={{ background: "#09090b", color: "white" }}
+        style={{ background: "#09090b", color: "white", margin: 0 }}
       >
         <ThemeProvider>
           <LangProvider>
