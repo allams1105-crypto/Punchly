@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 
+// Cambiamos el nombre para que coincida con la lógica interna
 function SmokeCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -63,19 +64,22 @@ void main(){
 
     function resize() {
       const c = canvasRef.current;
-      if (!c) return;
-      const dpr = Math.max(1, devicePixelRatio);
-      c.width = innerWidth * dpr;
-      c.height = innerHeight * dpr;
+      // Blindaje de seguridad para TS
+      if (!c || !gl) return;
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      c.width = window.innerWidth * dpr;
+      c.height = window.innerHeight * dpr;
       gl.viewport(0, 0, c.width, c.height);
     }
+    
     resize();
     window.addEventListener("resize", resize);
 
     let raf: number;
     function loop(now: number) {
       const c = canvasRef.current;
-      if (!c) return;
+      // Blindaje de seguridad para TS
+      if (!c || !gl) return;
       gl.clearColor(0,0,0,1);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.useProgram(prog);
@@ -94,10 +98,14 @@ void main(){
   }, []);
 
   return (
-    <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.45}} />
+    <canvas 
+      ref={canvasRef} 
+      style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.45}} 
+    />
   );
 }
 
+// Exportamos HeroGeometric explícitamente para que page.tsx lo vea
 export function HeroGeometric({ badge, title1, title2 }: { badge: string; title1: string; title2: string }) {
   return (
     <div style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",
@@ -136,11 +144,8 @@ export function HeroGeometric({ badge, title1, title2 }: { badge: string; title1
           border:"1px solid rgba(96,165,250,0.08)"}} />
         <div className="shape-3" style={{position:"absolute",top:"35%",left:"5%",width:"100px",height:"100px",borderRadius:"50%",
           background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)"}} />
-        <div className="shape-3" style={{position:"absolute",top:"20%",right:"25%",width:"60px",height:"60px",borderRadius:"50%",
-          background:"rgba(96,165,250,0.06)",border:"1px solid rgba(96,165,250,0.1)",animationDelay:"3s"}} />
       </div>
 
-      {/* Content */}
       <div style={{position:"relative",zIndex:10,textAlign:"center",padding:"120px 24px 80px",maxWidth:"900px",margin:"0 auto",width:"100%"}}>
         <div className="hero-fade-1" style={{display:"inline-flex",alignItems:"center",gap:"8px",
           background:"rgba(255,255,255,0.05)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.1)",
