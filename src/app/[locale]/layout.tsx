@@ -16,7 +16,6 @@ const dmSans = DM_Sans({
   weight: ["300","400","500","600"]
 });
 
-// Configuración de Viewport
 export const viewport: Viewport = {
   themeColor: "#D4AF37",
   width: "device-width",
@@ -24,43 +23,25 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export const metadata: Metadata = {
-  title: "Punchly.Clock",
-  description: "Control de asistencia para tu equipo",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Punchly.Clock",
-  },
-  icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
-  },
-};
-
-// La clave está en definir params como una Promise para cumplir con Next.js 15/16
 export default async function RootLayout(props: {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  // Extraemos children y esperamos la resolución de params
   const { children, params } = props;
   const { locale } = await params;
 
   return (
-    <html lang={locale} className="dark" style={{ colorScheme: 'dark' }}>
+    <html 
+      lang={locale} 
+      className="dark" 
+      style={{ colorScheme: 'dark' }} 
+      suppressHydrationWarning
+    >
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Punchly.Clock" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
-      <body 
-        className={`${syne.variable} ${dmSans.variable} antialiased`} 
-        style={{ background: "#09090b", color: "white", margin: 0 }}
-      >
+      <body className={`${syne.variable} ${dmSans.variable} antialiased`} style={{ background: "#030303", color: "white", margin: 0 }}>
         <ThemeProvider>
           <LangProvider>
             {children}
