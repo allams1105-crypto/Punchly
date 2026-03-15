@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
 
-// Cambiamos el nombre para que coincida con la lógica interna
 function SmokeCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -64,22 +63,19 @@ void main(){
 
     function resize() {
       const c = canvasRef.current;
-      // Blindaje de seguridad para TS
-      if (!c || !gl) return;
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      c.width = window.innerWidth * dpr;
-      c.height = window.innerHeight * dpr;
+      if (!c) return;
+      const dpr = Math.max(1, devicePixelRatio);
+      c.width = innerWidth * dpr;
+      c.height = innerHeight * dpr;
       gl.viewport(0, 0, c.width, c.height);
     }
-    
     resize();
     window.addEventListener("resize", resize);
 
     let raf: number;
     function loop(now: number) {
       const c = canvasRef.current;
-      // Blindaje de seguridad para TS
-      if (!c || !gl) return;
+      if (!c) return;
       gl.clearColor(0,0,0,1);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.useProgram(prog);
@@ -97,95 +93,54 @@ void main(){
     };
   }, []);
 
-  return (
-    <canvas 
-      ref={canvasRef} 
-      style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.45}} 
-    />
-  );
+  return <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.45}} />;
 }
 
-// Exportamos HeroGeometric explícitamente para que page.tsx lo vea
-export function HeroGeometric({ badge, title1, title2 }: { badge: string; title1: string; title2: string }) {
-  const isEs = typeof window !== "undefined" && window.location.pathname.startsWith("/es");
-  const t = {
-    badge: isEs ? "7 días de prueba gratis" : badge,
-    title1: isEs ? "Control de asistencia" : title1,
-    title2: isEs ? "" : title2,
-    sub: isEs ? "Kiosk con PIN, geofencing desde el móvil y reportes automáticos. Un pago único de $49." : "PIN kiosk, mobile geofencing and automatic reports. One-time payment of $49.",
-    btn1: isEs ? "Comenzar gratis" : "Start free trial",
-    btn2: isEs ? "{t.btn2}" : "Sign in",
-    btn1href: isEs ? "/es/register" : "/en/register",
-    btn2href: isEs ? "/es/login" : "/en/login",
-  };
+export function HeroGeometric({ locale }: { locale: string }) {
+  const isEs = locale === "es";
+
   return (
     <div style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",
-      background:"radial-gradient(ellipse at 20% 0%, rgba(96,165,250,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 0%, rgba(201,168,76,0.15) 0%, transparent 50%), #060810"}}>
-      
+      background:"radial-gradient(ellipse at 20% 0%, rgba(96,165,250,0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 0%, rgba(201,168,76,0.12) 0%, transparent 50%), #060810"}}>
+
       <SmokeCanvas />
 
-      {/* Overlay gradient */}
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, rgba(6,8,16,0.2) 0%, rgba(6,8,16,0.4) 60%, rgba(6,8,16,1) 100%)",zIndex:1}} />
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(6,8,16,0.2) 0%,rgba(6,8,16,0.4) 60%,rgba(6,8,16,1) 100%)",zIndex:1}} />
 
-      {/* 3D morphing shapes */}
+      {/* Shapes */}
       <div style={{position:"absolute",inset:0,zIndex:2,overflow:"hidden",pointerEvents:"none"}}>
         <style>{`
           @keyframes morph1{0%,100%{border-radius:40% 60% 70% 30%/40% 50% 60% 50%}50%{border-radius:70% 30% 30% 70%/50% 70% 30% 50%}}
           @keyframes morph2{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}50%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}}
-          @keyframes float-shape{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-30px) rotate(180deg)}}
-          @keyframes hero-fade-up{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
-          .shape-1{animation:morph1 14s ease-in-out infinite}
-          .shape-2{animation:morph2 18s ease-in-out infinite reverse}
-          .shape-3{animation:float-shape 10s ease-in-out infinite}
-          .hero-fade-1{animation:hero-fade-up 1s ease 0.5s both}
-          .hero-fade-2{animation:hero-fade-up 1s ease 0.7s both}
-          .hero-fade-3{animation:hero-fade-up 1s ease 0.9s both}
-          .hero-fade-4{animation:hero-fade-up 1s ease 1.1s both}
-          .hero-btn-gold{background:linear-gradient(135deg,#FFD166,#C9A84C);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);text-decoration:none;display:inline-block}
+          @keyframes float-shape{0%,100%{transform:translateY(0)}50%{transform:translateY(-24px)}}
+          @keyframes hero-fade{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
+          .hf1{animation:hero-fade 1s ease 0.4s both}
+          .hf2{animation:hero-fade 1s ease 0.6s both}
+          .hf3{animation:hero-fade 1s ease 0.8s both}
+          .hero-btn-gold{background:linear-gradient(135deg,#FFD166,#C9A84C);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);text-decoration:none;display:inline-block;border-radius:16px;padding:16px 36px;font-size:15px}
           .hero-btn-gold:hover{transform:translateY(-4px) scale(1.04);box-shadow:0 24px 60px rgba(201,168,76,0.5)}
-          .hero-btn-ghost{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);transition:all 0.3s ease;text-decoration:none;display:inline-block}
+          .hero-btn-ghost{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);transition:all 0.3s ease;text-decoration:none;display:inline-block;border-radius:16px;padding:16px 36px;font-size:15px}
           .hero-btn-ghost:hover{background:rgba(255,255,255,0.1);color:white;transform:translateY(-2px)}
         `}</style>
-        
-        <div className="shape-1" style={{position:"absolute",top:"10%",right:"8%",width:"420px",height:"420px",
-          background:"linear-gradient(135deg,rgba(201,168,76,0.06),rgba(255,209,102,0.03))",
-          border:"1px solid rgba(201,168,76,0.08)",backdropFilter:"blur(2px)"}} />
-        <div className="shape-2" style={{position:"absolute",bottom:"15%",left:"3%",width:"280px",height:"280px",
-          background:"linear-gradient(135deg,rgba(96,165,250,0.05),rgba(139,92,246,0.03))",
-          border:"1px solid rgba(96,165,250,0.08)"}} />
-        <div className="shape-3" style={{position:"absolute",top:"35%",left:"5%",width:"100px",height:"100px",borderRadius:"50%",
-          background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)"}} />
+        <div style={{position:"absolute",top:"10%",right:"8%",width:"420px",height:"420px",animation:"morph1 14s ease-in-out infinite",background:"linear-gradient(135deg,rgba(201,168,76,0.06),rgba(255,209,102,0.03))",border:"1px solid rgba(201,168,76,0.08)"}} />
+        <div style={{position:"absolute",bottom:"15%",left:"3%",width:"280px",height:"280px",animation:"morph2 18s ease-in-out infinite reverse",background:"linear-gradient(135deg,rgba(96,165,250,0.05),rgba(139,92,246,0.03))",border:"1px solid rgba(96,165,250,0.08)"}} />
+        <div style={{position:"absolute",top:"35%",left:"5%",width:"100px",height:"100px",borderRadius:"50%",animation:"float-shape 10s ease-in-out infinite",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)"}} />
       </div>
 
+      {/* Content */}
       <div style={{position:"relative",zIndex:10,textAlign:"center",padding:"120px 24px 80px",maxWidth:"900px",margin:"0 auto",width:"100%"}}>
-        <div className="hero-fade-1" style={{display:"inline-flex",alignItems:"center",gap:"8px",
-          background:"rgba(255,255,255,0.05)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.1)",
-          padding:"7px 18px",borderRadius:"100px",fontSize:"12px",color:"rgba(255,255,255,0.45)",marginBottom:"32px",fontFamily:"var(--font-dm-sans)"}}>
-          <div style={{width:"6px",height:"6px",background:"#C9A84C",borderRadius:"50%",boxShadow:"0 0 8px #C9A84C"}} />
-          {t.badge}
-        </div>
-
-        <h1 className="hero-fade-2" style={{fontFamily:"var(--font-syne)",fontSize:"clamp(42px,8vw,92px)",fontWeight:800,
-          lineHeight:1,letterSpacing:"-3px",marginBottom:"24px",color:"white"}}>
-          {t.title1}{t.title2 ? <br/> : null}
-          {t.title2 && <span style={{background:"linear-gradient(135deg,#FFD166,#C9A84C,#FFD166)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",filter:"drop-shadow(0 0 40px rgba(201,168,76,0.4))"}}>
-            {t.title2}
-          </span>}
+        <h1 className="hf1" style={{fontFamily:"var(--font-syne)",fontSize:"clamp(42px,8vw,96px)",fontWeight:800,lineHeight:1,letterSpacing:"-3px",marginBottom:"40px",color:"white"}}>
+          {isEs ? "Control de asistencia" : "Attendance tracking"}
         </h1>
 
-        <p className="hero-fade-3" style={{color:"rgba(255,255,255,0.35)",fontSize:"clamp(15px,2vw,19px)",
-          maxWidth:"500px",margin:"0 auto 44px",lineHeight:1.7,fontWeight:300,fontFamily:"var(--font-dm-sans)"}}>
-          {t.sub}
-        </p>
-
-        <div className="hero-fade-4" style={{display:"flex",gap:"12px",justifyContent:"center",flexWrap:"wrap"}}>
-          <a href={t.btn1href} className="hero-btn-gold" style={{padding:"16px 36px",borderRadius:"16px",fontSize:"15px",
-            boxShadow:"0 0 60px rgba(201,168,76,0.3)"}}>
-            {t.btn1}
+        <div className="hf2" style={{display:"flex",gap:"12px",justifyContent:"center",flexWrap:"wrap"}}>
+          <a href={isEs?"/es/register":"/en/register"} className="hero-btn-gold"
+            style={{boxShadow:"0 0 60px rgba(201,168,76,0.3)"}}>
+            {isEs?"Comenzar gratis":"Start free trial"}
           </a>
-          <a href={t.btn2href} className="hero-btn-ghost" style={{padding:"16px 36px",borderRadius:"16px",fontSize:"15px",
-            fontFamily:"var(--font-dm-sans)",fontWeight:500}}>
-            Ya tengo cuenta
+          <a href={isEs?"/es/login":"/en/login"} className="hero-btn-ghost"
+            style={{fontFamily:"var(--font-dm-sans)",fontWeight:500}}>
+            {isEs?"Iniciar sesión":"Sign in"}
           </a>
         </div>
       </div>
