@@ -1,4 +1,5 @@
 "use client";
+import { LocationMap } from "@/components/ui/expand-map";
 import { useState } from "react";
 import PushRegister from "@/components/PushRegister";
 
@@ -101,6 +102,14 @@ function GeofencingTab({ org }: { org: any }) {
           {!org?.lat && <span style={{display:"block",marginTop:"4px",color:"rgba(255,255,255,0.3)"}}>Sin configurar — empleados pueden fichar desde cualquier lugar.</span>}
         </p>
       </div>
+      {/* Map preview */}
+      <div style={{marginBottom:"8px"}}>
+        <LocationMap
+          location={lat && lng ? "Ubicación configurada" : "Sin ubicación"}
+          coordinates={lat && lng ? `${lat}, ${lng}` : "Detecta o ingresa coordenadas"}
+        />
+      </div>
+
       <button onClick={detect} disabled={detecting}
         style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"12px",color:"rgba(255,255,255,0.7)",fontSize:"13px",fontFamily:"var(--font-dm-sans)",fontWeight:600,cursor:"pointer",transition:"all 0.2s",opacity:detecting?0.6:1}}>
         {detecting?"Detectando...":"Detectar ubicación actual de la empresa"}

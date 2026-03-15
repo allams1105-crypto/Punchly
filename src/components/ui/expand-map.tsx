@@ -1,9 +1,4 @@
-import { writeFileSync, mkdirSync } from "fs";
-
-mkdirSync("src/components/ui", { recursive: true });
-
-// 1. Create the LocationMap component
-writeFileSync("src/components/ui/expand-map.tsx", `"use client"
+"use client"
 import type React from "react"
 import { useState, useRef } from "react"
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion"
@@ -180,37 +175,4 @@ export function LocationMap({
       </motion.p>
     </motion.div>
   )
-}`);
-
-// 2. Update SettingsClient to use LocationMap in geofencing tab
-const { readFileSync } = await import("fs");
-let settings = readFileSync("src/components/admin/SettingsClient.tsx", "utf8");
-
-// Add LocationMap import
-if (!settings.includes("LocationMap")) {
-  settings = settings.replace(
-    `"use client";`,
-    `"use client";
-import { LocationMap } from "@/components/ui/expand-map";`
-  );
-
-  // Add map to GeofencingTab after the detect button
-  settings = settings.replace(
-    `<button onClick={detect} disabled={detecting}`,
-    `{/* Map preview */}
-      <div style={{marginBottom:"8px"}}>
-        <LocationMap
-          location={lat && lng ? "Ubicación configurada" : "Sin ubicación"}
-          coordinates={lat && lng ? \`\${lat}, \${lng}\` : "Detecta o ingresa coordenadas"}
-        />
-      </div>
-
-      <button onClick={detect} disabled={detecting}`
-  );
-  
-  writeFileSync("src/components/admin/SettingsClient.tsx", settings);
 }
-
-console.log("Listo!");
-
-
