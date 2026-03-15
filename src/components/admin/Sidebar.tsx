@@ -30,7 +30,7 @@ export default function Sidebar({ orgName }: { orgName?: string }) {
   };
   
   return (
-    <div style={{width:"220px",minHeight:"100vh",background:"rgba(255,255,255,0.01)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",flexShrink:0}}>
+    <div className="punchly-sidebar" style={{width:"220px",minHeight:"100vh",background:"rgba(255,255,255,0.01)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",flexShrink:0}}>
       {/* Logo */}
       <div style={{padding:"20px 16px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>

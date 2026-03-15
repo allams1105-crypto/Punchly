@@ -101,3 +101,25 @@ body {
 /* Forzar fuentes */
 .font-syne { font-family: var(--font-syne) !important; }
 .font-dm { font-family: var(--font-body) !important; }
+/* === PUNCHLY RESPONSIVE === */
+/* responsive-punchly */
+@media (max-width: 768px) {
+  /* Sidebar hidden on mobile */
+  .punchly-sidebar { display: none !important; }
+  .punchly-main { width: 100% !important; }
+  
+  /* Mobile nav bar */
+  .punchly-mobile-nav { display: flex !important; }
+  
+  /* General */
+  .hide-mobile { display: none !important; }
+  .stack-mobile { flex-direction: column !important; }
+  .full-mobile { width: 100% !important; }
+  .grid-mobile-1 { grid-template-columns: 1fr !important; }
+  .grid-mobile-2 { grid-template-columns: 1fr 1fr !important; }
+  .text-mobile-sm { font-size: 12px !important; }
+  .p-mobile { padding: 16px !important; }
+}
+@media (min-width: 769px) {
+  .punchly-mobile-nav { display: none !important; }
+}
