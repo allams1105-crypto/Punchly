@@ -1,185 +1,224 @@
-import { writeFileSync } from "fs";
+import { writeFileSync, readFileSync } from "fs";
 
-writeFileSync("src/components/ui/shape-landing-hero.tsx", `"use client";
-import { useEffect, useRef } from "react";
+// 1. Fix hero text
+let hero = readFileSync("src/components/ui/shape-landing-hero.tsx", "utf8");
+hero = hero
+  .replace(/sin excusas/g, "inteligente y simple")
+  .replace(/Sin tarjeta requerida durante el trial/g, "Cancela cuando quieras")
+  .replace(/sin tarjeta de crédito/g, "prueba completa gratis");
+writeFileSync("src/components/ui/shape-landing-hero.tsx", hero);
 
-function SmokeCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+// 2. Fix landing text
+let landing = readFileSync("src/app/[locale]/page.tsx", "utf8");
+landing = landing
+  .replace(/sin excusas/gi, "inteligente y simple")
+  .replace(/Sin tarjeta requerida durante el trial/gi, "Cancela cuando quieras")
+  .replace(/sin tarjeta de crédito/gi, "prueba completa gratis")
+  .replace(/7 días gratis — sin tarjeta de crédito/gi, "7 días de prueba completa gratis");
+writeFileSync("src/app/[locale]/page.tsx", landing);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const gl = canvas.getContext("webgl2");
-    if (!gl) return;
+// 3. Add EN/ES to landing nav
+landing = readFileSync("src/app/[locale]/page.tsx", "utf8");
+landing = landing.replace(
+  `<Link href="/en/login" style={{fontSize:"13px",color:"rgba(255,255,255,0.45)",textDecoration:"none",fontWeight:500}}>Iniciar sesión</Link>`,
+  `<a href="/es/login" style={{fontSize:"12px",color:"rgba(255,255,255,0.25)",textDecoration:"none",fontWeight:500,fontFamily:"var(--font-dm-sans)"}}>ES</a>
+            <span style={{color:"rgba(255,255,255,0.1)"}}>·</span>
+            <a href="/en/login" style={{fontSize:"12px",color:"rgba(255,255,255,0.45)",textDecoration:"none",fontWeight:600",fontFamily:"var(--font-dm-sans)"}}>EN</a>
+            <span style={{color:"rgba(255,255,255,0.1)",margin:"0 4px"}}>|</span>
+            <Link href="/en/login" style={{fontSize:"13px",color:"rgba(255,255,255,0.45)",textDecoration:"none",fontWeight:500}}>Iniciar sesión</Link>`
+);
+writeFileSync("src/app/[locale]/page.tsx", landing);
 
-    const vs = gl.createShader(gl.VERTEX_SHADER)!;
-    gl.shaderSource(vs, \`#version 300 es
-precision highp float;
-in vec4 position;
-void main(){gl_Position=position;}\`);
-    gl.compileShader(vs);
+// 4. Create ES locale pages that mirror EN
+const { mkdirSync } = await import("fs");
+mkdirSync("src/app/[locale]/es", { recursive: true });
 
-    const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
-    gl.shaderSource(fs, \`#version 300 es
-precision highp float;
-out vec4 O;
-uniform float time;
-uniform vec2 resolution;
-#define FC gl_FragCoord.xy
-#define R resolution
-#define T (time+660.)
-float rnd(vec2 p){p=fract(p*vec2(12.9898,78.233));p+=dot(p,p+34.56);return fract(p.x*p.y);}
-float noise(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*(3.-2.*f);return mix(mix(rnd(i),rnd(i+vec2(1,0)),u.x),mix(rnd(i+vec2(0,1)),rnd(i+1.),u.x),u.y);}
-float fbm(vec2 p){float t=.0,a=1.;for(int i=0;i<5;i++){t+=a*noise(p);p*=mat2(1,-1.2,.2,1.2)*2.;a*=.5;}return t;}
-void main(){
-  vec2 uv=(FC-.5*R)/R.y;
-  vec3 col=vec3(1);
-  uv.x+=.25;uv*=vec2(2,1);
-  float n=fbm(uv*.28-vec2(T*.01,0));
-  n=noise(uv*3.+n*2.);
-  col.r-=fbm(uv+vec2(0,T*.015)+n);
-  col.g-=fbm(uv*1.003+vec2(0,T*.015)+n+.003);
-  col.b-=fbm(uv*1.006+vec2(0,T*.015)+n+.006);
-  vec3 gold=vec3(0.788,0.659,0.298);
-  col=mix(col,gold,dot(col,vec3(.21,.71,.07)));
-  col=mix(vec3(.06,.07,.1),col,min(time*.1,1.));
-  col=clamp(col,.06,1.);
-  O=vec4(col,1);
-}\`);
-    gl.compileShader(fs);
+// The [locale] routing already handles es/en via the URL
+// We need to make sure translations work in login/register
+// Update login to detect locale from URL
+const loginPage = `"use client";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 
-    const prog = gl.createProgram()!;
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.linkProgram(prog);
+const t = {
+  en: { title:"Welcome back", sub:"Sign in to Punchly.Clock", email:"Email", password:"Password", btn:"Sign in", loading:"Signing in...", error:"Incorrect email or password", register:"Don't have an account?", registerLink:"Sign up" },
+  es: { title:"Bienvenido", sub:"Inicia sesión en Punchly.Clock", email:"Email", password:"Contraseña", btn:"Iniciar sesión", loading:"Iniciando...", error:"Email o contraseña incorrectos", register:"¿No tienes cuenta?", registerLink:"Regístrate" },
+};
 
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,1,-1,-1,1,1,1,-1]), gl.STATIC_DRAW);
-    const pos = gl.getAttribLocation(prog, "position");
-    gl.enableVertexAttribArray(pos);
-    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+export default function LoginPage() {
+  const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) === "es" ? "es" : "en";
+  const tx = t[locale];
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const resLoc = gl.getUniformLocation(prog, "resolution");
-    const timeLoc = gl.getUniformLocation(prog, "time");
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true); setError("");
+    const res = await signIn("credentials", { email, password, redirect: false });
+    setLoading(false);
+    if (res?.error) { setError(tx.error); return; }
+    router.push("/"+locale+"/admin/dashboard");
+  }
 
-    function resize() {
-      const c = canvasRef.current;
-      if (!c) return;
-      const dpr = Math.max(1, devicePixelRatio);
-      c.width = innerWidth * dpr;
-      c.height = innerHeight * dpr;
-      gl.viewport(0, 0, c.width, c.height);
-    }
-    resize();
-    window.addEventListener("resize", resize);
-
-    let raf: number;
-    function loop(now: number) {
-      const c = canvasRef.current;
-      if (!c) return;
-      gl.clearColor(0,0,0,1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.useProgram(prog);
-      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.uniform2f(resLoc, c.width, c.height);
-      gl.uniform1f(timeLoc, now * 1e-3);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      raf = requestAnimationFrame(loop);
-    }
-    loop(0);
-
-    return () => {
-      window.removeEventListener("resize", resize);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
+  const inputStyle: React.CSSProperties = {
+    width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
+    borderRadius:"12px", padding:"12px 16px", color:"#FAFAFA", fontSize:"14px",
+    outline:"none", fontFamily:"var(--font-dm-sans)", transition:"border 0.2s", boxSizing:"border-box"
+  };
 
   return (
-    <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.45}} />
-  );
-}
-
-export function HeroGeometric({ badge, title1, title2 }: { badge: string; title1: string; title2: string }) {
-  return (
-    <div style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",
-      background:"radial-gradient(ellipse at 20% 0%, rgba(96,165,250,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 0%, rgba(201,168,76,0.15) 0%, transparent 50%), #060810"}}>
-      
-      <SmokeCanvas />
-
-      {/* Overlay gradient */}
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, rgba(6,8,16,0.2) 0%, rgba(6,8,16,0.4) 60%, rgba(6,8,16,1) 100%)",zIndex:1}} />
-
-      {/* 3D morphing shapes */}
-      <div style={{position:"absolute",inset:0,zIndex:2,overflow:"hidden",pointerEvents:"none"}}>
-        <style>{\`
-          @keyframes morph1{0%,100%{border-radius:40% 60% 70% 30%/40% 50% 60% 50%}50%{border-radius:70% 30% 30% 70%/50% 70% 30% 50%}}
-          @keyframes morph2{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}50%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}}
-          @keyframes float-shape{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-30px) rotate(180deg)}}
-          @keyframes hero-fade-up{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
-          .shape-1{animation:morph1 14s ease-in-out infinite}
-          .shape-2{animation:morph2 18s ease-in-out infinite reverse}
-          .shape-3{animation:float-shape 10s ease-in-out infinite}
-          .hero-fade-1{animation:hero-fade-up 1s ease 0.5s both}
-          .hero-fade-2{animation:hero-fade-up 1s ease 0.7s both}
-          .hero-fade-3{animation:hero-fade-up 1s ease 0.9s both}
-          .hero-fade-4{animation:hero-fade-up 1s ease 1.1s both}
-          .hero-btn-gold{background:linear-gradient(135deg,#FFD166,#C9A84C);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);text-decoration:none;display:inline-block}
-          .hero-btn-gold:hover{transform:translateY(-4px) scale(1.04);box-shadow:0 24px 60px rgba(201,168,76,0.5)}
-          .hero-btn-ghost{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);transition:all 0.3s ease;text-decoration:none;display:inline-block}
-          .hero-btn-ghost:hover{background:rgba(255,255,255,0.1);color:white;transform:translateY(-2px)}
-        \`}</style>
-        
-        <div className="shape-1" style={{position:"absolute",top:"10%",right:"8%",width:"420px",height:"420px",
-          background:"linear-gradient(135deg,rgba(201,168,76,0.06),rgba(255,209,102,0.03))",
-          border:"1px solid rgba(201,168,76,0.08)",backdropFilter:"blur(2px)"}} />
-        <div className="shape-2" style={{position:"absolute",bottom:"15%",left:"3%",width:"280px",height:"280px",
-          background:"linear-gradient(135deg,rgba(96,165,250,0.05),rgba(139,92,246,0.03))",
-          border:"1px solid rgba(96,165,250,0.08)"}} />
-        <div className="shape-3" style={{position:"absolute",top:"35%",left:"5%",width:"100px",height:"100px",borderRadius:"50%",
-          background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)"}} />
-        <div className="shape-3" style={{position:"absolute",top:"20%",right:"25%",width:"60px",height:"60px",borderRadius:"50%",
-          background:"rgba(96,165,250,0.06)",border:"1px solid rgba(96,165,250,0.1)",animationDelay:"3s"}} />
-      </div>
-
-      {/* Content */}
-      <div style={{position:"relative",zIndex:10,textAlign:"center",padding:"120px 24px 80px",maxWidth:"900px",margin:"0 auto",width:"100%"}}>
-        <div className="hero-fade-1" style={{display:"inline-flex",alignItems:"center",gap:"8px",
-          background:"rgba(255,255,255,0.05)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.1)",
-          padding:"7px 18px",borderRadius:"100px",fontSize:"12px",color:"rgba(255,255,255,0.45)",marginBottom:"32px",fontFamily:"var(--font-dm-sans)"}}>
-          <div style={{width:"6px",height:"6px",background:"#C9A84C",borderRadius:"50%",boxShadow:"0 0 8px #C9A84C"}} />
-          {badge}
+    <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.08) 0%, transparent 60%), #060810",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+      <style>{\`
+        .btn-gold{background:linear-gradient(135deg,#FFD166,#C9A84C);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s ease;border:none;cursor:pointer}
+        .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(201,168,76,0.4)}
+        input:focus{border-color:rgba(201,168,76,0.5)!important;box-shadow:0 0 0 3px rgba(201,168,76,0.08)}
+        .lang-switch a{font-size:11px;color:rgba(255,255,255,0.3);text-decoration:none;padding:4px 8px;border-radius:6px;transition:all 0.2s}
+        .lang-switch a:hover{color:white;background:rgba(255,255,255,0.06)}
+        .lang-switch a.active{color:#C9A84C;font-weight:700}
+      \`}</style>
+      <div style={{width:"100%",maxWidth:"400px"}}>
+        {/* Lang switcher */}
+        <div className="lang-switch" style={{display:"flex",justifyContent:"center",gap:"4px",marginBottom:"24px"}}>
+          <a href="/en/login" className={locale==="en"?"active":""}>EN</a>
+          <span style={{color:"rgba(255,255,255,0.1)",lineHeight:"26px"}}>·</span>
+          <a href="/es/login" className={locale==="es"?"active":""}>ES</a>
         </div>
 
-        <h1 className="hero-fade-2" style={{fontFamily:"var(--font-syne)",fontSize:"clamp(42px,8vw,92px)",fontWeight:800,
-          lineHeight:1,letterSpacing:"-3px",marginBottom:"24px",color:"white"}}>
-          {title1}<br/>
-          <span style={{background:"linear-gradient(135deg,#FFD166,#C9A84C,#FFD166)",WebkitBackgroundClip:"text",
-            WebkitTextFillColor:"transparent",backgroundClip:"text",
-            filter:"drop-shadow(0 0 40px rgba(201,168,76,0.4))"}}>
-            {title2}
-          </span>
-        </h1>
+        <div style={{textAlign:"center",marginBottom:"32px"}}>
+          <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"linear-gradient(135deg,#FFD166,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 0 30px rgba(255,209,102,0.3)"}}>
+            <span style={{color:"#000",fontWeight:900,fontSize:"18px",fontFamily:"var(--font-syne)"}}>P</span>
+          </div>
+          <h1 style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"24px",color:"#FAFAFA",marginBottom:"6px"}}>{tx.title}</h1>
+          <p style={{color:"rgba(255,255,255,0.3)",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{tx.sub}</p>
+        </div>
 
-        <p className="hero-fade-3" style={{color:"rgba(255,255,255,0.35)",fontSize:"clamp(15px,2vw,19px)",
-          maxWidth:"500px",margin:"0 auto 44px",lineHeight:1.7,fontWeight:300,fontFamily:"var(--font-dm-sans)"}}>
-          Kiosk con PIN, geofencing desde el móvil y reportes automáticos. Todo por un pago único de $49.
+        <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"24px",padding:"32px"}}>
+          <form onSubmit={handleSubmit} style={{display:"flex",flexDirection:"column",gap:"16px"}}>
+            <div>
+              <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>{tx.email}</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" required style={inputStyle} />
+            </div>
+            <div>
+              <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>{tx.password}</label>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" required style={inputStyle} />
+            </div>
+            {error && <p style={{color:"#F87171",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{error}</p>}
+            <button type="submit" disabled={loading} className="btn-gold" style={{padding:"14px",borderRadius:"14px",fontSize:"14px",marginTop:"4px",opacity:loading?0.6:1,width:"100%"}}>
+              {loading?tx.loading:tx.btn}
+            </button>
+          </form>
+        </div>
+
+        <p style={{textAlign:"center",marginTop:"20px",fontSize:"13px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-dm-sans)"}}>
+          {tx.register}{" "}
+          <Link href={"/"+locale+"/register"} style={{color:"#C9A84C",textDecoration:"none",fontWeight:600}}>{tx.registerLink}</Link>
         </p>
-
-        <div className="hero-fade-4" style={{display:"flex",gap:"12px",justifyContent:"center",flexWrap:"wrap"}}>
-          <a href="/en/register" className="hero-btn-gold" style={{padding:"16px 36px",borderRadius:"16px",fontSize:"15px",
-            boxShadow:"0 0 60px rgba(201,168,76,0.3)"}}>
-            Empezar 7 días gratis
-          </a>
-          <a href="/en/login" className="hero-btn-ghost" style={{padding:"16px 36px",borderRadius:"16px",fontSize:"15px",
-            fontFamily:"var(--font-dm-sans)",fontWeight:500}}>
-            Ya tengo cuenta
-          </a>
-        </div>
       </div>
     </div>
   );
-}`);
+}`;
+
+const registerPage = `"use client";
+import { useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
+
+const t = {
+  en: { title:"Create account", sub:"7-day free trial", name:"Your name", org:"Company name", email:"Email", password:"Password", btn:"Create free account", loading:"Creating...", error:"Error creating account", login:"Already have an account?", loginLink:"Sign in",
+    namePh:"John Doe", orgPh:"My Company Inc.", emailPh:"you@company.com" },
+  es: { title:"Crea tu cuenta", sub:"7 días de prueba gratis", name:"Tu nombre", org:"Nombre de la empresa", email:"Email", password:"Contraseña", btn:"Crear cuenta gratis", loading:"Creando...", error:"Error al crear cuenta", login:"¿Ya tienes cuenta?", loginLink:"Iniciar sesión",
+    namePh:"Juan Pérez", orgPh:"Mi Empresa S.A.", emailPh:"juan@empresa.com" },
+};
+
+export default function RegisterPage() {
+  const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) === "es" ? "es" : "en";
+  const tx = t[locale];
+  const [form, setForm] = useState({ name:"", orgName:"", email:"", password:"" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name||!form.orgName||!form.email||!form.password) { setError(tx.error); return; }
+    setLoading(true); setError("");
+    const res = await fetch("/api/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
+    const data = await res.json();
+    setLoading(false);
+    if (!res.ok) { setError(data.error||tx.error); return; }
+    const { signIn } = await import("next-auth/react");
+    await signIn("credentials",{email:form.email,password:form.password,redirect:false});
+    router.push("/"+locale+"/admin/dashboard");
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
+    borderRadius:"12px", padding:"12px 16px", color:"#FAFAFA", fontSize:"14px",
+    outline:"none", fontFamily:"var(--font-dm-sans)", transition:"border 0.2s", boxSizing:"border-box"
+  };
+
+  return (
+    <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.08) 0%, transparent 60%), #060810",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+      <style>{\`
+        .btn-gold{background:linear-gradient(135deg,#FFD166,#C9A84C);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s ease;border:none;cursor:pointer}
+        .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(201,168,76,0.4)}
+        input:focus{border-color:rgba(201,168,76,0.5)!important}
+        .lang-switch a{font-size:11px;color:rgba(255,255,255,0.3);text-decoration:none;padding:4px 8px;border-radius:6px;transition:all 0.2s}
+        .lang-switch a:hover{color:white}
+        .lang-switch a.active{color:#C9A84C;font-weight:700}
+      \`}</style>
+      <div style={{width:"100%",maxWidth:"420px"}}>
+        <div className="lang-switch" style={{display:"flex",justifyContent:"center",gap:"4px",marginBottom:"24px"}}>
+          <a href="/en/register" className={locale==="en"?"active":""}>EN</a>
+          <span style={{color:"rgba(255,255,255,0.1)",lineHeight:"26px"}}>·</span>
+          <a href="/es/register" className={locale==="es"?"active":""}>ES</a>
+        </div>
+
+        <div style={{textAlign:"center",marginBottom:"32px"}}>
+          <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"linear-gradient(135deg,#FFD166,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 0 30px rgba(255,209,102,0.3)"}}>
+            <span style={{color:"#000",fontWeight:900,fontSize:"18px",fontFamily:"var(--font-syne)"}}>P</span>
+          </div>
+          <h1 style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"24px",color:"#FAFAFA",marginBottom:"6px"}}>{tx.title}</h1>
+          <p style={{color:"rgba(255,255,255,0.3)",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{tx.sub}</p>
+        </div>
+
+        <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"24px",padding:"32px"}}>
+          <form onSubmit={handleSubmit} style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+            {[
+              {key:"name",label:tx.name,ph:tx.namePh,type:"text"},
+              {key:"orgName",label:tx.org,ph:tx.orgPh,type:"text"},
+              {key:"email",label:tx.email,ph:tx.emailPh,type:"email"},
+              {key:"password",label:tx.password,ph:"••••••",type:"password"},
+            ].map(f=>(
+              <div key={f.key}>
+                <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>{f.label}</label>
+                <input type={f.type} value={form[f.key as keyof typeof form]} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))} placeholder={f.ph} required style={inputStyle} />
+              </div>
+            ))}
+            {error && <p style={{color:"#F87171",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{error}</p>}
+            <button type="submit" disabled={loading} className="btn-gold" style={{padding:"14px",borderRadius:"14px",fontSize:"14px",marginTop:"4px",opacity:loading?0.6:1,width:"100%"}}>
+              {loading?tx.loading:tx.btn}
+            </button>
+          </form>
+        </div>
+
+        <p style={{textAlign:"center",marginTop:"20px",fontSize:"13px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-dm-sans)"}}>
+          {tx.login}{" "}
+          <Link href={"/"+locale+"/login"} style={{color:"#C9A84C",textDecoration:"none",fontWeight:600}}>{tx.loginLink}</Link>
+        </p>
+      </div>
+    </div>
+  );
+}`;
+
+writeFileSync("src/app/[locale]/login/page.tsx", loginPage);
+writeFileSync("src/app/[locale]/register/page.tsx", registerPage);
 
 console.log("Listo!");
-
