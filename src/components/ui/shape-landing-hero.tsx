@@ -107,6 +107,17 @@ void main(){
 
 // Exportamos HeroGeometric explícitamente para que page.tsx lo vea
 export function HeroGeometric({ badge, title1, title2 }: { badge: string; title1: string; title2: string }) {
+  const isEs = typeof window !== "undefined" && window.location.pathname.startsWith("/es");
+  const t = {
+    badge: isEs ? "7 días de prueba gratis" : badge,
+    title1: isEs ? "Control de asistencia" : title1,
+    title2: isEs ? "" : title2,
+    sub: isEs ? "Kiosk con PIN, geofencing desde el móvil y reportes automáticos. Un pago único de $49." : "PIN kiosk, mobile geofencing and automatic reports. One-time payment of $49.",
+    btn1: isEs ? "Comenzar gratis" : "Start free trial",
+    btn2: isEs ? "{t.btn2}" : "Sign in",
+    btn1href: isEs ? "/es/register" : "/en/register",
+    btn2href: isEs ? "/es/login" : "/en/login",
+  };
   return (
     <div style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",
       background:"radial-gradient(ellipse at 20% 0%, rgba(96,165,250,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 0%, rgba(201,168,76,0.15) 0%, transparent 50%), #060810"}}>
@@ -151,30 +162,28 @@ export function HeroGeometric({ badge, title1, title2 }: { badge: string; title1
           background:"rgba(255,255,255,0.05)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.1)",
           padding:"7px 18px",borderRadius:"100px",fontSize:"12px",color:"rgba(255,255,255,0.45)",marginBottom:"32px",fontFamily:"var(--font-dm-sans)"}}>
           <div style={{width:"6px",height:"6px",background:"#C9A84C",borderRadius:"50%",boxShadow:"0 0 8px #C9A84C"}} />
-          {badge}
+          {t.badge}
         </div>
 
         <h1 className="hero-fade-2" style={{fontFamily:"var(--font-syne)",fontSize:"clamp(42px,8vw,92px)",fontWeight:800,
           lineHeight:1,letterSpacing:"-3px",marginBottom:"24px",color:"white"}}>
-          {title1}<br/>
-          <span style={{background:"linear-gradient(135deg,#FFD166,#C9A84C,#FFD166)",WebkitBackgroundClip:"text",
-            WebkitTextFillColor:"transparent",backgroundClip:"text",
-            filter:"drop-shadow(0 0 40px rgba(201,168,76,0.4))"}}>
-            {title2}
-          </span>
+          {t.title1}{t.title2 ? <br/> : null}
+          {t.title2 && <span style={{background:"linear-gradient(135deg,#FFD166,#C9A84C,#FFD166)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",filter:"drop-shadow(0 0 40px rgba(201,168,76,0.4))"}}>
+            {t.title2}
+          </span>}
         </h1>
 
         <p className="hero-fade-3" style={{color:"rgba(255,255,255,0.35)",fontSize:"clamp(15px,2vw,19px)",
           maxWidth:"500px",margin:"0 auto 44px",lineHeight:1.7,fontWeight:300,fontFamily:"var(--font-dm-sans)"}}>
-          Kiosk con PIN, geofencing desde el móvil y reportes automáticos. Todo por un pago único de $49.
+          {t.sub}
         </p>
 
         <div className="hero-fade-4" style={{display:"flex",gap:"12px",justifyContent:"center",flexWrap:"wrap"}}>
-          <a href="/en/register" className="hero-btn-gold" style={{padding:"16px 36px",borderRadius:"16px",fontSize:"15px",
+          <a href={t.btn1href} className="hero-btn-gold" style={{padding:"16px 36px",borderRadius:"16px",fontSize:"15px",
             boxShadow:"0 0 60px rgba(201,168,76,0.3)"}}>
-            Empezar 7 días gratis
+            {t.btn1}
           </a>
-          <a href="/en/login" className="hero-btn-ghost" style={{padding:"16px 36px",borderRadius:"16px",fontSize:"15px",
+          <a href={t.btn2href} className="hero-btn-ghost" style={{padding:"16px 36px",borderRadius:"16px",fontSize:"15px",
             fontFamily:"var(--font-dm-sans)",fontWeight:500}}>
             Ya tengo cuenta
           </a>

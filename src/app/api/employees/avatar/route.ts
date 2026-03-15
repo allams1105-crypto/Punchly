@@ -8,13 +8,11 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     const orgId = (session.user as any).organizationId;
     const { userId, avatarColor } = await req.json();
-
-    const user = await prisma.user.update({
+    await prisma.user.update({
       where: { id: userId, organizationId: orgId },
       data: { avatarColor } as any,
     });
-
-    return NextResponse.json({ user });
+    return NextResponse.json({ success: true });
   } catch (e: any) {
     console.error("Avatar error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
