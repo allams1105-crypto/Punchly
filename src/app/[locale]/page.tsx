@@ -46,20 +46,20 @@ export default async function LandingPage({ params }: { params: any }) {
         </div>
 
         {/* Nav */}
-        <nav style={{position:"absolute",top:0,left:0,right:0,zIndex:50,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"24px 48px",maxWidth:"1280px",margin:"0 auto"}}>
+        <nav style={{position:"absolute",top:0,left:0,right:0,zIndex:50,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 24px",maxWidth:"1280px",margin:"0 auto",boxSizing:"border-box",width:"100%"}}>
           <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-            <div style={{width:"34px",height:"34px",borderRadius:"10px",background:"linear-gradient(135deg,#FFD166,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 24px rgba(255,209,102,0.35)"}}>
+            <div style={{width:"34px",height:"34px",borderRadius:"10px",background:"linear-gradient(135deg,#FFD166,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 24px rgba(255,209,102,0.35)",flexShrink:0}}>
               <span style={{color:"#000",fontWeight:900,fontSize:"15px",fontFamily:"var(--font-syne)"}}>P</span>
             </div>
-            <span style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"15px",letterSpacing:"-0.3px"}}>Punchly.Clock</span>
+            <span className="hide-sm" style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"15px",letterSpacing:"-0.3px"}}>Punchly.Clock</span>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            <a href="/en" className={"lang-btn"+(isEs?"":" lang-active")}>EN</a>
-            <span style={{color:"rgba(255,255,255,0.1)"}}>·</span>
-            <a href="/es" className={"lang-btn"+(isEs?" lang-active":"")}>ES</a>
-            <span style={{width:"1px",height:"16px",background:"rgba(255,255,255,0.1)",margin:"0 8px"}} />
-            <Link href={`/${locale}/login`} style={{fontSize:"13px",color:"rgba(255,255,255,0.45)",textDecoration:"none",fontWeight:500}}>{isEs?"Iniciar sesión":"Sign in"}</Link>
-            <Link href={`/${locale}/register`} className="glass-gold btn-gold" style={{padding:"9px 22px",borderRadius:"12px",fontSize:"13px",fontFamily:"var(--font-syne)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+            <a href="/en" className={"lang-btn"+(isEs?"":" lang-active")} style={{fontSize:"11px",padding:"4px 8px"}}>EN</a>
+            <span style={{color:"rgba(255,255,255,0.1)",fontSize:"10px"}}>·</span>
+            <a href="/es" className={"lang-btn"+(isEs?" lang-active":"")} style={{fontSize:"11px",padding:"4px 8px"}}>ES</a>
+            <span className="hide-sm" style={{width:"1px",height:"14px",background:"rgba(255,255,255,0.1)",margin:"0 6px"}} />
+            <Link href={`/${locale}/login`} className="hide-sm" style={{fontSize:"13px",color:"rgba(255,255,255,0.45)",textDecoration:"none",fontWeight:500}}>{isEs?"Iniciar sesión":"Sign in"}</Link>
+            <Link href={`/${locale}/register`} className="btn-gold" style={{padding:"8px 16px",borderRadius:"10px",fontSize:"12px",fontFamily:"var(--font-syne)",textDecoration:"none",display:"inline-block",marginLeft:"4px"}}>
               {isEs?"Comenzar":"Get started"}
             </Link>
           </div>
@@ -69,7 +69,7 @@ export default async function LandingPage({ params }: { params: any }) {
         <HeroGeometric locale={locale} />
 
         {/* FLOATING KIOSK */}
-        <section style={{position:"relative",zIndex:10,padding:"20px 40px 80px",background:"linear-gradient(to bottom,transparent,#060810 50%)"}}>
+        <section style={{position:"relative",zIndex:10,padding:"20px 20px 80px",background:"linear-gradient(to bottom,transparent,#060810 50%)"}}>
           <div className="float" style={{maxWidth:"700px",margin:"0 auto"}}>
             <div style={{borderRadius:"24px",padding:"3px",background:"linear-gradient(135deg,rgba(201,168,76,0.3),rgba(96,165,250,0.15),rgba(139,92,246,0.2))",boxShadow:"0 50px 100px rgba(0,0,0,0.7),0 0 80px rgba(201,168,76,0.08)"}}>
               <div style={{background:"linear-gradient(145deg,#0D0F1A,#080A12)",borderRadius:"21px",overflow:"hidden"}}>
@@ -89,7 +89,7 @@ export default async function LandingPage({ params }: { params: any }) {
                     <span style={{color:"rgba(255,255,255,0.15)",fontSize:"12px",fontFamily:"var(--font-dm-sans)"}}>Search your name...</span>
                   </div>
                 </div>
-                <div style={{padding:"14px 18px",display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:"8px"}}>
+                <div style={{padding:"14px 18px",display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:"8px"}} className="grid-sm-2">
                   {[["A","Ana G.","#FFD166",true],["L","Luis M.","#60A5FA",true],["S","Sofia R.","#34D399",true],["C","Carlos P.","#F87171",false],["M","María J.","#A78BFA",false],["P","Pedro L.","#FB923C",false]].map(([i,n,c,a])=>(
                     <div key={String(n)} className="card-3d" style={{background:a?"rgba(52,211,153,0.05)":"rgba(255,255,255,0.03)",border:a?"1px solid rgba(52,211,153,0.12)":"1px solid rgba(255,255,255,0.05)",borderRadius:"12px",padding:"12px 8px",cursor:"pointer",textAlign:"center"}}>
                       <div style={{width:"28px",height:"28px",borderRadius:"8px",background:String(c)+"18",border:"1px solid "+String(c)+"25",display:"flex",alignItems:"center",justifyContent:"center",color:String(c),fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"11px",margin:"0 auto 6px",boxShadow:"0 0 10px "+String(c)+"20"}}>{i}</div>
@@ -104,7 +104,7 @@ export default async function LandingPage({ params }: { params: any }) {
           </div>
 
           {/* Stats */}
-          <div className="fade-up-1" style={{maxWidth:"700px",margin:"28px auto 0",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"10px"}}>
+          <div className="fade-up-1 grid-sm-2" style={{maxWidth:"700px",margin:"28px auto 0",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"10px"}}>
             {[
               {value:"2,847",label:isEs?"Fichajes procesados":"Clock-ins processed",color:"#FFD166",glow:"rgba(201,168,76,0.12)"},
               {value:"99.9%",label:isEs?"Uptime garantizado":"Uptime guaranteed",color:"#34D399",glow:"rgba(52,211,153,0.08)"},
@@ -120,7 +120,7 @@ export default async function LandingPage({ params }: { params: any }) {
         </section>
 
         {/* FEATURES */}
-        <section style={{padding:"80px 40px",background:"linear-gradient(to bottom,#060810,#08091A)"}}>
+        <section style={{padding:"60px 20px",background:"linear-gradient(to bottom,#060810,#08091A)"}}>
           <div style={{maxWidth:"1100px",margin:"0 auto"}}>
             <div className="fade-up-2" style={{textAlign:"center",marginBottom:"56px"}}>
               <p style={{color:"rgba(201,168,76,0.7)",fontSize:"11px",fontWeight:700,letterSpacing:"3px",textTransform:"uppercase",fontFamily:"var(--font-dm-sans)",marginBottom:"12px"}}>{isEs?"Funcionalidades":"Features"}</p>
@@ -149,7 +149,7 @@ export default async function LandingPage({ params }: { params: any }) {
         </section>
 
         {/* HOW IT WORKS */}
-        <section style={{padding:"80px 40px",background:"linear-gradient(to bottom,#08091A,#060810)"}}>
+        <section style={{padding:"60px 20px",background:"linear-gradient(to bottom,#08091A,#060810)"}}>
           <div style={{maxWidth:"960px",margin:"0 auto"}}>
             <div style={{textAlign:"center",marginBottom:"56px"}}>
               <p style={{color:"rgba(96,165,250,0.7)",fontSize:"11px",fontWeight:700,letterSpacing:"3px",textTransform:"uppercase",fontFamily:"var(--font-dm-sans)",marginBottom:"12px"}}>{isEs?"Proceso":"Process"}</p>
@@ -173,7 +173,7 @@ export default async function LandingPage({ params }: { params: any }) {
         </section>
 
         {/* PRICING */}
-        <section style={{padding:"80px 40px 100px",background:"linear-gradient(to bottom,#060810,#030508)"}}>
+        <section style={{padding:"60px 20px 80px",background:"linear-gradient(to bottom,#060810,#030508)"}}>
           <div style={{maxWidth:"500px",margin:"0 auto",textAlign:"center"}}>
             <div className="fade-up-3">
               <p style={{color:"rgba(201,168,76,0.7)",fontSize:"11px",fontWeight:700,letterSpacing:"3px",textTransform:"uppercase",fontFamily:"var(--font-dm-sans)",marginBottom:"12px"}}>{isEs?"Precio":"Pricing"}</p>
@@ -207,7 +207,7 @@ export default async function LandingPage({ params }: { params: any }) {
         </section>
 
         {/* FOOTER */}
-        <footer style={{background:"#030508",borderTop:"1px solid rgba(255,255,255,0.04)",padding:"32px 48px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
+        <footer style={{background:"#030508",borderTop:"1px solid rgba(255,255,255,0.04)",padding:"24px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <div style={{width:"26px",height:"26px",borderRadius:"8px",background:"linear-gradient(135deg,#FFD166,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <span style={{color:"#000",fontWeight:900,fontSize:"11px",fontFamily:"var(--font-syne)"}}>P</span>
