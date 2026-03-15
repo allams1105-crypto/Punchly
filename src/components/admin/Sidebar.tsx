@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import LangToggle from "@/components/LangToggle";
 
 const links = [
   { href:"/en/admin/dashboard", label:"Dashboard", icon:"M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
@@ -72,7 +71,7 @@ export default function Sidebar({ orgName }: { orgName?: string }) {
       <div style={{padding:"12px 8px 16px",borderTop:"1px solid rgba(255,255,255,0.06)", display:"flex", flexDirection:"column", gap:"8px"}}>
         {/* Cambiador de Idioma */}
         <div style={{marginBottom:"4px"}}>
-          <LangToggle />
+          
         </div>
         
         {/* Botón Logout arreglado */}
