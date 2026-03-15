@@ -27,15 +27,24 @@ export default function KioskClient({ employees, token }: { employees:Employee[]
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [emps, setEmps] = useState<Employee[]>(employees);
 
   useEffect(()=>{const t=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(t);},[]);
 
-  const filtered = employees.filter(e=>(e.name||"").toLowerCase().includes((search||"").toLowerCase()));
-  const onShiftNow = employees.filter(e=>e.onShift);
+  const filtered = emps.filter(e=>(e.name||"").toLowerCase().includes((search||"").toLowerCase()));
+  const onShiftNow = emps.filter(e=>e.onShift);
 
   function selectEmployee(emp:Employee){setSelected(emp);setAction(emp.onShift?"out":"in");setPin("");setError("");setStep("pin");}
   function addDigit(d:string){if(pin.length<4)setPin(p=>p+d);}
   function removeDigit(){setPin(p=>p.slice(0,-1));}
+
+  async function refreshEmployees() {
+    try {
+      const res = await fetch(`/api/kiosk/employees?orgId=${token}`);
+      const data = await res.json();
+      if (data.employees) setEmps(data.employees);
+    } catch(e) {}
+  }
 
   async function confirmPin(){
     if(pin.length!==4){setError("Ingresa tu PIN de 4 dígitos");return;}
@@ -46,6 +55,7 @@ export default function KioskClient({ employees, token }: { employees:Employee[]
     if(!res.ok){setError(data.error||"Error al registrar");return;}
     setSuccessMsg(action==="in"?"Entrada registrada":"Salida registrada");
     setStep("success");
+    await refreshEmployees();
     setTimeout(()=>{setStep("list");setSelected(null);setPin("");setSearch("");setSuccessMsg("");},3000);
   }
 
