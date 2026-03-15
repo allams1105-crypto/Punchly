@@ -7,7 +7,7 @@ function SmokeCanvas() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const gl = canvas.getContext("webgl2");
+    const gl = canvas.getContext("webgl2") as WebGL2RenderingContext;
     if (!gl) return;
 
     const vs = gl.createShader(gl.VERTEX_SHADER)!;
@@ -54,12 +54,15 @@ void main(){
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,1,-1,-1,1,1,1,-1]), gl.STATIC_DRAW);
-    const pos = gl.getAttribLocation(prog, "position");
-    gl.enableVertexAttribArray(pos);
-    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+    const posLoc = gl.getAttribLocation(prog, "position");
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
     const resLoc = gl.getUniformLocation(prog, "resolution");
     const timeLoc = gl.getUniformLocation(prog, "time");
+
+    // Store gl in a non-nullable local ref
+    const glCtx: WebGL2RenderingContext = gl;
 
     function resize() {
       const c = canvasRef.current;
@@ -67,7 +70,7 @@ void main(){
       const dpr = Math.max(1, devicePixelRatio);
       c.width = innerWidth * dpr;
       c.height = innerHeight * dpr;
-      gl.viewport(0, 0, c.width, c.height);
+      glCtx.viewport(0, 0, c.width, c.height);
     }
     resize();
     window.addEventListener("resize", resize);
@@ -76,13 +79,13 @@ void main(){
     function loop(now: number) {
       const c = canvasRef.current;
       if (!c) return;
-      gl.clearColor(0,0,0,1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.useProgram(prog);
-      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.uniform2f(resLoc, c.width, c.height);
-      gl.uniform1f(timeLoc, now * 1e-3);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      glCtx.clearColor(0, 0, 0, 1);
+      glCtx.clear(glCtx.COLOR_BUFFER_BIT);
+      glCtx.useProgram(prog);
+      glCtx.bindBuffer(glCtx.ARRAY_BUFFER, buf);
+      glCtx.uniform2f(resLoc, c.width, c.height);
+      glCtx.uniform1f(timeLoc, now * 1e-3);
+      glCtx.drawArrays(glCtx.TRIANGLE_STRIP, 0, 4);
       raf = requestAnimationFrame(loop);
     }
     loop(0);
@@ -107,7 +110,6 @@ export function HeroGeometric({ locale }: { locale: string }) {
 
       <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(6,8,16,0.2) 0%,rgba(6,8,16,0.4) 60%,rgba(6,8,16,1) 100%)",zIndex:1}} />
 
-      {/* Shapes */}
       <div style={{position:"absolute",inset:0,zIndex:2,overflow:"hidden",pointerEvents:"none"}}>
         <style>{`
           @keyframes morph1{0%,100%{border-radius:40% 60% 70% 30%/40% 50% 60% 50%}50%{border-radius:70% 30% 30% 70%/50% 70% 30% 50%}}
@@ -116,7 +118,6 @@ export function HeroGeometric({ locale }: { locale: string }) {
           @keyframes hero-fade{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
           .hf1{animation:hero-fade 1s ease 0.4s both}
           .hf2{animation:hero-fade 1s ease 0.6s both}
-          .hf3{animation:hero-fade 1s ease 0.8s both}
           .hero-btn-gold{background:linear-gradient(135deg,#FFD166,#C9A84C);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);text-decoration:none;display:inline-block;border-radius:16px;padding:16px 36px;font-size:15px}
           .hero-btn-gold:hover{transform:translateY(-4px) scale(1.04);box-shadow:0 24px 60px rgba(201,168,76,0.5)}
           .hero-btn-ghost{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);transition:all 0.3s ease;text-decoration:none;display:inline-block;border-radius:16px;padding:16px 36px;font-size:15px}
@@ -127,19 +128,15 @@ export function HeroGeometric({ locale }: { locale: string }) {
         <div style={{position:"absolute",top:"35%",left:"5%",width:"100px",height:"100px",borderRadius:"50%",animation:"float-shape 10s ease-in-out infinite",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)"}} />
       </div>
 
-      {/* Content */}
       <div style={{position:"relative",zIndex:10,textAlign:"center",padding:"120px 24px 80px",maxWidth:"900px",margin:"0 auto",width:"100%"}}>
         <h1 className="hf1" style={{fontFamily:"var(--font-syne)",fontSize:"clamp(42px,8vw,96px)",fontWeight:800,lineHeight:1,letterSpacing:"-3px",marginBottom:"40px",color:"white"}}>
           {isEs ? "Control de asistencia" : "Attendance tracking"}
         </h1>
-
         <div className="hf2" style={{display:"flex",gap:"12px",justifyContent:"center",flexWrap:"wrap"}}>
-          <a href={isEs?"/es/register":"/en/register"} className="hero-btn-gold"
-            style={{boxShadow:"0 0 60px rgba(201,168,76,0.3)"}}>
+          <a href={isEs?"/es/register":"/en/register"} className="hero-btn-gold" style={{boxShadow:"0 0 60px rgba(201,168,76,0.3)"}}>
             {isEs?"Comenzar gratis":"Start free trial"}
           </a>
-          <a href={isEs?"/es/login":"/en/login"} className="hero-btn-ghost"
-            style={{fontFamily:"var(--font-dm-sans)",fontWeight:500}}>
+          <a href={isEs?"/es/login":"/en/login"} className="hero-btn-ghost" style={{fontFamily:"var(--font-dm-sans)",fontWeight:500}}>
             {isEs?"Iniciar sesión":"Sign in"}
           </a>
         </div>

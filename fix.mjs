@@ -1,216 +1,151 @@
-import { writeFileSync, mkdirSync } from "fs";
+import { writeFileSync } from "fs";
 
-mkdirSync("src/components/ui", { recursive: true });
+writeFileSync("src/components/ui/shape-landing-hero.tsx", `"use client";
+import { useEffect, useRef } from "react";
 
-// 1. Create the LocationMap component
-writeFileSync("src/components/ui/expand-map.tsx", `"use client"
-import type React from "react"
-import { useState, useRef } from "react"
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion"
+function SmokeCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-interface LocationMapProps {
-  location?: string
-  coordinates?: string
-  className?: string
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const gl = canvas.getContext("webgl2") as WebGL2RenderingContext;
+    if (!gl) return;
+
+    const vs = gl.createShader(gl.VERTEX_SHADER)!;
+    gl.shaderSource(vs, \`#version 300 es
+precision highp float;
+in vec4 position;
+void main(){gl_Position=position;}\`);
+    gl.compileShader(vs);
+
+    const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
+    gl.shaderSource(fs, \`#version 300 es
+precision highp float;
+out vec4 O;
+uniform float time;
+uniform vec2 resolution;
+#define FC gl_FragCoord.xy
+#define R resolution
+#define T (time+660.)
+float rnd(vec2 p){p=fract(p*vec2(12.9898,78.233));p+=dot(p,p+34.56);return fract(p.x*p.y);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*(3.-2.*f);return mix(mix(rnd(i),rnd(i+vec2(1,0)),u.x),mix(rnd(i+vec2(0,1)),rnd(i+1.),u.x),u.y);}
+float fbm(vec2 p){float t=.0,a=1.;for(int i=0;i<5;i++){t+=a*noise(p);p*=mat2(1,-1.2,.2,1.2)*2.;a*=.5;}return t;}
+void main(){
+  vec2 uv=(FC-.5*R)/R.y;
+  vec3 col=vec3(1);
+  uv.x+=.25;uv*=vec2(2,1);
+  float n=fbm(uv*.28-vec2(T*.01,0));
+  n=noise(uv*3.+n*2.);
+  col.r-=fbm(uv+vec2(0,T*.015)+n);
+  col.g-=fbm(uv*1.003+vec2(0,T*.015)+n+.003);
+  col.b-=fbm(uv*1.006+vec2(0,T*.015)+n+.006);
+  vec3 gold=vec3(0.788,0.659,0.298);
+  col=mix(col,gold,dot(col,vec3(.21,.71,.07)));
+  col=mix(vec3(.06,.07,.1),col,min(time*.1,1.));
+  col=clamp(col,.06,1.);
+  O=vec4(col,1);
+}\`);
+    gl.compileShader(fs);
+
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,1,-1,-1,1,1,1,-1]), gl.STATIC_DRAW);
+    const posLoc = gl.getAttribLocation(prog, "position");
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+    const resLoc = gl.getUniformLocation(prog, "resolution");
+    const timeLoc = gl.getUniformLocation(prog, "time");
+
+    // Store gl in a non-nullable local ref
+    const glCtx: WebGL2RenderingContext = gl;
+
+    function resize() {
+      const c = canvasRef.current;
+      if (!c) return;
+      const dpr = Math.max(1, devicePixelRatio);
+      c.width = innerWidth * dpr;
+      c.height = innerHeight * dpr;
+      glCtx.viewport(0, 0, c.width, c.height);
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    let raf: number;
+    function loop(now: number) {
+      const c = canvasRef.current;
+      if (!c) return;
+      glCtx.clearColor(0, 0, 0, 1);
+      glCtx.clear(glCtx.COLOR_BUFFER_BIT);
+      glCtx.useProgram(prog);
+      glCtx.bindBuffer(glCtx.ARRAY_BUFFER, buf);
+      glCtx.uniform2f(resLoc, c.width, c.height);
+      glCtx.uniform1f(timeLoc, now * 1e-3);
+      glCtx.drawArrays(glCtx.TRIANGLE_STRIP, 0, 4);
+      raf = requestAnimationFrame(loop);
+    }
+    loop(0);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.45}} />;
 }
 
-export function LocationMap({
-  location = "Tu empresa",
-  coordinates = "Configura tu ubicación",
-  className,
-}: LocationMapProps) {
-  const [isHovered, setIsHovered] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-  const rotateX = useTransform(mouseY, [-50, 50], [8, -8])
-  const rotateY = useTransform(mouseX, [-50, 50], [-8, 8])
-  const springRotateX = useSpring(rotateX, { stiffness: 300, damping: 30 })
-  const springRotateY = useSpring(rotateY, { stiffness: 300, damping: 30 })
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!containerRef.current) return
-    const rect = containerRef.current.getBoundingClientRect()
-    mouseX.set(e.clientX - rect.left - rect.width / 2)
-    mouseY.set(e.clientY - rect.top - rect.height / 2)
-  }
-
-  const handleMouseLeave = () => {
-    mouseX.set(0); mouseY.set(0); setIsHovered(false)
-  }
+export function HeroGeometric({ locale }: { locale: string }) {
+  const isEs = locale === "es";
 
   return (
-    <motion.div
-      ref={containerRef}
-      className={className}
-      style={{ perspective: 1000, cursor: "pointer", userSelect: "none", position: "relative" }}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
-      onClick={() => setIsExpanded(!isExpanded)}
-    >
-      <motion.div
-        style={{
-          rotateX: springRotateX, rotateY: springRotateY, transformStyle: "preserve-3d",
-          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", overflow: "hidden", position: "relative",
-        }}
-        animate={{ width: isExpanded ? 360 : 260, height: isExpanded ? 280 : 120 }}
-        transition={{ type: "spring", stiffness: 400, damping: 35 }}
-      >
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(201,168,76,0.05), transparent, rgba(96,165,250,0.03))" }} />
+    <div style={{position:"relative",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",
+      background:"radial-gradient(ellipse at 20% 0%, rgba(96,165,250,0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 0%, rgba(201,168,76,0.12) 0%, transparent 50%), #060810"}}>
 
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-            >
-              <div style={{ position: "absolute", inset: 0, background: "rgba(10,12,20,0.95)" }} />
-              <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} preserveAspectRatio="none">
-                {[35, 65].map((y, i) => (
-                  <motion.line key={"h"+i} x1="0%" y1={y+"%"} x2="100%" y2={y+"%"}
-                    stroke="rgba(201,168,76,0.2)" strokeWidth="3"
-                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                    transition={{ duration: 0.8, delay: 0.2 + i * 0.1 }} />
-                ))}
-                {[30, 70].map((x, i) => (
-                  <motion.line key={"v"+i} x1={x+"%"} y1="0%" x2={x+"%"} y2="100%"
-                    stroke="rgba(96,165,250,0.15)" strokeWidth="2"
-                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                    transition={{ duration: 0.6, delay: 0.4 + i * 0.1 }} />
-                ))}
-                {[20, 50, 80].map((y, i) => (
-                  <motion.line key={"hs"+i} x1="0%" y1={y+"%"} x2="100%" y2={y+"%"}
-                    stroke="rgba(255,255,255,0.05)" strokeWidth="1"
-                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                    transition={{ duration: 0.5, delay: 0.6 + i * 0.1 }} />
-                ))}
-                {[15, 45, 55, 85].map((x, i) => (
-                  <motion.line key={"vs"+i} x1={x+"%"} y1="0%" x2={x+"%"} y2="100%"
-                    stroke="rgba(255,255,255,0.05)" strokeWidth="1"
-                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                    transition={{ duration: 0.5, delay: 0.7 + i * 0.1 }} />
-                ))}
-              </svg>
+      <SmokeCanvas />
 
-              {[
-                { top:"40%", left:"10%", w:"15%", h:"20%" },
-                { top:"15%", left:"35%", w:"12%", h:"15%" },
-                { top:"70%", left:"75%", w:"18%", h:"18%" },
-                { top:"20%", right:"10%", w:"10%", h:"25%" },
-                { top:"55%", left:"5%",  w:"8%",  h:"12%" },
-                { top:"8%",  left:"75%", w:"14%", h:"10%" },
-              ].map((b, i) => (
-                <motion.div key={i}
-                  style={{ position:"absolute", ...b, width:b.w, height:b.h, borderRadius:"3px",
-                    background:"rgba(201,168,76,0.12)", border:"1px solid rgba(201,168,76,0.15)" }}
-                  initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: 0.5 + i * 0.05 }} />
-              ))}
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(6,8,16,0.2) 0%,rgba(6,8,16,0.4) 60%,rgba(6,8,16,1) 100%)",zIndex:1}} />
 
-              {/* Pin */}
-              <motion.div
-                style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)" }}
-                initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }}
-                transition={{ type:"spring", stiffness:400, damping:20, delay:0.3 }}
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-                  style={{ filter:"drop-shadow(0 0 12px rgba(201,168,76,0.7))" }}>
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#C9A84C"/>
-                  <circle cx="12" cy="9" r="2.5" fill="#030508"/>
-                </svg>
-              </motion.div>
-
-              <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, rgba(6,8,16,0.8), transparent, transparent)", pointerEvents:"none" }} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Content */}
-        <div style={{ position:"relative", zIndex:10, height:"100%", display:"flex", flexDirection:"column", justifyContent:"space-between", padding:"16px 18px" }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <motion.svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              animate={{ opacity: isExpanded ? 0 : 1 }} transition={{ duration: 0.3 }}>
-              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-              <line x1="9" x2="9" y1="3" y2="18"/>
-              <line x1="15" x2="15" y1="6" y2="21"/>
-            </motion.svg>
-            <div style={{ display:"flex", alignItems:"center", gap:"5px", background:"rgba(201,168,76,0.08)", border:"1px solid rgba(201,168,76,0.15)", padding:"3px 10px", borderRadius:"100px" }}>
-              <div style={{ width:"5px", height:"5px", borderRadius:"50%", background:"#C9A84C", boxShadow:"0 0 6px #C9A84C" }} />
-              <span style={{ fontSize:"10px", fontWeight:600, color:"rgba(201,168,76,0.8)", textTransform:"uppercase", letterSpacing:"1px", fontFamily:"var(--font-dm-sans)" }}>Geo</span>
-            </div>
-          </div>
-
-          <div>
-            <motion.p
-              style={{ color:"#FAFAFA", fontFamily:"var(--font-syne)", fontWeight:700, fontSize:"13px", marginBottom:"3px" }}
-              animate={{ x: isHovered ? 3 : 0 }}
-              transition={{ type:"spring", stiffness:400, damping:25 }}
-            >
-              {location}
-            </motion.p>
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.p style={{ color:"rgba(201,168,76,0.6)", fontSize:"11px", fontFamily:"var(--font-dm-sans)" }}
-                  initial={{ opacity:0, y:-8, height:0 }} animate={{ opacity:1, y:0, height:"auto" }}
-                  exit={{ opacity:0, y:-8, height:0 }} transition={{ duration:0.25 }}>
-                  {coordinates}
-                </motion.p>
-              )}
-            </AnimatePresence>
-            <motion.div
-              style={{ height:"1px", background:"linear-gradient(to right, rgba(201,168,76,0.5), rgba(96,165,250,0.3), transparent)", originX:0 }}
-              animate={{ scaleX: isHovered || isExpanded ? 1 : 0.3 }}
-              transition={{ duration:0.4 }}
-            />
-          </div>
-        </div>
-      </motion.div>
-
-      <motion.p
-        style={{ position:"absolute", bottom:"-22px", left:"50%", x:"-50%", fontSize:"10px", color:"rgba(255,255,255,0.25)", whiteSpace:"nowrap", fontFamily:"var(--font-dm-sans)" }}
-        animate={{ opacity: isHovered && !isExpanded ? 1 : 0, y: isHovered ? 0 : 4 }}
-        transition={{ duration:0.2 }}
-      >
-        Click para expandir
-      </motion.p>
-    </motion.div>
-  )
-}`);
-
-// 2. Update SettingsClient to use LocationMap in geofencing tab
-const { readFileSync } = await import("fs");
-let settings = readFileSync("src/components/admin/SettingsClient.tsx", "utf8");
-
-// Add LocationMap import
-if (!settings.includes("LocationMap")) {
-  settings = settings.replace(
-    `"use client";`,
-    `"use client";
-import { LocationMap } from "@/components/ui/expand-map";`
-  );
-
-  // Add map to GeofencingTab after the detect button
-  settings = settings.replace(
-    `<button onClick={detect} disabled={detecting}`,
-    `{/* Map preview */}
-      <div style={{marginBottom:"8px"}}>
-        <LocationMap
-          location={lat && lng ? "Ubicación configurada" : "Sin ubicación"}
-          coordinates={lat && lng ? \`\${lat}, \${lng}\` : "Detecta o ingresa coordenadas"}
-        />
+      <div style={{position:"absolute",inset:0,zIndex:2,overflow:"hidden",pointerEvents:"none"}}>
+        <style>{\`
+          @keyframes morph1{0%,100%{border-radius:40% 60% 70% 30%/40% 50% 60% 50%}50%{border-radius:70% 30% 30% 70%/50% 70% 30% 50%}}
+          @keyframes morph2{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}50%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}}
+          @keyframes float-shape{0%,100%{transform:translateY(0)}50%{transform:translateY(-24px)}}
+          @keyframes hero-fade{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
+          .hf1{animation:hero-fade 1s ease 0.4s both}
+          .hf2{animation:hero-fade 1s ease 0.6s both}
+          .hero-btn-gold{background:linear-gradient(135deg,#FFD166,#C9A84C);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);text-decoration:none;display:inline-block;border-radius:16px;padding:16px 36px;font-size:15px}
+          .hero-btn-gold:hover{transform:translateY(-4px) scale(1.04);box-shadow:0 24px 60px rgba(201,168,76,0.5)}
+          .hero-btn-ghost{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);transition:all 0.3s ease;text-decoration:none;display:inline-block;border-radius:16px;padding:16px 36px;font-size:15px}
+          .hero-btn-ghost:hover{background:rgba(255,255,255,0.1);color:white;transform:translateY(-2px)}
+        \`}</style>
+        <div style={{position:"absolute",top:"10%",right:"8%",width:"420px",height:"420px",animation:"morph1 14s ease-in-out infinite",background:"linear-gradient(135deg,rgba(201,168,76,0.06),rgba(255,209,102,0.03))",border:"1px solid rgba(201,168,76,0.08)"}} />
+        <div style={{position:"absolute",bottom:"15%",left:"3%",width:"280px",height:"280px",animation:"morph2 18s ease-in-out infinite reverse",background:"linear-gradient(135deg,rgba(96,165,250,0.05),rgba(139,92,246,0.03))",border:"1px solid rgba(96,165,250,0.08)"}} />
+        <div style={{position:"absolute",top:"35%",left:"5%",width:"100px",height:"100px",borderRadius:"50%",animation:"float-shape 10s ease-in-out infinite",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)"}} />
       </div>
 
-      <button onClick={detect} disabled={detecting}`
+      <div style={{position:"relative",zIndex:10,textAlign:"center",padding:"120px 24px 80px",maxWidth:"900px",margin:"0 auto",width:"100%"}}>
+        <h1 className="hf1" style={{fontFamily:"var(--font-syne)",fontSize:"clamp(42px,8vw,96px)",fontWeight:800,lineHeight:1,letterSpacing:"-3px",marginBottom:"40px",color:"white"}}>
+          {isEs ? "Control de asistencia" : "Attendance tracking"}
+        </h1>
+        <div className="hf2" style={{display:"flex",gap:"12px",justifyContent:"center",flexWrap:"wrap"}}>
+          <a href={isEs?"/es/register":"/en/register"} className="hero-btn-gold" style={{boxShadow:"0 0 60px rgba(201,168,76,0.3)"}}>
+            {isEs?"Comenzar gratis":"Start free trial"}
+          </a>
+          <a href={isEs?"/es/login":"/en/login"} className="hero-btn-ghost" style={{fontFamily:"var(--font-dm-sans)",fontWeight:500}}>
+            {isEs?"Iniciar sesión":"Sign in"}
+          </a>
+        </div>
+      </div>
+    </div>
   );
-  
-  writeFileSync("src/components/admin/SettingsClient.tsx", settings);
-}
+}`);
 
 console.log("Listo!");
-
 
