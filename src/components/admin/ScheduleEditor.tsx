@@ -1,111 +1,147 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const DAYS = [
-  { key: "monday", label: "L" },
-  { key: "tuesday", label: "M" },
-  { key: "wednesday", label: "X" },
-  { key: "thursday", label: "J" },
-  { key: "friday", label: "V" },
-  { key: "saturday", label: "S" },
-  { key: "sunday", label: "D" },
+  { key: "monday",    label: "Lun", startKey: "monStart", endKey: "monEnd" },
+  { key: "tuesday",   label: "Mar", startKey: "tueStart", endKey: "tueEnd" },
+  { key: "wednesday", label: "Mié", startKey: "wedStart", endKey: "wedEnd" },
+  { key: "thursday",  label: "Jue", startKey: "thuStart", endKey: "thuEnd" },
+  { key: "friday",    label: "Vie", startKey: "friStart", endKey: "friEnd" },
+  { key: "saturday",  label: "Sáb", startKey: "satStart", endKey: "satEnd" },
+  { key: "sunday",    label: "Dom", startKey: "sunStart", endKey: "sunEnd" },
 ];
 
-export default function ScheduleEditor({ userId, employeeName }: { userId: string; employeeName: string }) {
-  const [schedule, setSchedule] = useState({
-    monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: false, sunday: false,
-    startTime: "08:00", endTime: "17:00", toleranceMin: 10,
+export default function ScheduleEditor({ userId, initialSchedule }: { userId: string; initialSchedule: any }) {
+  const [days, setDays] = useState<Record<string,boolean>>({
+    monday:    initialSchedule?.monday    ?? true,
+    tuesday:   initialSchedule?.tuesday   ?? true,
+    wednesday: initialSchedule?.wednesday ?? true,
+    thursday:  initialSchedule?.thursday  ?? true,
+    friday:    initialSchedule?.friday    ?? true,
+    saturday:  initialSchedule?.saturday  ?? false,
+    sunday:    initialSchedule?.sunday    ?? false,
   });
-  const [loading, setLoading] = useState(true);
+
+  const [times, setTimes] = useState<Record<string,string>>({
+    monStart: initialSchedule?.monStart || initialSchedule?.startTime || "08:00",
+    monEnd:   initialSchedule?.monEnd   || initialSchedule?.endTime   || "17:00",
+    tueStart: initialSchedule?.tueStart || initialSchedule?.startTime || "08:00",
+    tueEnd:   initialSchedule?.tueEnd   || initialSchedule?.endTime   || "17:00",
+    wedStart: initialSchedule?.wedStart || initialSchedule?.startTime || "08:00",
+    wedEnd:   initialSchedule?.wedEnd   || initialSchedule?.endTime   || "17:00",
+    thuStart: initialSchedule?.thuStart || initialSchedule?.startTime || "08:00",
+    thuEnd:   initialSchedule?.thuEnd   || initialSchedule?.endTime   || "17:00",
+    friStart: initialSchedule?.friStart || initialSchedule?.startTime || "08:00",
+    friEnd:   initialSchedule?.friEnd   || initialSchedule?.endTime   || "17:00",
+    satStart: initialSchedule?.satStart || initialSchedule?.startTime || "08:00",
+    satEnd:   initialSchedule?.satEnd   || initialSchedule?.endTime   || "17:00",
+    sunStart: initialSchedule?.sunStart || initialSchedule?.startTime || "08:00",
+    sunEnd:   initialSchedule?.sunEnd   || initialSchedule?.endTime   || "17:00",
+  });
+
+  const [tolerance, setTolerance] = useState(initialSchedule?.toleranceMin ?? 10);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
-  useEffect(() => {
-    fetch(`/api/schedule?userId=${userId}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.schedule) setSchedule(d.schedule);
-        setLoading(false);
-      });
-  }, [userId]);
-
-  function toggleDay(day: string) {
-    setSchedule(prev => ({ ...prev, [day]: !(prev as any)[day] }));
-  }
-
   async function save() {
     setSaving(true);
-    setMsg("");
     const res = await fetch("/api/schedule", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, ...schedule }),
+      body: JSON.stringify({ userId, ...days, ...times, toleranceMin: tolerance }),
     });
-    setMsg(res.ok ? "✓ Horario guardado" : "Error al guardar");
+    setMsg(res.ok ? "Guardado" : "Error");
     setSaving(false);
     setTimeout(() => setMsg(""), 3000);
   }
 
-  if (loading) return <div className="p-4 text-xs text-[var(--text-muted)]">Cargando...</div>;
+  const inputS: React.CSSProperties = {
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "8px",
+    padding: "6px 8px",
+    color: "#FAFAFA",
+    fontSize: "12px",
+    fontFamily: "var(--font-dm-sans)",
+    outline: "none",
+    width: "80px",
+  };
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-bold text-[var(--text-primary)]">Horario — {employeeName}</h3>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">Define días laborables y horario de entrada/salida</p>
+    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+      <style>{`input[type=time]:focus,input[type=range]:focus{outline:none}`}</style>
+
+      {/* Days with individual times */}
+      <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+        {DAYS.map(d => (
+          <div key={d.key} style={{
+            display:"flex",alignItems:"center",gap:"10px",padding:"10px 12px",borderRadius:"12px",
+            background:days[d.key]?"rgba(201,168,76,0.06)":"rgba(255,255,255,0.02)",
+            border:days[d.key]?"1px solid rgba(201,168,76,0.15)":"1px solid rgba(255,255,255,0.05)",
+            transition:"all 0.15s"
+          }}>
+            {/* Day toggle */}
+            <button onClick={()=>setDays(p=>({...p,[d.key]:!p[d.key]}))}
+              style={{
+                width:"36px",height:"20px",borderRadius:"100px",border:"none",cursor:"pointer",
+                flexShrink:0,transition:"all 0.2s",position:"relative",
+                background:days[d.key]?"linear-gradient(135deg,#C9A84C,#F0D080)":"rgba(255,255,255,0.1)",
+              }}>
+              <div style={{
+                position:"absolute",top:"2px",width:"16px",height:"16px",borderRadius:"50%",background:"white",
+                transition:"all 0.2s",left:days[d.key]?"18px":"2px",boxShadow:"0 1px 4px rgba(0,0,0,0.3)"
+              }} />
+            </button>
+
+            <span style={{
+              fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"12px",width:"28px",flexShrink:0,
+              color:days[d.key]?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)"
+            }}>{d.label}</span>
+
+            {days[d.key] ? (
+              <div style={{display:"flex",alignItems:"center",gap:"6px",flex:1}}>
+                <input type="time" value={times[d.startKey]} onChange={e=>setTimes(p=>({...p,[d.startKey]:e.target.value}))}
+                  style={inputS} />
+                <span style={{color:"rgba(255,255,255,0.2)",fontSize:"11px"}}>—</span>
+                <input type="time" value={times[d.endKey]} onChange={e=>setTimes(p=>({...p,[d.endKey]:e.target.value}))}
+                  style={inputS} />
+                <span style={{fontSize:"11px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-dm-sans)",marginLeft:"4px"}}>
+                  {(() => {
+                    const [sh,sm] = times[d.startKey].split(":").map(Number);
+                    const [eh,em] = times[d.endKey].split(":").map(Number);
+                    const diff = (eh*60+em) - (sh*60+sm);
+                    if (diff <= 0) return "";
+                    return diff >= 60 ? Math.floor(diff/60)+"h"+(diff%60>0?" "+diff%60+"m":"") : diff+"m";
+                  })()}
+                </span>
+              </div>
+            ) : (
+              <span style={{fontSize:"11px",color:"rgba(255,255,255,0.2)",fontFamily:"var(--font-dm-sans)"}}>Día libre</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Tolerance */}
+      <div style={{padding:"12px",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"12px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}>
+          <span style={{fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",fontFamily:"var(--font-dm-sans)"}}>Tolerancia de llegada</span>
+          <span style={{fontSize:"12px",fontWeight:700,color:"#C9A84C",fontFamily:"var(--font-syne)"}}>{tolerance} min</span>
+        </div>
+        <input type="range" min="0" max="60" step="5" value={tolerance}
+          onChange={e=>setTolerance(Number(e.target.value))}
+          style={{width:"100%",accentColor:"#C9A84C"}} />
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",color:"rgba(255,255,255,0.2)",marginTop:"4px",fontFamily:"var(--font-dm-sans)"}}>
+          <span>0 min</span><span>60 min</span>
         </div>
       </div>
-      <div className="p-5 space-y-5">
-        {/* Days */}
-        <div>
-          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Días laborables</p>
-          <div className="flex gap-2">
-            {DAYS.map(d => (
-              <button key={d.key} onClick={() => toggleDay(d.key)}
-                className={`w-9 h-9 rounded-xl text-xs font-black transition ${(schedule as any)[d.key] ? "bg-[#E8B84B] text-black" : "bg-[var(--border)] text-[var(--text-muted)]"}`}>
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Times */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Hora entrada</label>
-            <input type="time" value={schedule.startTime}
-              onChange={e => setSchedule(prev => ({ ...prev, startTime: e.target.value }))}
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Hora salida</label>
-            <input type="time" value={schedule.endTime}
-              onChange={e => setSchedule(prev => ({ ...prev, endTime: e.target.value }))}
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#E8B84B] transition" />
-          </div>
-        </div>
-
-        {/* Tolerance */}
-        <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-            Tolerancia de tardanza — {schedule.toleranceMin} minutos
-          </label>
-          <input type="range" min="0" max="30" step="5" value={schedule.toleranceMin}
-            onChange={e => setSchedule(prev => ({ ...prev, toleranceMin: Number(e.target.value) }))}
-            className="w-full accent-[#E8B84B]" />
-          <div className="flex justify-between text-xs text-[var(--text-muted)] mt-1">
-            <span>0 min</span><span>15 min</span><span>30 min</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2">
-          <button onClick={save} disabled={saving}
-            className="bg-[#E8B84B] text-black px-5 py-2.5 rounded-xl text-sm font-black hover:bg-[#d4a43a] transition disabled:opacity-50">
-            {saving ? "Guardando..." : "Guardar horario"}
-          </button>
-          {msg && <p className={`text-xs ${msg.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>{msg}</p>}
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        {msg && <p style={{fontSize:"12px",color:msg==="Guardado"?"#34D399":"#F87171",fontFamily:"var(--font-dm-sans)"}}>{msg}</p>}
+        <button onClick={save} disabled={saving}
+          style={{marginLeft:"auto",background:"linear-gradient(135deg,#C9A84C,#F0D080)",color:"#000",padding:"10px 20px",borderRadius:"12px",fontSize:"13px",fontFamily:"var(--font-syne)",fontWeight:700,border:"none",cursor:"pointer",opacity:saving?0.6:1}}>
+          {saving?"Guardando...":"Guardar horario"}
+        </button>
       </div>
     </div>
   );

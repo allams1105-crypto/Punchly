@@ -1,307 +1,171 @@
-import { writeFileSync, readFileSync, mkdirSync } from "fs";
+import { writeFileSync } from "fs";
 
-// 1. LOGOUT — employee dashboard
-let empDash = readFileSync("src/components/employee/EmployeeDashboardClient.tsx", "utf8");
-if (!empDash.includes("signOut")) {
-  empDash = empDash.replace(
-    `"use client";`,
-    `"use client";
-import { signOut } from "next-auth/react";`
-  );
-  empDash = empDash.replace(
-    `<h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Mi Panel</h1>`,
-    `<h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Mi Panel</h1>
-        <button onClick={()=>signOut({callbackUrl:"/en"})}
-          style={{background:"transparent",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"10px",padding:"6px 14px",color:"rgba(255,255,255,0.35)",fontSize:"12px",fontFamily:"var(--font-dm-sans)",cursor:"pointer",transition:"all 0.15s"}}
-          onMouseEnter={e=>(e.currentTarget.style.color="#F87171")} onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.35)")}>
-          Cerrar sesión
-        </button>`
-  );
-  writeFileSync("src/components/employee/EmployeeDashboardClient.tsx", empDash);
-}
-
-// 2. Employee password — add password field to create and edit
-// Update create API to accept password
-writeFileSync("src/app/api/employees/create/route.ts", `import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-
-export async function POST(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    const orgId = (session.user as any).organizationId;
-    const { name, email, hourlyRate, kioskPin, password } = await req.json();
-
-    const pin = await bcrypt.hash(password || "0000", 10);
-    const data: any = { name, email, hourlyRate, organizationId: orgId, pin };
-    if (kioskPin && kioskPin.length === 4) {
-      data.kioskPin = await bcrypt.hash(kioskPin, 10);
-    }
-
-    const user = await prisma.user.create({ data });
-    await prisma.activityLog.create({
-      data: { organizationId: orgId, userId: user.id, userName: user.name, action: "EMPLOYEE_CREATED", details: "Empleado creado" }
-    });
-    return NextResponse.json({ user });
-  } catch (e: any) {
-    if (e.code === "P2002") return NextResponse.json({ error: "Ya existe un empleado con ese email" }, { status: 400 });
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
-}`);
-
-// Update new employee page with password field
-writeFileSync("src/app/[locale]/admin/employees/new/page.tsx", `"use client";
+writeFileSync("src/components/admin/ScheduleEditor.tsx", `"use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
-export default function NewEmployeePage() {
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [hourlyRate, setHourlyRate] = useState("");
-  const [password, setPassword] = useState("");
-  const [kioskPin, setKioskPin] = useState("");
+const DAYS = [
+  { key: "monday",    label: "Lun", startKey: "monStart", endKey: "monEnd" },
+  { key: "tuesday",   label: "Mar", startKey: "tueStart", endKey: "tueEnd" },
+  { key: "wednesday", label: "Mié", startKey: "wedStart", endKey: "wedEnd" },
+  { key: "thursday",  label: "Jue", startKey: "thuStart", endKey: "thuEnd" },
+  { key: "friday",    label: "Vie", startKey: "friStart", endKey: "friEnd" },
+  { key: "saturday",  label: "Sáb", startKey: "satStart", endKey: "satEnd" },
+  { key: "sunday",    label: "Dom", startKey: "sunStart", endKey: "sunEnd" },
+];
+
+export default function ScheduleEditor({ userId, initialSchedule }: { userId: string; initialSchedule: any }) {
+  const [days, setDays] = useState<Record<string,boolean>>({
+    monday:    initialSchedule?.monday    ?? true,
+    tuesday:   initialSchedule?.tuesday   ?? true,
+    wednesday: initialSchedule?.wednesday ?? true,
+    thursday:  initialSchedule?.thursday  ?? true,
+    friday:    initialSchedule?.friday    ?? true,
+    saturday:  initialSchedule?.saturday  ?? false,
+    sunday:    initialSchedule?.sunday    ?? false,
+  });
+
+  const [times, setTimes] = useState<Record<string,string>>({
+    monStart: initialSchedule?.monStart || initialSchedule?.startTime || "08:00",
+    monEnd:   initialSchedule?.monEnd   || initialSchedule?.endTime   || "17:00",
+    tueStart: initialSchedule?.tueStart || initialSchedule?.startTime || "08:00",
+    tueEnd:   initialSchedule?.tueEnd   || initialSchedule?.endTime   || "17:00",
+    wedStart: initialSchedule?.wedStart || initialSchedule?.startTime || "08:00",
+    wedEnd:   initialSchedule?.wedEnd   || initialSchedule?.endTime   || "17:00",
+    thuStart: initialSchedule?.thuStart || initialSchedule?.startTime || "08:00",
+    thuEnd:   initialSchedule?.thuEnd   || initialSchedule?.endTime   || "17:00",
+    friStart: initialSchedule?.friStart || initialSchedule?.startTime || "08:00",
+    friEnd:   initialSchedule?.friEnd   || initialSchedule?.endTime   || "17:00",
+    satStart: initialSchedule?.satStart || initialSchedule?.startTime || "08:00",
+    satEnd:   initialSchedule?.satEnd   || initialSchedule?.endTime   || "17:00",
+    sunStart: initialSchedule?.sunStart || initialSchedule?.startTime || "08:00",
+    sunEnd:   initialSchedule?.sunEnd   || initialSchedule?.endTime   || "17:00",
+  });
+
+  const [tolerance, setTolerance] = useState(initialSchedule?.toleranceMin ?? 10);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
 
   async function save() {
-    if (!name || !email) { setError("Nombre y email son requeridos"); return; }
-    if (!password) { setError("La contraseña es requerida"); return; }
-    if (kioskPin && kioskPin.length !== 4) { setError("El PIN debe tener 4 dígitos"); return; }
-    setSaving(true); setError("");
-    const res = await fetch("/api/employees/create", {
+    setSaving(true);
+    const res = await fetch("/api/schedule", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, hourlyRate: Number(hourlyRate)||0, password, kioskPin }),
+      body: JSON.stringify({ userId, ...days, ...times, toleranceMin: tolerance }),
     });
-    const data = await res.json();
+    setMsg(res.ok ? "Guardado" : "Error");
     setSaving(false);
-    if (!res.ok) { setError(data.error || "Error al crear empleado"); return; }
-    router.push("/en/admin/employees");
+    setTimeout(() => setMsg(""), 3000);
   }
 
   const inputS: React.CSSProperties = {
-    width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
-    borderRadius:"12px", padding:"10px 14px", color:"#FAFAFA", fontSize:"13px",
-    fontFamily:"var(--font-dm-sans)", outline:"none", transition:"border 0.2s", boxSizing:"border-box"
-  };
-  const labelS: React.CSSProperties = {
-    display:"block", fontSize:"11px", fontWeight:600, color:"rgba(255,255,255,0.3)",
-    textTransform:"uppercase", letterSpacing:"1px", marginBottom:"8px", fontFamily:"var(--font-dm-sans)"
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "8px",
+    padding: "6px 8px",
+    color: "#FAFAFA",
+    fontSize: "12px",
+    fontFamily: "var(--font-dm-sans)",
+    outline: "none",
+    width: "80px",
   };
 
   return (
-    <div style={{flex:1,overflowY:"auto",background:"#0A0A0A"}}>
-      <style>{\`input:focus{border-color:rgba(201,168,76,0.4)!important}\`}</style>
-      <div style={{height:"56px",borderBottom:"1px solid rgba(255,255,255,0.08)",padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Nuevo Empleado</h1>
+    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+      <style>{\`input[type=time]:focus,input[type=range]:focus{outline:none}\`}</style>
+
+      {/* Days with individual times */}
+      <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+        {DAYS.map(d => (
+          <div key={d.key} style={{
+            display:"flex",alignItems:"center",gap:"10px",padding:"10px 12px",borderRadius:"12px",
+            background:days[d.key]?"rgba(201,168,76,0.06)":"rgba(255,255,255,0.02)",
+            border:days[d.key]?"1px solid rgba(201,168,76,0.15)":"1px solid rgba(255,255,255,0.05)",
+            transition:"all 0.15s"
+          }}>
+            {/* Day toggle */}
+            <button onClick={()=>setDays(p=>({...p,[d.key]:!p[d.key]}))}
+              style={{
+                width:"36px",height:"20px",borderRadius:"100px",border:"none",cursor:"pointer",
+                flexShrink:0,transition:"all 0.2s",position:"relative",
+                background:days[d.key]?"linear-gradient(135deg,#C9A84C,#F0D080)":"rgba(255,255,255,0.1)",
+              }}>
+              <div style={{
+                position:"absolute",top:"2px",width:"16px",height:"16px",borderRadius:"50%",background:"white",
+                transition:"all 0.2s",left:days[d.key]?"18px":"2px",boxShadow:"0 1px 4px rgba(0,0,0,0.3)"
+              }} />
+            </button>
+
+            <span style={{
+              fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"12px",width:"28px",flexShrink:0,
+              color:days[d.key]?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)"
+            }}>{d.label}</span>
+
+            {days[d.key] ? (
+              <div style={{display:"flex",alignItems:"center",gap:"6px",flex:1}}>
+                <input type="time" value={times[d.startKey]} onChange={e=>setTimes(p=>({...p,[d.startKey]:e.target.value}))}
+                  style={inputS} />
+                <span style={{color:"rgba(255,255,255,0.2)",fontSize:"11px"}}>—</span>
+                <input type="time" value={times[d.endKey]} onChange={e=>setTimes(p=>({...p,[d.endKey]:e.target.value}))}
+                  style={inputS} />
+                <span style={{fontSize:"11px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-dm-sans)",marginLeft:"4px"}}>
+                  {(() => {
+                    const [sh,sm] = times[d.startKey].split(":").map(Number);
+                    const [eh,em] = times[d.endKey].split(":").map(Number);
+                    const diff = (eh*60+em) - (sh*60+sm);
+                    if (diff <= 0) return "";
+                    return diff >= 60 ? Math.floor(diff/60)+"h"+(diff%60>0?" "+diff%60+"m":"") : diff+"m";
+                  })()}
+                </span>
+              </div>
+            ) : (
+              <span style={{fontSize:"11px",color:"rgba(255,255,255,0.2)",fontFamily:"var(--font-dm-sans)"}}>Día libre</span>
+            )}
+          </div>
+        ))}
       </div>
-      <div style={{maxWidth:"520px",margin:"0 auto",padding:"24px"}}>
-        <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"20px",overflow:"hidden"}}>
-          <div style={{padding:"16px 20px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-            <h2 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Datos del empleado</h2>
-          </div>
-          <div style={{padding:"20px",display:"flex",flexDirection:"column",gap:"14px"}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
-              <div>
-                <label style={labelS}>Nombre completo</label>
-                <input value={name} onChange={e=>setName(e.target.value)} placeholder="Juan Pérez" style={inputS} />
-              </div>
-              <div>
-                <label style={labelS}>Email</label>
-                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="juan@empresa.com" style={inputS} />
-              </div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
-              <div>
-                <label style={labelS}>Contraseña (para login)</label>
-                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={inputS} />
-                <p style={{fontSize:"10px",color:"rgba(255,255,255,0.2)",marginTop:"4px",fontFamily:"var(--font-dm-sans)"}}>El empleado usará esto para iniciar sesión</p>
-              </div>
-              <div>
-                <label style={labelS}>PIN del Kiosk (4 dígitos)</label>
-                <input type="password" value={kioskPin} onChange={e=>setKioskPin(e.target.value.replace(/\D/g,"").substring(0,4))} placeholder="1234" maxLength={4} style={inputS} />
-                <p style={{fontSize:"10px",color:"rgba(255,255,255,0.2)",marginTop:"4px",fontFamily:"var(--font-dm-sans)"}}>PIN para fichar en el kiosk</p>
-              </div>
-            </div>
-            <div>
-              <label style={labelS}>Tarifa por hora ($)</label>
-              <input type="number" value={hourlyRate} onChange={e=>setHourlyRate(e.target.value)} placeholder="15.00" style={{...inputS,width:"50%"}} />
-            </div>
-            {error && <p style={{color:"#F87171",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{error}</p>}
-            <div style={{display:"flex",gap:"10px",paddingTop:"8px"}}>
-              <button onClick={()=>router.back()} style={{flex:1,padding:"12px",borderRadius:"12px",border:"1px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.4)",fontSize:"13px",fontFamily:"var(--font-dm-sans)",cursor:"pointer"}}>
-                Cancelar
-              </button>
-              <button onClick={save} disabled={saving}
-                style={{flex:1,padding:"12px",borderRadius:"12px",background:"linear-gradient(135deg,#C9A84C,#F0D080)",color:"#000",fontSize:"13px",fontFamily:"var(--font-syne)",fontWeight:700,border:"none",cursor:"pointer",opacity:saving?0.6:1}}>
-                {saving?"Guardando...":"Crear empleado"}
-              </button>
-            </div>
-          </div>
+
+      {/* Tolerance */}
+      <div style={{padding:"12px",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"12px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}>
+          <span style={{fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",fontFamily:"var(--font-dm-sans)"}}>Tolerancia de llegada</span>
+          <span style={{fontSize:"12px",fontWeight:700,color:"#C9A84C",fontFamily:"var(--font-syne)"}}>{tolerance} min</span>
         </div>
+        <input type="range" min="0" max="60" step="5" value={tolerance}
+          onChange={e=>setTolerance(Number(e.target.value))}
+          style={{width:"100%",accentColor:"#C9A84C"}} />
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",color:"rgba(255,255,255,0.2)",marginTop:"4px",fontFamily:"var(--font-dm-sans)"}}>
+          <span>0 min</span><span>60 min</span>
+        </div>
+      </div>
+
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        {msg && <p style={{fontSize:"12px",color:msg==="Guardado"?"#34D399":"#F87171",fontFamily:"var(--font-dm-sans)"}}>{msg}</p>}
+        <button onClick={save} disabled={saving}
+          style={{marginLeft:"auto",background:"linear-gradient(135deg,#C9A84C,#F0D080)",color:"#000",padding:"10px 20px",borderRadius:"12px",fontSize:"13px",fontFamily:"var(--font-syne)",fontWeight:700,border:"none",cursor:"pointer",opacity:saving?0.6:1}}>
+          {saving?"Guardando...":"Guardar horario"}
+        </button>
       </div>
     </div>
   );
 }`);
 
-// 3. EMAIL ON EVERY CLOCK IN — update kiosk clock API
-writeFileSync("src/app/api/kiosk/clock/route.ts", `import { prisma } from "@/lib/db";
-import { NextResponse } from "next/server";
-import { Resend } from "resend";
-import bcrypt from "bcryptjs";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export async function POST(req: Request) {
-  const { userId, organizationId, action, pin } = await req.json();
-  if (!userId || !organizationId || !action) return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
-
-  const user = await prisma.user.findUnique({ where: { id: userId }, include: { schedule: true } });
-  if (!user) return NextResponse.json({ error: "Empleado no encontrado" }, { status: 404 });
-
-  const kioskPin = (user as any).kioskPin;
-  if (kioskPin) {
-    if (!pin) return NextResponse.json({ error: "PIN requerido" }, { status: 401 });
-    const valid = await bcrypt.compare(pin, kioskPin);
-    if (!valid) return NextResponse.json({ error: "PIN incorrecto" }, { status: 401 });
-  }
-
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    include: { users: { where: { role: "OWNER" } } }
-  });
-  const ownerEmail = org?.users?.[0]?.email;
-  const alertEmail = (org as any)?.alertEmail;
-  const recipients = [ownerEmail, alertEmail].filter(Boolean) as string[];
-
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
-  const dateStr = now.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" });
-
-  if (action === "in") {
-    const existing = await prisma.timeEntry.findFirst({ where: { userId, organizationId, clockOut: null } });
-    if (existing) return NextResponse.json({ error: "Ya está en turno" }, { status: 400 });
-
-    const entry = await prisma.timeEntry.create({ data: { userId, organizationId, clockIn: now } });
-
-    await prisma.activityLog.create({
-      data: { organizationId, userId, userName: user.name, action: "CLOCK_IN", details: \`Entrada registrada a las \${timeStr}\` },
-    });
-
-    // Check if late
-    let isLate = false;
-    let lateMin = 0;
-    const schedule = user.schedule;
-    if (schedule) {
-      const dayMap: Record<number, keyof typeof schedule> = { 0:"sunday",1:"monday",2:"tuesday",3:"wednesday",4:"thursday",5:"friday",6:"saturday" };
-      const dayKey = dayMap[now.getDay()];
-      if (schedule[dayKey]) {
-        const [h, m] = schedule.startTime.split(":").map(Number);
-        const start = new Date(now); start.setHours(h, m, 0, 0);
-        lateMin = Math.floor((now.getTime() - start.getTime()) / 60000) - schedule.toleranceMin;
-        if (lateMin > 0) {
-          isLate = true;
-          await prisma.activityLog.create({
-            data: { organizationId, userId, userName: user.name, action: "LATE",
-              details: \`Tardanza de \${lateMin} minutos\` },
-          });
-        }
-      }
-    }
-
-    // Send email for every clock in
-    if (recipients.length > 0) {
-      try {
-        await resend.emails.send({
-          from: "Punchly.Clock <onboarding@resend.dev>",
-          to: recipients,
-          subject: isLate ? \`⚠️ Tardanza — \${user.name}\` : \`✓ Entrada — \${user.name}\`,
-          html: \`<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0A0A0A;color:white;border-radius:16px;">
-            <div style="background:linear-gradient(135deg,#C9A84C,#F0D080);padding:2px;border-radius:12px;margin-bottom:24px;display:inline-block">
-              <div style="background:#0A0A0A;padding:8px 16px;border-radius:10px;">
-                <span style="color:#C9A84C;font-weight:900;font-size:14px;">Punchly.Clock</span>
-              </div>
-            </div>
-            <h2 style="color:${isLate ? "#F87171" : "#34D399"};margin-bottom:8px;">${isLate ? "⚠️ Tardanza detectada" : "✓ Entrada registrada"}</h2>
-            <p style="color:rgba(255,255,255,0.7);font-size:16px;"><strong style="color:white">\${user.name}</strong> fichó su <strong>entrada</strong> a las <strong style="color:#C9A84C">\${timeStr}</strong></p>
-            <p style="color:rgba(255,255,255,0.4);font-size:13px;">\${dateStr}</p>
-            \${isLate ? \`<p style="color:#F87171;margin-top:16px;">Llegó <strong>\${lateMin} minutos tarde</strong> (horario: \${schedule?.startTime})</p>\` : ""}
-            <a href="https://punchlyclock.vercel.app/en/admin/attendance" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#F0D080);color:black;padding:12px 24px;border-radius:12px;font-weight:700;text-decoration:none;margin-top:20px;">Ver asistencia →</a>
-          </div>\`,
-        });
-      } catch(e) { console.error("Email error:", e); }
-    }
-
-    return NextResponse.json({ success: true, action: "in", entryId: entry.id });
-
-  } else if (action === "out") {
-    const entry = await prisma.timeEntry.findFirst({ where: { userId, organizationId, clockOut: null }, orderBy: { clockIn: "desc" } });
-    if (!entry) return NextResponse.json({ error: "No está en turno" }, { status: 400 });
-
-    const durationMin = Math.floor((now.getTime() - entry.clockIn.getTime()) / 60000);
-    const h = Math.floor(durationMin / 60);
-    const m = durationMin % 60;
-
-    await prisma.timeEntry.update({ where: { id: entry.id }, data: { clockOut: now, durationMin } });
-    await prisma.activityLog.create({
-      data: { organizationId, userId, userName: user.name, action: "CLOCK_OUT",
-        details: \`Salida registrada — \${h}h \${m}m trabajados\` },
-    });
-
-    // Send email for clock out too
-    if (recipients.length > 0) {
-      try {
-        await resend.emails.send({
-          from: "Punchly.Clock <onboarding@resend.dev>",
-          to: recipients,
-          subject: \`✓ Salida — \${user.name}\`,
-          html: \`<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0A0A0A;color:white;border-radius:16px;">
-            <div style="background:linear-gradient(135deg,#C9A84C,#F0D080);padding:2px;border-radius:12px;margin-bottom:24px;display:inline-block">
-              <div style="background:#0A0A0A;padding:8px 16px;border-radius:10px;">
-                <span style="color:#C9A84C;font-weight:900;font-size:14px;">Punchly.Clock</span>
-              </div>
-            </div>
-            <h2 style="color:#60A5FA;margin-bottom:8px;">✓ Salida registrada</h2>
-            <p style="color:rgba(255,255,255,0.7);font-size:16px;"><strong style="color:white">\${user.name}</strong> fichó su <strong>salida</strong> a las <strong style="color:#C9A84C">\${timeStr}</strong></p>
-            <p style="color:rgba(255,255,255,0.4);font-size:13px;">\${dateStr}</p>
-            <p style="color:#34D399;margin-top:16px;font-size:15px;">Tiempo trabajado: <strong>\${h}h \${m}m</strong></p>
-            <a href="https://punchlyclock.vercel.app/en/admin/attendance" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#F0D080);color:black;padding:12px 24px;border-radius:12px;font-weight:700;text-decoration:none;margin-top:20px;">Ver asistencia →</a>
-          </div>\`,
-        });
-      } catch(e) { console.error("Email error:", e); }
-    }
-
-    return NextResponse.json({ success: true, action: "out" });
-  }
-
-  return NextResponse.json({ error: "Acción inválida" }, { status: 400 });
-}`);
-
-// 4. KIOSK PWA — update manifest and add standalone meta
-writeFileSync("public/manifest.json", JSON.stringify({
-  name: "Punchly.Clock Kiosk",
-  short_name: "Punchly",
-  description: "Sistema de control de asistencia",
-  start_url: "/en/kiosk",
-  display: "standalone",
-  background_color: "#0A0A0A",
-  theme_color: "#C9A84C",
-  orientation: "landscape",
-  icons: [
-    { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" },
-    { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-    { src: "/icon-512.png", sizes: "512x512", type: "image/png" }
-  ]
-}, null, 2));
-
-// 5. FIX GEOFENCING — update settings API to handle the save properly
-mkdirSync("src/app/api/settings/geo", { recursive: true });
-writeFileSync("src/app/api/settings/geo/route.ts", `import { auth } from "@/lib/auth";
+// Update schedule API to save per-day times
+writeFileSync("src/app/api/schedule/route.ts", `import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const userId = req.nextUrl.searchParams.get("userId");
+    if (!userId) return NextResponse.json({ error: "userId requerido" }, { status: 400 });
+    const schedule = await prisma.schedule.findUnique({ where: { userId } });
+    return NextResponse.json({ schedule });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -309,77 +173,189 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     const orgId = (session.user as any).organizationId;
     const body = await req.json();
-    const { lat, lng, geoRadius } = body;
+    const { userId, monday, tuesday, wednesday, thursday, friday, saturday, sunday,
+      monStart, monEnd, tueStart, tueEnd, wedStart, wedEnd, thuStart, thuEnd,
+      friStart, friEnd, satStart, satEnd, sunStart, sunEnd, toleranceMin } = body;
 
-    if (!lat || !lng) return NextResponse.json({ error: "Latitud y longitud requeridas" }, { status: 400 });
+    const data: any = {
+      organizationId: orgId, userId,
+      monday, tuesday, wednesday, thursday, friday, saturday, sunday,
+      monStart, monEnd, tueStart, tueEnd, wedStart, wedEnd, thuStart, thuEnd,
+      friStart, friEnd, satStart, satEnd, sunStart, sunEnd,
+      toleranceMin: toleranceMin || 10,
+      // Keep legacy fields for compatibility
+      startTime: monStart || "08:00",
+      endTime: monEnd || "17:00",
+    };
 
-    await prisma.organization.update({
-      where: { id: orgId },
-      data: { lat: parseFloat(String(lat)), lng: parseFloat(String(lng)), geoRadius: parseInt(String(geoRadius||100)) } as any,
+    const schedule = await prisma.schedule.upsert({
+      where: { userId },
+      update: data,
+      create: data,
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ schedule });
   } catch (e: any) {
-    console.error("Geo settings error:", e);
+    console.error("Schedule error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
+}`);
+
+// Update kiosk clock to use per-day schedule
+writeFileSync("src/app/api/clock/route.ts", `import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-export async function GET(req: NextRequest) {
+function getScheduleForDay(schedule: any, dayIdx: number) {
+  const dayMap: Record<number, { active: string; start: string; end: string }> = {
+    0: { active:"sunday",    start:"sunStart", end:"sunEnd" },
+    1: { active:"monday",    start:"monStart", end:"monEnd" },
+    2: { active:"tuesday",   start:"tueStart", end:"tueEnd" },
+    3: { active:"wednesday", start:"wedStart", end:"wedEnd" },
+    4: { active:"thursday",  start:"thuStart", end:"thuEnd" },
+    5: { active:"friday",    start:"friStart", end:"friEnd" },
+    6: { active:"saturday",  start:"satStart", end:"satEnd" },
+  };
+  const d = dayMap[dayIdx];
+  return {
+    isWorkDay: schedule[d.active],
+    startTime: schedule[d.start] || schedule.startTime || "08:00",
+    endTime: schedule[d.end] || schedule.endTime || "17:00",
+  };
+}
+
+export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const userId = (session.user as any).id;
     const orgId = (session.user as any).organizationId;
-    const org = await prisma.organization.findUnique({ where: { id: orgId } });
-    return NextResponse.json({ lat: (org as any)?.lat, lng: (org as any)?.lng, geoRadius: (org as any)?.geoRadius || 100 });
+    const { action, lat, lng } = await req.json();
+
+    const [user, org] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, include: { schedule: true } }),
+      prisma.organization.findUnique({ where: { id: orgId }, include: { users: { where: { role: "OWNER" } } } }),
+    ]);
+
+    if (!user || !org) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+
+    // Geofencing check
+    const orgLat = (org as any).lat;
+    const orgLng = (org as any).lng;
+    const geoRadius = (org as any).geoRadius || 100;
+    if (orgLat && orgLng && lat && lng) {
+      const distance = haversine(lat, lng, orgLat, orgLng);
+      if (distance > geoRadius) {
+        return NextResponse.json({
+          error: \`Estás muy lejos (\${Math.round(distance)}m). Debes estar a menos de \${geoRadius}m.\`,
+          distance: Math.round(distance), required: geoRadius
+        }, { status: 403 });
+      }
+    }
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("es", { hour:"2-digit", minute:"2-digit" });
+    const dateStr = now.toLocaleDateString("es", { weekday:"long", day:"numeric", month:"long" });
+    const ownerEmail = org.users?.[0]?.email;
+    const alertEmail = (org as any)?.alertEmail;
+    const recipients = [ownerEmail, alertEmail].filter(Boolean) as string[];
+
+    if (action === "in") {
+      const existing = await prisma.timeEntry.findFirst({ where: { userId, organizationId: orgId, clockOut: null } });
+      if (existing) return NextResponse.json({ error: "Ya estás en turno" }, { status: 400 });
+
+      const entry = await prisma.timeEntry.create({
+        data: { userId, organizationId: orgId, clockIn: now, source: "mobile" },
+      });
+
+      await prisma.activityLog.create({
+        data: { organizationId: orgId, userId, userName: user.name, action: "CLOCK_IN", details: "Entrada desde móvil" },
+      });
+
+      // Check late with per-day schedule
+      let isLate = false;
+      let lateMin = 0;
+      let scheduleStart = "";
+      const schedule = user.schedule;
+      if (schedule) {
+        const { isWorkDay, startTime } = getScheduleForDay(schedule, now.getDay());
+        if (isWorkDay) {
+          const [h, m] = startTime.split(":").map(Number);
+          const start = new Date(now); start.setHours(h, m, 0, 0);
+          lateMin = Math.floor((now.getTime() - start.getTime()) / 60000) - schedule.toleranceMin;
+          scheduleStart = startTime;
+          if (lateMin > 0) {
+            isLate = true;
+            await prisma.activityLog.create({
+              data: { organizationId: orgId, userId, userName: user.name, action: "LATE",
+                details: \`Tardanza de \${lateMin} min desde móvil\` },
+            });
+          }
+        }
+      }
+
+      if (recipients.length > 0) {
+        try {
+          await resend.emails.send({
+            from: "Punchly.Clock <onboarding@resend.dev>",
+            to: recipients,
+            subject: isLate ? \`⚠️ Tardanza — \${user.name}\` : \`✓ Entrada — \${user.name}\`,
+            html: \`<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;">
+              <h2 style="color:\${isLate?"#F87171":"#34D399"}">\${isLate?"⚠️ Tardanza":"✓ Entrada registrada"}</h2>
+              <p><strong>\${user.name}</strong> entró a las <strong style="color:#C9A84C">\${timeStr}</strong></p>
+              <p style="color:#666">\${dateStr}</p>
+              \${isLate ? \`<p style="color:#F87171">Tardanza: <strong>\${lateMin} min</strong> (horario: \${scheduleStart})</p>\` : ""}
+            </div>\`,
+          });
+        } catch(e) {}
+      }
+
+      return NextResponse.json({ success: true, action: "in", entryId: entry.id });
+
+    } else {
+      const entry = await prisma.timeEntry.findFirst({ where: { userId, organizationId: orgId, clockOut: null }, orderBy: { clockIn: "desc" } });
+      if (!entry) return NextResponse.json({ error: "No estás en turno" }, { status: 400 });
+      const durationMin = Math.floor((now.getTime() - entry.clockIn.getTime()) / 60000);
+      const h = Math.floor(durationMin/60); const m = durationMin%60;
+      await prisma.timeEntry.update({ where: { id: entry.id }, data: { clockOut: now, durationMin } });
+      await prisma.activityLog.create({
+        data: { organizationId: orgId, userId, userName: user.name, action: "CLOCK_OUT",
+          details: \`Salida — \${h}h \${m}m trabajados\` },
+      });
+
+      if (recipients.length > 0) {
+        try {
+          await resend.emails.send({
+            from: "Punchly.Clock <onboarding@resend.dev>",
+            to: recipients,
+            subject: \`✓ Salida — \${user.name}\`,
+            html: \`<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;">
+              <h2 style="color:#60A5FA">✓ Salida registrada</h2>
+              <p><strong>\${user.name}</strong> salió a las <strong style="color:#C9A84C">\${timeStr}</strong></p>
+              <p style="color:#666">\${dateStr}</p>
+              <p style="color:#34D399">Trabajó: <strong>\${h}h \${m}m</strong></p>
+            </div>\`,
+          });
+        } catch(e) {}
+      }
+
+      return NextResponse.json({ success: true, action: "out" });
+    }
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }`);
-
-// Update settings page to load existing geo data
-const settingsPage = readFileSync("src/app/[locale]/admin/settings/page.tsx", "utf8");
-if (!settingsPage.includes("geoData")) {
-  writeFileSync("src/app/[locale]/admin/settings/page.tsx", `import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
-import SettingsClient from "@/components/admin/SettingsClient";
-
-export default async function SettingsPage() {
-  const session = await auth();
-  if (!session) redirect("/en/login");
-  const orgId = (session.user as any).organizationId;
-  const userId = (session.user as any).id;
-
-  const [org, user] = await Promise.all([
-    prisma.organization.findUnique({ where: { id: orgId } }),
-    prisma.user.findUnique({ where: { id: userId } }),
-  ]);
-
-  return (
-    <div style={{flex:1,overflowY:"auto",background:"#0A0A0A"}}>
-      <div style={{height:"56px",borderBottom:"1px solid rgba(255,255,255,0.08)",padding:"0 24px",display:"flex",alignItems:"center"}}>
-        <h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Configuración</h1>
-      </div>
-      <div style={{padding:"24px",maxWidth:"640px"}}>
-        <SettingsClient org={org} user={user} />
-      </div>
-    </div>
-  );
-}`);
-}
-
-// Update SettingsClient GeofencingTab to load existing data
-let settingsClient = readFileSync("src/components/admin/SettingsClient.tsx", "utf8");
-settingsClient = settingsClient.replace(
-  `  const [lat, setLat] = useState(org?.lat?.toString()||"");
-  const [lng, setLng] = useState(org?.lng?.toString()||"");
-  const [radius, setRadius] = useState(org?.geoRadius?.toString()||"100");`,
-  `  const [lat, setLat] = useState((org as any)?.lat?.toString()||"");
-  const [lng, setLng] = useState((org as any)?.lng?.toString()||"");
-  const [radius, setRadius] = useState((org as any)?.geoRadius?.toString()||"100");`
-);
-writeFileSync("src/components/admin/SettingsClient.tsx", settingsClient);
 
 console.log("Listo!");
 
