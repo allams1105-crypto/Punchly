@@ -1,8 +1,4 @@
-import { writeFileSync, mkdirSync } from "fs";
-
-mkdirSync("src/app/api/settings/geo", { recursive: true });
-
-writeFileSync("src/app/api/settings/geo/route.ts", `import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -38,7 +34,4 @@ export async function GET(req: NextRequest) {
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
-}`);
-
-console.log("Listo!");
-
+}
