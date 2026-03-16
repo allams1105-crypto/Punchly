@@ -1,4 +1,5 @@
 "use client";
+import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 
 const GOLD = "#C9A84C";
