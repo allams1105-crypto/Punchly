@@ -1,5 +1,4 @@
 "use client";
-import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 
 const GOLD = "#C9A84C";
@@ -94,12 +93,12 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
           <p className="text-white/30 text-xs" style={{fontFamily:"var(--font-dm-sans)"}}>
             {time.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
           </p>
-          <button onClick={async()=>{ await signOut({callbackUrl:"/en",redirect:true}); }}
-            style={{background:"transparent",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"10px",padding:"5px 14px",color:"rgba(255,255,255,0.3)",fontSize:"11px",fontFamily:"var(--font-dm-sans)",cursor:"pointer",transition:"all 0.15s"}}
+          <a href="/api/auth/signout?callbackUrl=/en"
+            style={{background:"transparent",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"10px",padding:"5px 14px",color:"rgba(255,255,255,0.3)",fontSize:"11px",fontFamily:"var(--font-dm-sans)",cursor:"pointer",textDecoration:"none",transition:"all 0.15s"}}
             onMouseEnter={e=>(e.currentTarget.style.color="#F87171")}
             onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.3)")}>
             Salir
-          </button>
+          </a>
         </div>
       </div>
 
