@@ -38,7 +38,7 @@ export const t_es = {
   "landing.pro.badge": "Más popular",
   "landing.pro.cta": "Obtener licencia →",
   "landing.cta.title": "Empieza hoy gratis",
-  "landing.cta.desc": "Sin tarjeta de crédito. 7 días gratis. Luego solo $34 al mes.",
+  "landing.cta.desc": "7 días gratis. Luego solo $34 al mes.",
   "landing.cta.btn": "Crear cuenta gratis →",
   // Login
   "login.title": "Bienvenido de nuevo",

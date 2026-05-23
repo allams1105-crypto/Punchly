@@ -167,7 +167,7 @@ export default async function LandingPage({ params }: { params: any }) {
                 <Link href={`/${lang}/register`} className="btn-primary" style={{display:"block",padding:"16px",borderRadius:"10px",fontFamily:"var(--font-inter)",fontSize:"16px",textDecoration:"none",textAlign:"center",width:"100%",boxSizing:"border-box"}}>
                   Comenzar 7 días gratis
                 </Link>
-                <p style={{color:"var(--text-muted)",fontSize:"12px",marginTop:"16px",fontFamily:"var(--font-inter)"}}>No requiere tarjeta de crédito</p>
+
               </div>
             </div>
           </div>
