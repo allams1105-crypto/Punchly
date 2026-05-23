@@ -127,7 +127,7 @@ export async function GET(req: NextRequest) {
       isOverridden: !!override,
       period: periodString,
       avatarUrl: emp.avatarUrl,
-      avatarColor: emp.avatarColor || null,
+      avatarColor: (emp as any).avatarColor || null,
     };
   });
 
