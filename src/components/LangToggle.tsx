@@ -8,7 +8,7 @@ export default function LangToggle({ className = "" }: { className?: string }) {
   // Obtenemos el idioma actual de la URL
   const segments = pathname.split("/");
   const currentLang = segments[1]; 
-  const gold = "#D4AF37";
+  const primary = "var(--accent)";
 
   const changeLang = (newLang: string) => {
     if (currentLang === newLang) return;
@@ -30,9 +30,9 @@ export default function LangToggle({ className = "" }: { className?: string }) {
     cursor: "pointer",
     border: "none",
     transition: "all 0.2s ease",
-    background: active ? gold : "transparent",
+    background: active ? primary : "transparent",
     color: active ? "#000" : "rgba(255,255,255,0.4)",
-    fontFamily: "var(--font-syne)"
+    fontFamily: "var(--font-inter)"
   });
 
   return (

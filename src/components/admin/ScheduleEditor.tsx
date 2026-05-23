@@ -62,7 +62,7 @@ export default function ScheduleEditor({ userId, initialSchedule }: { userId: st
     padding: "6px 8px",
     color: "#FAFAFA",
     fontSize: "12px",
-    fontFamily: "var(--font-dm-sans)",
+    fontFamily: "var(--font-inter)",
     outline: "none",
     width: "80px",
   };
@@ -76,8 +76,8 @@ export default function ScheduleEditor({ userId, initialSchedule }: { userId: st
         {DAYS.map(d => (
           <div key={d.key} style={{
             display:"flex",alignItems:"center",gap:"10px",padding:"10px 12px",borderRadius:"12px",
-            background:days[d.key]?"rgba(201,168,76,0.06)":"rgba(255,255,255,0.02)",
-            border:days[d.key]?"1px solid rgba(201,168,76,0.15)":"1px solid rgba(255,255,255,0.05)",
+            background:days[d.key]?"rgba(59, 130, 246,0.06)":"rgba(255,255,255,0.02)",
+            border:days[d.key]?"1px solid rgba(59, 130, 246,0.15)":"1px solid rgba(255,255,255,0.05)",
             transition:"all 0.15s"
           }}>
             {/* Day toggle */}
@@ -85,7 +85,7 @@ export default function ScheduleEditor({ userId, initialSchedule }: { userId: st
               style={{
                 width:"36px",height:"20px",borderRadius:"100px",border:"none",cursor:"pointer",
                 flexShrink:0,transition:"all 0.2s",position:"relative",
-                background:days[d.key]?"linear-gradient(135deg,#C9A84C,#F0D080)":"rgba(255,255,255,0.1)",
+                background:days[d.key]?"var(--accent)":"rgba(255,255,255,0.1)",
               }}>
               <div style={{
                 position:"absolute",top:"2px",width:"16px",height:"16px",borderRadius:"50%",background:"white",
@@ -94,7 +94,7 @@ export default function ScheduleEditor({ userId, initialSchedule }: { userId: st
             </button>
 
             <span style={{
-              fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"12px",width:"28px",flexShrink:0,
+              fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"12px",width:"28px",flexShrink:0,
               color:days[d.key]?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.3)"
             }}>{d.label}</span>
 
@@ -105,7 +105,7 @@ export default function ScheduleEditor({ userId, initialSchedule }: { userId: st
                 <span style={{color:"rgba(255,255,255,0.2)",fontSize:"11px"}}>—</span>
                 <input type="time" value={times[d.endKey]} onChange={e=>setTimes(p=>({...p,[d.endKey]:e.target.value}))}
                   style={inputS} />
-                <span style={{fontSize:"11px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-dm-sans)",marginLeft:"4px"}}>
+                <span style={{fontSize:"11px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-inter)",marginLeft:"4px"}}>
                   {(() => {
                     const [sh,sm] = times[d.startKey].split(":").map(Number);
                     const [eh,em] = times[d.endKey].split(":").map(Number);
@@ -116,7 +116,7 @@ export default function ScheduleEditor({ userId, initialSchedule }: { userId: st
                 </span>
               </div>
             ) : (
-              <span style={{fontSize:"11px",color:"rgba(255,255,255,0.2)",fontFamily:"var(--font-dm-sans)"}}>Día libre</span>
+              <span style={{fontSize:"11px",color:"rgba(255,255,255,0.2)",fontFamily:"var(--font-inter)"}}>Día libre</span>
             )}
           </div>
         ))}
@@ -125,21 +125,21 @@ export default function ScheduleEditor({ userId, initialSchedule }: { userId: st
       {/* Tolerance */}
       <div style={{padding:"12px",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:"12px"}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}>
-          <span style={{fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",fontFamily:"var(--font-dm-sans)"}}>Tolerancia de llegada</span>
-          <span style={{fontSize:"12px",fontWeight:700,color:"#C9A84C",fontFamily:"var(--font-syne)"}}>{tolerance} min</span>
+          <span style={{fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",fontFamily:"var(--font-inter)"}}>Tolerancia de llegada</span>
+          <span style={{fontSize:"12px",fontWeight:700,color:"var(--accent)",fontFamily:"var(--font-inter)"}}>{tolerance} min</span>
         </div>
         <input type="range" min="0" max="60" step="5" value={tolerance}
           onChange={e=>setTolerance(Number(e.target.value))}
-          style={{width:"100%",accentColor:"#C9A84C"}} />
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",color:"rgba(255,255,255,0.2)",marginTop:"4px",fontFamily:"var(--font-dm-sans)"}}>
+          style={{width:"100%",accentColor:"var(--accent)"}} />
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",color:"rgba(255,255,255,0.2)",marginTop:"4px",fontFamily:"var(--font-inter)"}}>
           <span>0 min</span><span>60 min</span>
         </div>
       </div>
 
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        {msg && <p style={{fontSize:"12px",color:msg==="Guardado"?"#34D399":"#F87171",fontFamily:"var(--font-dm-sans)"}}>{msg}</p>}
+        {msg && <p style={{fontSize:"12px",color:msg==="Guardado"?"#34D399":"#F87171",fontFamily:"var(--font-inter)"}}>{msg}</p>}
         <button onClick={save} disabled={saving}
-          style={{marginLeft:"auto",background:"linear-gradient(135deg,#C9A84C,#F0D080)",color:"#000",padding:"10px 20px",borderRadius:"12px",fontSize:"13px",fontFamily:"var(--font-syne)",fontWeight:700,border:"none",cursor:"pointer",opacity:saving?0.6:1}}>
+          style={{marginLeft:"auto",background:"var(--accent)",color:"#000",padding:"10px 20px",borderRadius:"12px",fontSize:"13px",fontFamily:"var(--font-inter)",fontWeight:700,border:"none",cursor:"pointer",opacity:saving?0.6:1}}>
           {saving?"Guardando...":"Guardar horario"}
         </button>
       </div>

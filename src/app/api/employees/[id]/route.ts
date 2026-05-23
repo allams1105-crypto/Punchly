@@ -10,13 +10,14 @@ export async function PATCH(req: NextRequest, { params }: { params: any }) {
     const orgId = (session.user as any).organizationId;
     const { id } = await params;
     const body = await req.json();
-    const { name, email, hourlyRate, isActive, kioskPin } = body;
+    const { name, email, hourlyRate, isActive, kioskPin, avatarUrl } = body;
 
     const updateData: any = {
       name,
       email,
       isActive,
       hourlyRate: hourlyRate !== undefined ? parseFloat(hourlyRate) : undefined,
+      avatarUrl,
     };
 
     if (kioskPin && String(kioskPin).length === 4) {

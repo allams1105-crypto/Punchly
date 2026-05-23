@@ -8,10 +8,10 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     const orgId = (session.user as any).organizationId;
-    const { name, email, hourlyRate, kioskPin, password } = await req.json();
+    const { name, email, hourlyRate, kioskPin, password, avatarUrl } = await req.json();
 
     const pin = await bcrypt.hash(password || "0000", 10);
-    const data: any = { name, email, hourlyRate, organizationId: orgId, pin };
+    const data: any = { name, email, hourlyRate, organizationId: orgId, pin, avatarUrl };
     if (kioskPin && kioskPin.length === 4) {
       data.kioskPin = await bcrypt.hash(kioskPin, 10);
     }

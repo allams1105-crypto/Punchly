@@ -3,16 +3,17 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Paleta Premium - Menos contraste agresivo */
-  --bg-primary: #09090b;
-  --bg-card: #121214;
-  --border: rgba(255, 255, 255, 0.06);
-  --text-primary: #fafafa;
-  --text-muted: #a1a1aa;
-  --accent: #D4AF37; /* Dorado Champagne */
+  /* Professional SaaS Palette */
+  --bg-primary: #020617; /* Slate 950 */
+  --bg-card: #0F172A; /* Slate 900 */
+  --border: rgba(255, 255, 255, 0.08);
+  --text-primary: #F8FAFC; /* Slate 50 */
+  --text-muted: #94A3B8; /* Slate 400 */
+  --accent: #3B82F6; /* Professional Blue */
+  --accent-dark: #2563EB;
   
-  --font-heading: var(--font-syne), sans-serif;
-  --font-body: var(--font-dm-sans), sans-serif;
+  --font-heading: var(--font-inter), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
   
   color-scheme: dark !important;
 }
@@ -44,33 +45,33 @@ body {
   font-family: var(--font-body);
 }
 
-/* --- CLASES DE UTILIDAD PREMIUM --- */
+/* --- CLASES DE UTILIDAD PROFESSIONAL --- */
 .glass {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid var(--border) !important;
 }
 
-.gold-gradient {
-  background: linear-gradient(135deg, #D4AF37 0%, #F1D27B 100%);
+.primary-gradient {
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Botones estilo Apple/Linear */
+/* Botones estilo Profesional */
 .btn-premium {
-  background: linear-gradient(135deg, #D4AF37, #8B6914);
-  color: #000;
-  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
   transition: all 0.2s ease;
-  border: none;
+  border: 1px solid var(--accent-dark);
   cursor: pointer;
 }
 
 .btn-premium:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+  background: var(--accent-dark);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.2);
 }
 
 /* --- SCROLLBARS --- */
@@ -99,8 +100,8 @@ body {
 }
 
 /* Forzar fuentes */
-.font-syne { font-family: var(--font-syne) !important; }
-.font-dm { font-family: var(--font-body) !important; }
+.font-syne { font-family: var(--font-inter) !important; }
+.font-dm { font-family: var(--font-inter) !important; }
 /* === PUNCHLY RESPONSIVE === */
 /* responsive-punchly */
 @media (max-width: 768px) {

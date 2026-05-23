@@ -57,7 +57,7 @@ export async function GET(req: Request) {
     const csv = [
       "Empleado,Horas Totales,Horas Regulares,Horas Extra,Tarifa/h,Total",
       ...payrollData.map(e => `${e.name},${e.totalHours},${e.regularHours},${e.overtimeHours},$${e.hourlyRate},$${e.totalPay}`),
-      `TOTAL,,,,,$${totalPayroll.toLocaleString()}`,
+      `TOTAL,,,,,$${totalPayroll.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2})}`,
     ].join("\n");
 
     return new Response(csv, {
@@ -75,7 +75,7 @@ export async function GET(req: Request) {
       <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:center;">${emp.regularHours}h</td>
       <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:center;color:${emp.overtimeHours > 0 ? "#ea580c" : "#6b7280"};">${emp.overtimeHours}h</td>
       <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:center;">$${emp.hourlyRate}/h</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;font-weight:700;color:#E8B84B;">$${emp.totalPay.toLocaleString()}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;font-weight:700;color:#E8B84B;">$${emp.totalPay.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
     </tr>
   `).join("");
 
@@ -124,7 +124,7 @@ export async function GET(req: Request) {
     <div class="summary">
       <div>
         <h2>Nómina total estimada</h2>
-        <div class="amount">$${totalPayroll.toLocaleString()}</div>
+        <div class="amount">$${totalPayroll.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
         <div class="meta">${org?.name} · ${employees.length} empleados</div>
       </div>
       <div style="text-align:right;">
@@ -148,7 +148,7 @@ export async function GET(req: Request) {
           ${rows}
           <tr class="total-row">
             <td colspan="5">Total nómina</td>
-            <td style="text-align:right;color:#E8B84B;">$${totalPayroll.toLocaleString()}</td>
+            <td style="text-align:right;color:#E8B84B;">$${totalPayroll.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
           </tr>
         </tbody>
       </table>

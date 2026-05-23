@@ -1,23 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Syne, DM_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "../globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LangProvider } from "@/lib/LangContext";
+import AmbientBackground from "@/components/shared/AmbientBackground";
 
-const syne = Syne({ 
-  variable: "--font-syne", 
+const inter = Inter({ 
+  variable: "--font-inter", 
   subsets: ["latin"],
-  weight: ["400","500","600","700","800"]
-});
-
-const dmSans = DM_Sans({ 
-  variable: "--font-dm-sans", 
-  subsets: ["latin"],
-  weight: ["300","400","500","600"]
+  weight: ["300","400","500","600","700","800"]
 });
 
 export const viewport: Viewport = {
-  themeColor: "#D4AF37",
+  themeColor: "#3B82F6",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -41,10 +36,13 @@ export default async function RootLayout(props: {
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
-      <body className={`${syne.variable} ${dmSans.variable} antialiased`} style={{ background: "#030303", color: "white", margin: 0 }}>
+      <body className={`${inter.variable} antialiased`} style={{ background: "transparent", color: "var(--text-primary)", margin: 0 }}>
         <ThemeProvider>
           <LangProvider>
-            {children}
+            <AmbientBackground />
+            <div style={{ position: "relative", zIndex: 1, height: "100vh", overflow: "auto" }}>
+              {children}
+            </div>
           </LangProvider>
         </ThemeProvider>
       </body>

@@ -54,6 +54,9 @@ model Organization {
   lat            Float?
   lng            Float?
   geoRadius      Int      @default(100)
+  overtimeThreshold Float  @default(1.5)
+  payrollOverrides PayrollOverride[]
+  paymentVouchers  PaymentVoucher[]
 }
 
 model User {
@@ -78,6 +81,8 @@ model User {
   schedule          Schedule?
   kioskPin           String?
   pushSubscription  PushSubscription?
+  payrollOverrides PayrollOverride[]
+  paymentVouchers  PaymentVoucher[]
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -210,6 +215,22 @@ model Schedule {
   friday         Boolean  @default(true)
   saturday       Boolean  @default(false)
   sunday         Boolean  @default(false)
+  
+  monStart       String?  @default("08:00")
+  monEnd         String?  @default("17:00")
+  tueStart       String?  @default("08:00")
+  tueEnd         String?  @default("17:00")
+  wedStart       String?  @default("08:00")
+  wedEnd         String?  @default("17:00")
+  thuStart       String?  @default("08:00")
+  thuEnd         String?  @default("17:00")
+  friStart       String?  @default("08:00")
+  friEnd         String?  @default("17:00")
+  satStart       String?  @default("08:00")
+  satEnd         String?  @default("17:00")
+  sunStart       String?  @default("08:00")
+  sunEnd         String?  @default("17:00")
+
   startTime      String   @default("08:00")
   endTime        String   @default("17:00")
   toleranceMin   Int      @default(10)
@@ -227,4 +248,38 @@ model PushSubscription {
   subscription String
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PayrollOverride {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  period         String   // format: "YYYY-MM-HALF" (e.g., "2026-5-1")
+  totalHours     Float?
+  totalPay       Float?
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, period])
+  @@index([organizationId, period])
+}
+
+model PaymentVoucher {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  period         String   // format: "YYYY-MM-HALF"
+  totalHours     Float
+  overtimeHours  Float
+  hourlyRate     Float
+  totalPay       Float
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, period])
+  @@index([organizationId, period])
 }

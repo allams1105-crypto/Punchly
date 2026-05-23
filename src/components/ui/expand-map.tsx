@@ -55,7 +55,7 @@ export function LocationMap({
         animate={{ width: isExpanded ? 360 : 260, height: isExpanded ? 280 : 120 }}
         transition={{ type: "spring", stiffness: 400, damping: 35 }}
       >
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(201,168,76,0.05), transparent, rgba(96,165,250,0.03))" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(59, 130, 246,0.05), transparent, rgba(96,165,250,0.03))" }} />
 
         <AnimatePresence>
           {isExpanded && (
@@ -68,7 +68,7 @@ export function LocationMap({
               <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} preserveAspectRatio="none">
                 {[35, 65].map((y, i) => (
                   <motion.line key={"h"+i} x1="0%" y1={y+"%"} x2="100%" y2={y+"%"}
-                    stroke="rgba(201,168,76,0.2)" strokeWidth="3"
+                    stroke="rgba(59, 130, 246,0.2)" strokeWidth="3"
                     initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
                     transition={{ duration: 0.8, delay: 0.2 + i * 0.1 }} />
                 ))}
@@ -102,7 +102,7 @@ export function LocationMap({
               ].map((b, i) => (
                 <motion.div key={i}
                   style={{ position:"absolute", ...b, width:b.w, height:b.h, borderRadius:"3px",
-                    background:"rgba(201,168,76,0.12)", border:"1px solid rgba(201,168,76,0.15)" }}
+                    background:"rgba(59, 130, 246,0.12)", border:"1px solid rgba(59, 130, 246,0.15)" }}
                   initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4, delay: 0.5 + i * 0.05 }} />
               ))}
@@ -114,9 +114,9 @@ export function LocationMap({
                 transition={{ type:"spring", stiffness:400, damping:20, delay:0.3 }}
               >
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-                  style={{ filter:"drop-shadow(0 0 12px rgba(201,168,76,0.7))" }}>
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#C9A84C"/>
-                  <circle cx="12" cy="9" r="2.5" fill="#030508"/>
+                  style={{ filter:"drop-shadow(0 0 12px rgba(59, 130, 246,0.7))" }}>
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="var(--accent)"/>
+                  <circle cx="12" cy="9" r="2.5" fill="var(--bg-primary)"/>
                 </svg>
               </motion.div>
 
@@ -128,21 +128,21 @@ export function LocationMap({
         {/* Content */}
         <div style={{ position:"relative", zIndex:10, height:"100%", display:"flex", flexDirection:"column", justifyContent:"space-between", padding:"16px 18px" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <motion.svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            <motion.svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               animate={{ opacity: isExpanded ? 0 : 1 }} transition={{ duration: 0.3 }}>
               <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
               <line x1="9" x2="9" y1="3" y2="18"/>
               <line x1="15" x2="15" y1="6" y2="21"/>
             </motion.svg>
-            <div style={{ display:"flex", alignItems:"center", gap:"5px", background:"rgba(201,168,76,0.08)", border:"1px solid rgba(201,168,76,0.15)", padding:"3px 10px", borderRadius:"100px" }}>
-              <div style={{ width:"5px", height:"5px", borderRadius:"50%", background:"#C9A84C", boxShadow:"0 0 6px #C9A84C" }} />
-              <span style={{ fontSize:"10px", fontWeight:600, color:"rgba(201,168,76,0.8)", textTransform:"uppercase", letterSpacing:"1px", fontFamily:"var(--font-dm-sans)" }}>Geo</span>
+            <div style={{ display:"flex", alignItems:"center", gap:"5px", background:"rgba(59, 130, 246,0.08)", border:"1px solid rgba(59, 130, 246,0.15)", padding:"3px 10px", borderRadius:"100px" }}>
+              <div style={{ width:"5px", height:"5px", borderRadius:"50%", background:"var(--accent)", boxShadow:"0 0 6px var(--accent)" }} />
+              <span style={{ fontSize:"10px", fontWeight:600, color:"rgba(59, 130, 246,0.8)", textTransform:"uppercase", letterSpacing:"1px", fontFamily:"var(--font-inter)" }}>Geo</span>
             </div>
           </div>
 
           <div>
             <motion.p
-              style={{ color:"#FAFAFA", fontFamily:"var(--font-syne)", fontWeight:700, fontSize:"13px", marginBottom:"3px" }}
+              style={{ color:"#FAFAFA", fontFamily:"var(--font-inter)", fontWeight:700, fontSize:"13px", marginBottom:"3px" }}
               animate={{ x: isHovered ? 3 : 0 }}
               transition={{ type:"spring", stiffness:400, damping:25 }}
             >
@@ -150,7 +150,7 @@ export function LocationMap({
             </motion.p>
             <AnimatePresence>
               {isExpanded && (
-                <motion.p style={{ color:"rgba(201,168,76,0.6)", fontSize:"11px", fontFamily:"var(--font-dm-sans)" }}
+                <motion.p style={{ color:"rgba(59, 130, 246,0.6)", fontSize:"11px", fontFamily:"var(--font-inter)" }}
                   initial={{ opacity:0, y:-8, height:0 }} animate={{ opacity:1, y:0, height:"auto" }}
                   exit={{ opacity:0, y:-8, height:0 }} transition={{ duration:0.25 }}>
                   {coordinates}
@@ -158,7 +158,7 @@ export function LocationMap({
               )}
             </AnimatePresence>
             <motion.div
-              style={{ height:"1px", background:"linear-gradient(to right, rgba(201,168,76,0.5), rgba(96,165,250,0.3), transparent)", originX:0 }}
+              style={{ height:"1px", background:"linear-gradient(to right, rgba(59, 130, 246,0.5), rgba(96,165,250,0.3), transparent)", originX:0 }}
               animate={{ scaleX: isHovered || isExpanded ? 1 : 0.3 }}
               transition={{ duration:0.4 }}
             />
@@ -167,7 +167,7 @@ export function LocationMap({
       </motion.div>
 
       <motion.p
-        style={{ position:"absolute", bottom:"-22px", left:"50%", x:"-50%", fontSize:"10px", color:"rgba(255,255,255,0.25)", whiteSpace:"nowrap", fontFamily:"var(--font-dm-sans)" }}
+        style={{ position:"absolute", bottom:"-22px", left:"50%", x:"-50%", fontSize:"10px", color:"rgba(255,255,255,0.25)", whiteSpace:"nowrap", fontFamily:"var(--font-inter)" }}
         animate={{ opacity: isHovered && !isExpanded ? 1 : 0, y: isHovered ? 0 : 4 }}
         transition={{ duration:0.2 }}
       >

@@ -12,13 +12,14 @@ export default async function EmployeeDashboardPage() {
   const today = new Date(); today.setHours(0,0,0,0);
   const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
 
-  const [user, org, todayEntry, weekEntries, lateLogs, recentEntries] = await Promise.all([
+  const [user, org, todayEntry, weekEntries, lateLogs, recentEntries, vouchers] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, include: { schedule: true } }),
     prisma.organization.findUnique({ where: { id: orgId } }),
     prisma.timeEntry.findFirst({ where: { userId, organizationId: orgId, clockIn: { gte: today } }, orderBy: { clockIn: "desc" } }),
     prisma.timeEntry.findMany({ where: { userId, organizationId: orgId, clockIn: { gte: weekStart } } }),
     prisma.activityLog.findMany({ where: { userId, organizationId: orgId, action: "LATE", createdAt: { gte: weekStart } } }),
     prisma.timeEntry.findMany({ where: { userId, organizationId: orgId }, orderBy: { clockIn: "desc" }, take: 10 }),
+    prisma.paymentVoucher.findMany({ where: { userId, organizationId: orgId }, orderBy: { createdAt: "desc" } })
   ]);
 
   if (!user) redirect("/en/login");
@@ -29,12 +30,13 @@ export default async function EmployeeDashboardPage() {
 
   return (
     <EmployeeDashboardClient
-      user={{ id: user.id, name: user.name, email: user.email, avatarColor: (user as any).avatarColor }}
+      user={{ id: user.id, name: user.name, email: user.email, avatarColor: (user as any).avatarColor, avatarUrl: user.avatarUrl }}
       onShift={onShift}
       todayEntry={todayEntry ? { clockIn: todayEntry.clockIn.toISOString(), clockOut: todayEntry.clockOut?.toISOString() || null } : null}
       weekStats={{ totalMin, daysWorked, lateCount: lateLogs.length }}
       schedule={user.schedule}
       recentEntries={recentEntries.map(e => ({ id: e.id, clockIn: e.clockIn.toISOString(), clockOut: e.clockOut?.toISOString() || null, durationMin: e.durationMin }))}
+      vouchers={vouchers}
       geoEnabled={!!((org as any)?.lat && (org as any)?.lng)}
       geoRadius={(org as any)?.geoRadius || 100}
     />

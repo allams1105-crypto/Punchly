@@ -35,18 +35,18 @@ export default function RegisterPage() {
   const inputStyle: React.CSSProperties = {
     width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
     borderRadius:"12px", padding:"12px 16px", color:"#FAFAFA", fontSize:"14px",
-    outline:"none", fontFamily:"var(--font-dm-sans)", transition:"border 0.2s", boxSizing:"border-box"
+    outline:"none", fontFamily:"var(--font-inter)", transition:"border 0.2s", boxSizing:"border-box"
   };
 
   return (
-    <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.08) 0%, transparent 60%), #060810",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+    <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246,0.08) 0%, transparent 60%), var(--bg-primary)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
       <style>{`
-        .btn-gold{background:linear-gradient(135deg,#FFD166,#C9A84C);color:#000;font-family:var(--font-syne);font-weight:700;transition:all 0.3s ease;border:none;cursor:pointer}
-        .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(201,168,76,0.4)}
-        input:focus{border-color:rgba(201,168,76,0.5)!important}
+        .btn-primary{background:var(--accent);color:#fff;font-family:var(--font-inter);font-weight:600;transition:all 0.2s ease;text-decoration:none;display:inline-block;border:1px solid var(--accent-dark);border-radius:12px}
+        .btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59, 130, 246, 0.25)}
+        input:focus{border-color:rgba(59, 130, 246,0.5)!important}
         .lang-switch a{font-size:11px;color:rgba(255,255,255,0.3);text-decoration:none;padding:4px 8px;border-radius:6px;transition:all 0.2s}
         .lang-switch a:hover{color:white}
-        .lang-switch a.active{color:#C9A84C;font-weight:700}
+        .lang-switch a.active{color:var(--accent);font-weight:700}
       `}</style>
       <div style={{width:"100%",maxWidth:"420px"}}>
         <div className="lang-switch" style={{display:"flex",justifyContent:"center",gap:"4px",marginBottom:"24px"}}>
@@ -56,11 +56,11 @@ export default function RegisterPage() {
         </div>
 
         <div style={{textAlign:"center",marginBottom:"32px"}}>
-          <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"linear-gradient(135deg,#FFD166,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 0 30px rgba(255,209,102,0.3)"}}>
-            <span style={{color:"#000",fontWeight:900,fontSize:"18px",fontFamily:"var(--font-syne)"}}>P</span>
+          <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 0 30px rgba(59, 130, 246,0.3)"}}>
+            <span style={{color:"#000",fontWeight:900,fontSize:"18px",fontFamily:"var(--font-inter)"}}>P</span>
           </div>
-          <h1 style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"24px",color:"#FAFAFA",marginBottom:"6px"}}>{tx.title}</h1>
-          <p style={{color:"rgba(255,255,255,0.3)",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{tx.sub}</p>
+          <h1 style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"24px",color:"#FAFAFA",marginBottom:"6px"}}>{tx.title}</h1>
+          <p style={{color:"rgba(255,255,255,0.3)",fontSize:"13px",fontFamily:"var(--font-inter)"}}>{tx.sub}</p>
         </div>
 
         <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"24px",padding:"32px"}}>
@@ -72,20 +72,20 @@ export default function RegisterPage() {
               {key:"password",label:tx.password,ph:"••••••",type:"password"},
             ].map(f=>(
               <div key={f.key}>
-                <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-dm-sans)"}}>{f.label}</label>
+                <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-inter)"}}>{f.label}</label>
                 <input type={f.type} value={form[f.key as keyof typeof form]} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))} placeholder={f.ph} required style={inputStyle} />
               </div>
             ))}
-            {error && <p style={{color:"#F87171",fontSize:"13px",fontFamily:"var(--font-dm-sans)"}}>{error}</p>}
-            <button type="submit" disabled={loading} className="btn-gold" style={{padding:"14px",borderRadius:"14px",fontSize:"14px",marginTop:"4px",opacity:loading?0.6:1,width:"100%"}}>
+            {error && <p style={{color:"#F87171",fontSize:"13px",fontFamily:"var(--font-inter)"}}>{error}</p>}
+            <button type="submit" disabled={loading} className="btn-primary" style={{padding:"14px",borderRadius:"14px",fontSize:"14px",marginTop:"4px",opacity:loading?0.6:1,width:"100%"}}>
               {loading?tx.loading:tx.btn}
             </button>
           </form>
         </div>
 
-        <p style={{textAlign:"center",marginTop:"20px",fontSize:"13px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-dm-sans)"}}>
+        <p style={{textAlign:"center",marginTop:"20px",fontSize:"13px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-inter)"}}>
           {tx.login}{" "}
-          <Link href={"/"+locale+"/login"} style={{color:"#C9A84C",textDecoration:"none",fontWeight:600}}>{tx.loginLink}</Link>
+          <Link href={"/"+locale+"/login"} style={{color:"var(--accent)",textDecoration:"none",fontWeight:600}}>{tx.loginLink}</Link>
         </p>
       </div>
     </div>

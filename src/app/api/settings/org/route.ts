@@ -6,8 +6,14 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   const orgId = (session.user as any).organizationId;
-  const { name } = await req.json();
+  const { name, overtimeThreshold } = await req.json();
   if (!name) return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
-  await prisma.organization.update({ where: { id: orgId }, data: { name } });
+  
+  const dataToUpdate: any = { name };
+  if (overtimeThreshold !== undefined) {
+    dataToUpdate.overtimeThreshold = parseFloat(overtimeThreshold);
+  }
+  
+  await prisma.organization.update({ where: { id: orgId }, data: dataToUpdate });
   return NextResponse.json({ ok: true });
 }

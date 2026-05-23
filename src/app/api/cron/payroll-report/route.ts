@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
         <td style="padding: 12px 0; font-size: 14px; color: #6b7280; text-align: center;">${emp.totalHours}h</td>
         <td style="padding: 12px 0; font-size: 14px; color: #6b7280; text-align: center;">${emp.regularHours}h</td>
         <td style="padding: 12px 0; font-size: 14px; color: ${emp.overtimeHours > 0 ? "#ea580c" : "#6b7280"}; text-align: center;">${emp.overtimeHours}h</td>
-        <td style="padding: 12px 0; font-size: 14px; font-weight: 600; color: #111; text-align: right;">$${emp.totalPay.toLocaleString()}</td>
+        <td style="padding: 12px 0; font-size: 14px; font-weight: 600; color: #111; text-align: right;">$${emp.totalPay.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
       </tr>
     `).join("");
 
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
         <div style="background: linear-gradient(135deg, #7c3aed, #3b82f6); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
           <p style="margin: 0; font-size: 13px; opacity: 0.8;">Reporte quincenal</p>
           <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.8;">${periodLabel}</p>
-          <p style="margin: 16px 0 0; font-size: 36px; font-weight: 900;">$${totalPayroll.toLocaleString()}</p>
+          <p style="margin: 16px 0 0; font-size: 36px; font-weight: 900;">$${totalPayroll.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
           <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.8;">${employees.length} empleados</p>
         </div>
         <table style="width: 100%; border-collapse: collapse;">

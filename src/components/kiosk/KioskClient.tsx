@@ -1,20 +1,25 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const GOLD = "#C9A84C";
-const COLORS = [GOLD,"#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80"];
+const PRIMARY = "var(--accent)";
+const COLORS = [PRIMARY,"#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80"];
 
-function Avatar({ name, color, size="md" }: { name:string; color?:string|null; size?:"sm"|"md"|"lg" }) {
+function Avatar({ name, color, photoUrl, size="md" }: { name:string; color?:string|null; photoUrl?:string|null; size?:"sm"|"md"|"lg" }) {
   const bg = color||COLORS[(name?.charCodeAt(0)||0)%COLORS.length];
-  const sz = size==="lg"?{width:"80px",height:"80px",fontSize:"28px",borderRadius:"22px"}:size==="md"?{width:"52px",height:"52px",fontSize:"18px",borderRadius:"14px"}:{width:"36px",height:"36px",fontSize:"13px",borderRadius:"10px"};
+  const sz = size==="lg"?{width:"96px",height:"96px",fontSize:"36px"}:size==="md"?{width:"64px",height:"64px",fontSize:"24px"}:{width:"36px",height:"36px",fontSize:"13px"};
+  
+  if (photoUrl) {
+    return <img src={photoUrl} alt={name} style={{...sz,borderRadius:"50%",objectFit:"cover",flexShrink:0,border:"2px solid rgba(255,255,255,0.1)"}} />;
+  }
+
   return (
-    <div style={{...sz,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-syne)",fontWeight:800,flexShrink:0,background:bg+"18",border:"1.5px solid "+bg+"30",color:bg}}>
+    <div style={{...sz,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-inter)",fontWeight:800,flexShrink:0,background:bg+"25",border:"2px solid "+bg+"40",color:bg}}>
       {(name||"?").charAt(0).toUpperCase()}
     </div>
   );
 }
 
-type Employee = { id:string; name:string; avatarColor?:string|null; onShift:boolean; clockInTime?:string|null };
+type Employee = { id:string; name:string; avatarColor?:string|null; avatarUrl?:string|null; onShift:boolean; clockInTime?:string|null };
 type Step = "list"|"pin"|"success";
 
 export default function KioskClient({ employees, token }: { employees:Employee[]; token:string }) {
@@ -52,159 +57,161 @@ export default function KioskClient({ employees, token }: { employees:Employee[]
     const res=await fetch("/api/kiosk/clock",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:selected!.id,organizationId:token,action,pin})});
     const data=await res.json();
     setLoading(false);
-    if(!res.ok){setError(data.error||"Error al registrar");return;}
-    setSuccessMsg(action==="in"?"Entrada registrada":"Salida registrada");
+    if(!res.ok){setError(data.error||"PIN incorrecto");setPin("");return;}
+    setSuccessMsg(action==="in"?"¡Bienvenido/a!":"¡Hasta luego!");
     setStep("success");
     await refreshEmployees();
     setTimeout(()=>{setStep("list");setSelected(null);setPin("");setSearch("");setSuccessMsg("");},3000);
   }
 
-  const timeStr = time.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const timeStr = time.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"});
   const dateStr = time.toLocaleDateString("es",{weekday:"long",day:"numeric",month:"long"});
 
-  const glassS = {background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)"};
-
   if(step==="success") return (
-    <div style={{minHeight:"100vh",background:"#0A0A0A",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px",backgroundImage:"radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 70%)"}}>
-      <style>{`@keyframes scale-in{from{opacity:0;transform:scale(0.7)}to{opacity:1;transform:scale(1)}}.success-anim{animation:scale-in 0.5s cubic-bezier(0.34,1.56,0.64,1)}`}</style>
-      <div className="success-anim" style={{textAlign:"center"}}>
-        <div style={{width:"96px",height:"96px",borderRadius:"50%",margin:"0 auto 24px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(201,168,76,0.1)",border:"2px solid rgba(201,168,76,0.3)",boxShadow:"0 0 60px rgba(201,168,76,0.25)"}}>
-          <svg width="40" height="40" fill="none" stroke={GOLD} strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px",position:"relative"}}>
+      <style>{`@keyframes pop-in{0%{opacity:0;transform:scale(0.8)}70%{transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}.success-anim{animation:pop-in 0.6s cubic-bezier(0.34,1.56,0.64,1)}`}</style>
+      <div className="success-anim" style={{textAlign:"center",position:"relative",zIndex:10,background:"rgba(255,255,255,0.03)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",padding:"60px",borderRadius:"40px",border:"1px solid rgba(255,255,255,0.08)",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{width:"120px",height:"120px",borderRadius:"50%",margin:"0 auto 32px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(52, 211, 153, 0.15)",border:"3px solid rgba(52, 211, 153, 0.4)",boxShadow:"0 0 80px rgba(52, 211, 153, 0.3)"}}>
+          <svg width="60" height="60" fill="none" stroke="#34D399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <p style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"36px",color:"#FAFAFA",marginBottom:"8px"}}>{successMsg}</p>
-        <p style={{fontFamily:"var(--font-syne)",fontWeight:600,fontSize:"20px",color:GOLD}}>{selected?.name}</p>
-        <p style={{fontFamily:"var(--font-dm-sans)",color:"rgba(255,255,255,0.3)",marginTop:"8px",fontSize:"14px"}}>{timeStr}</p>
+        <p style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"42px",color:"#FAFAFA",marginBottom:"12px"}}>{successMsg}</p>
+        <p style={{fontFamily:"var(--font-inter)",fontWeight:600,fontSize:"28px",color:PRIMARY}}>{selected?.name}</p>
+        <div style={{marginTop:"24px",display:"inline-block",background:"rgba(255,255,255,0.05)",padding:"12px 24px",borderRadius:"100px"}}>
+          <p style={{fontFamily:"var(--font-inter)",color:"rgba(255,255,255,0.6)",fontSize:"16px",fontWeight:500}}>{action==="in"?"Entrada registrada a las ":"Salida registrada a las "}<strong style={{color:"white"}}>{timeStr}</strong></p>
+        </div>
       </div>
     </div>
   );
 
   if(step==="pin") return (
-    <div style={{minHeight:"100vh",background:"#0A0A0A",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",backgroundImage:"radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.05) 0%, transparent 60%)"}}>
-      <button onClick={()=>setStep("list")} style={{position:"absolute",top:"24px",left:"24px",background:"transparent",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.3)",display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",fontFamily:"var(--font-dm-sans)",transition:"color 0.15s"}}
-        onMouseEnter={e=>(e.currentTarget.style.color="rgba(255,255,255,0.8)")} onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.3)")}>
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        Volver
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",position:"relative"}}>
+      <style>{`
+        .ios-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.05);color:#FFF;font-family:var(--font-inter);font-size:28px;font-weight:400;width:80px;height:80px;border-radius:50%;cursor:pointer;transition:all 0.1s;display:flex;flex-direction:column;align-items:center;justifyContent:center}
+        .ios-btn:active{background:rgba(255,255,255,0.2);transform:scale(0.92)}
+        .ios-btn-sub{font-size:11px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.3);margin-top:-2px}
+        @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+        .shake{animation:shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both}
+      `}</style>
+
+      <button onClick={()=>setStep("list")} style={{position:"absolute",top:"32px",left:"32px",zIndex:20,background:"rgba(255,255,255,0.05)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"100px",padding:"12px 24px",cursor:"pointer",color:"rgba(255,255,255,0.8)",display:"flex",alignItems:"center",gap:"8px",fontSize:"16px",fontWeight:500,fontFamily:"var(--font-inter)",transition:"all 0.2s"}}
+        onMouseEnter={e=>(e.currentTarget.style.background="rgba(255,255,255,0.1)")} onMouseLeave={e=>(e.currentTarget.style.background="rgba(255,255,255,0.05)")}>
+        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Cancelar
       </button>
 
-      <div style={{width:"100%",maxWidth:"340px"}}>
-        <div style={{textAlign:"center",marginBottom:"32px"}}>
-          <Avatar name={selected!.name} color={selected?.avatarColor} size="lg" />
-          <p style={{fontFamily:"var(--font-syne)",fontWeight:800,fontSize:"22px",color:"#FAFAFA",marginTop:"16px"}}>{selected!.name}</p>
-          <div style={{display:"inline-block",marginTop:"10px",padding:"6px 16px",borderRadius:"100px",fontSize:"13px",fontFamily:"var(--font-dm-sans)",fontWeight:600,
+      <div style={{width:"100%",maxWidth:"400px",position:"relative",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center"}}>
+        <div style={{textAlign:"center",marginBottom:"40px"}}>
+          <Avatar name={selected!.name} color={selected?.avatarColor} photoUrl={selected?.avatarUrl} size="lg" />
+          <p style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"32px",color:"#FAFAFA",marginTop:"20px",lineHeight:1.1}}>{selected!.name}</p>
+          <div style={{display:"inline-flex",alignItems:"center",gap:"6px",marginTop:"12px",padding:"8px 20px",borderRadius:"100px",fontSize:"14px",fontFamily:"var(--font-inter)",fontWeight:700,
             background:action==="in"?"rgba(52,211,153,0.1)":"rgba(248,113,113,0.1)",
             border:action==="in"?"1px solid rgba(52,211,153,0.2)":"1px solid rgba(248,113,113,0.2)",
             color:action==="in"?"#34D399":"#F87171"}}>
-            {action==="in"?"Registrar Entrada":"Registrar Salida"}
+            <div style={{width:"8px",height:"8px",borderRadius:"50%",background:action==="in"?"#34D399":"#F87171"}} />
+            {action==="in"?"Marcando Entrada":"Marcando Salida"}
           </div>
         </div>
 
         {/* PIN dots */}
-        <div style={{display:"flex",justifyContent:"center",gap:"16px",marginBottom:"28px"}}>
+        <p style={{fontFamily:"var(--font-inter)",color:"rgba(255,255,255,0.5)",fontSize:"15px",fontWeight:500,marginBottom:"16px",marginTop:error?"0":"35px"}}>{error||"Ingresa tu PIN"}</p>
+        <div className={error?"shake":""} style={{display:"flex",justifyContent:"center",gap:"24px",marginBottom:"48px",height:"20px",alignItems:"center"}}>
           {[0,1,2,3].map(i=>(
-            <div key={i} style={{width:"14px",height:"14px",borderRadius:"50%",transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
-              background:i<pin.length?GOLD:"rgba(255,255,255,0.15)",
-              transform:i<pin.length?"scale(1.3)":"scale(1)",
-              boxShadow:i<pin.length?"0 0 12px "+GOLD+"80":"none"}} />
+            <div key={i} style={{width:"16px",height:"16px",borderRadius:"50%",transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+              background:i<pin.length?PRIMARY:error?"#F87171":"rgba(255,255,255,0.15)",
+              transform:i<pin.length?"scale(1.2)":"scale(1)",
+              boxShadow:i<pin.length?"0 0 20px "+PRIMARY+"80":error?"0 0 20px rgba(248,113,113,0.6)":"none"}} />
           ))}
         </div>
 
-        {error && <p style={{textAlign:"center",color:"#F87171",fontSize:"13px",marginBottom:"16px",fontFamily:"var(--font-dm-sans)"}}>{error}</p>}
-
         {/* Numpad */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"12px"}}>
-          {["1","2","3","4","5","6","7","8","9","","0","del"].map((d,i)=>(
-            <button key={i} onClick={()=>d==="del"?removeDigit():d?addDigit(d):null}
-              disabled={!d&&d!=="0"}
-              style={{height:"60px",borderRadius:"16px",fontSize:"20px",fontFamily:"var(--font-syne)",fontWeight:700,border:"none",cursor:d||d==="0"?"pointer":"default",transition:"all 0.15s",
-                background:d||d==="0"?"rgba(255,255,255,0.06)":"transparent",
-                color:"#FAFAFA",opacity:!d&&d!=="0"?0:1}}
-              onMouseEnter={e=>{if(d||d==="0")e.currentTarget.style.background="rgba(255,255,255,0.1)"}}
-              onMouseLeave={e=>{e.currentTarget.style.background=d||d==="0"?"rgba(255,255,255,0.06)":"transparent"}}>
-              {d==="del"
-                ? <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{margin:"0 auto"}}><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
-                : d}
-            </button>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:"24px 32px",placeItems:"center"}}>
+          {[{d:"1",s:""},{d:"2",s:"ABC"},{d:"3",s:"DEF"},{d:"4",s:"GHI"},{d:"5",s:"JKL"},{d:"6",s:"MNO"},{d:"7",s:"PQRS"},{d:"8",s:"TUV"},{d:"9",s:"WXYZ"},{d:"",s:""},{d:"0",s:""},{d:"del",s:""}].map((btn,i)=>(
+            <div key={i} style={{width:"80px",height:"80px"}}>
+              {btn.d==="del" ? (
+                <button onClick={removeDigit} disabled={pin.length===0} className="ios-btn" style={{background:"transparent",border:"none",opacity:pin.length===0?0:1}}>
+                  <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"/></svg>
+                </button>
+              ) : btn.d ? (
+                <button onClick={()=>addDigit(btn.d)} className="ios-btn" style={{justifyContent:"center"}}>
+                  <span>{btn.d}</span>
+                  {btn.s && <span className="ios-btn-sub">{btn.s}</span>}
+                </button>
+              ) : null}
+            </div>
           ))}
         </div>
 
         <button onClick={confirmPin} disabled={loading||pin.length!==4}
-          style={{width:"100%",padding:"16px",borderRadius:"16px",fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"15px",border:"none",cursor:"pointer",transition:"all 0.3s ease",
-            background:"linear-gradient(135deg,#C9A84C,#F0D080)",color:"#000",
-            opacity:pin.length!==4||loading?0.35:1,
-            boxShadow:pin.length===4?"0 0 40px rgba(201,168,76,0.35)":"none"}}>
-          {loading?"Verificando...":"Confirmar"}
+          style={{marginTop:"48px",padding:"20px 48px",borderRadius:"100px",fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"18px",border:"none",cursor:"pointer",transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+            background:PRIMARY,color:"#FFF",
+            opacity:pin.length!==4||loading?0:1,
+            transform:pin.length!==4||loading?"translateY(20px) scale(0.9)":"translateY(0) scale(1)",
+            boxShadow:pin.length===4?"0 12px 40px rgba(59, 130, 246,0.4)":"none"}}>
+          {loading?"Verificando...":"Entrar"}
         </button>
       </div>
     </div>
   );
 
   return (
-    <div style={{minHeight:"100vh",background:"#0A0A0A",color:"#FAFAFA",backgroundImage:"radial-gradient(ellipse at 20% 0%, rgba(201,168,76,0.05) 0%, transparent 50%)"}}>
+    <div style={{minHeight:"100vh",color:"#FAFAFA",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column"}}>
       <style>{`
-        .emp-card{transition:all 0.2s cubic-bezier(0.34,1.3,0.64,1);cursor:pointer}
-        .emp-card:hover{transform:translateY(-3px) scale(1.02)}
-        .emp-card:active{transform:scale(0.97)}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        @keyframes floatBg{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-50px) scale(1.1)}}
+        .emp-card{transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+        .emp-card:hover{transform:translateY(-6px) scale(1.02);background:rgba(255,255,255,0.06);border-color:rgba(59, 130, 246,0.3);box-shadow:0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(59, 130, 246,0.1)}
+        .emp-card:active{transform:scale(0.96);transition:all 0.1s}
+        .emp-card-active{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3)}
+        .emp-card-active:hover{background:rgba(52,211,153,0.12);border-color:rgba(52,211,153,0.4);box-shadow:0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(52,211,153,0.15)}
+        @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.2)}}
+        .glass-search{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);color:#FFF;font-family:var(--font-inter);font-size:18px;transition:all 0.3s}
+        .glass-search:focus{background:rgba(255,255,255,0.08);border-color:var(--accent);box-shadow:0 0 0 4px rgba(59,130,246,0.15)}
         @media(max-width:768px){.kiosk-grid{grid-template-columns:repeat(2,1fr)!important}}
       `}</style>
 
       {/* Header */}
-      <div style={{padding:"28px 28px 20px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
+      <div style={{padding:"40px 40px 20px",position:"relative",zIndex:10,display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
         <div>
-          <p style={{fontFamily:"var(--font-syne)",fontSize:"clamp(36px,8vw,56px)",fontWeight:800,color:"#FAFAFA",lineHeight:1}}>{timeStr}</p>
-          <p style={{fontFamily:"var(--font-dm-sans)",color:"rgba(255,255,255,0.25)",fontSize:"13px",marginTop:"6px",textTransform:"capitalize"}}>{dateStr}</p>
+          <p style={{fontFamily:"var(--font-inter)",fontSize:"clamp(48px,8vw,72px)",fontWeight:800,color:"#FAFAFA",lineHeight:1,letterSpacing:"-2px"}}>{timeStr}</p>
+          <p style={{fontFamily:"var(--font-inter)",color:"rgba(255,255,255,0.4)",fontSize:"18px",marginTop:"12px",textTransform:"capitalize",fontWeight:500}}>{dateStr}</p>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"4px"}}>
-          <div style={{width:"28px",height:"28px",borderRadius:"9px",background:"linear-gradient(135deg,#C9A84C,#8B6914)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <span style={{color:"#000",fontWeight:900,fontSize:"12px",fontFamily:"var(--font-syne)"}}>P</span>
+        <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:"8px",background:"rgba(255,255,255,0.03)",backdropFilter:"blur(20px)",padding:"12px 20px",borderRadius:"100px",border:"1px solid rgba(255,255,255,0.05)"}}>
+          <div style={{width:"32px",height:"32px",borderRadius:"10px",background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px rgba(59,130,246,0.4)"}}>
+            <span style={{color:"#FFF",fontWeight:900,fontSize:"14px",fontFamily:"var(--font-inter)"}}>P</span>
           </div>
-          <span style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"13px",color:"rgba(255,255,255,0.6)"}}>Punchly.Clock</span>
+          <span style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"16px",color:"rgba(255,255,255,0.8)"}}>Punchly.Clock</span>
         </div>
       </div>
 
-      {/* On shift */}
-      {onShiftNow.length>0 && (
-        <div style={{padding:"10px 28px",borderTop:"1px solid rgba(255,255,255,0.05)",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",gap:"10px",overflowX:"auto"}}>
-          <span style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:"rgba(255,255,255,0.25)",flexShrink:0}}>En turno</span>
-          {onShiftNow.map(e=>(
-            <div key={e.id} style={{display:"flex",alignItems:"center",gap:"6px",padding:"5px 12px",borderRadius:"100px",flexShrink:0,background:"rgba(52,211,153,0.08)",border:"1px solid rgba(52,211,153,0.15)"}}>
-              <div style={{width:"6px",height:"6px",background:"#34D399",borderRadius:"50%",animation:"pulse 2s infinite"}} />
-              <span style={{fontFamily:"var(--font-dm-sans)",fontSize:"12px",color:"#34D399",fontWeight:500}}>{e.name}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Search */}
-      <div style={{padding:"16px 28px"}}>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Busca tu nombre..."
-          style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"16px",padding:"14px 20px",color:"#FAFAFA",fontSize:"15px",fontFamily:"var(--font-dm-sans)",outline:"none",transition:"border 0.2s",boxSizing:"border-box"}}
-          onFocus={e=>{e.currentTarget.style.border="1px solid rgba(201,168,76,0.35)";e.currentTarget.style.boxShadow="0 0 0 4px rgba(201,168,76,0.06)"}}
-          onBlur={e=>{e.currentTarget.style.border="1px solid rgba(255,255,255,0.08)";e.currentTarget.style.boxShadow="none"}} />
+      <div style={{padding:"20px 40px",position:"relative",zIndex:10}}>
+        <div style={{position:"relative",maxWidth:"600px"}}>
+          <svg width="24" height="24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{position:"absolute",left:"20px",top:"50%",transform:"translateY(-50%)"}}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Toca aquí para buscar tu nombre..."
+            className="glass-search"
+            style={{width:"100%",borderRadius:"20px",padding:"20px 20px 20px 56px",outline:"none"}} />
+        </div>
       </div>
 
       {/* Grid */}
-      <div style={{padding:"0 28px 32px"}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px"}} className="kiosk-grid">
+      <div style={{padding:"20px 40px 60px",flex:1,overflowY:"auto",position:"relative",zIndex:10}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"24px"}} className="kiosk-grid">
           {filtered.map(emp=>(
-            <div key={emp.id} className="emp-card" onClick={()=>selectEmployee(emp)}
-              style={{padding:"20px",borderRadius:"20px",
-                background:emp.onShift?"rgba(52,211,153,0.06)":"rgba(255,255,255,0.04)",
-                border:emp.onShift?"1px solid rgba(52,211,153,0.15)":"1px solid rgba(255,255,255,0.08)"}}>
-              <Avatar name={emp.name} color={emp.avatarColor} size="md" />
-              <p style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"13px",color:"#FAFAFA",marginTop:"12px",lineHeight:1.3}}>{emp.name}</p>
+            <div key={emp.id} className={`emp-card ${emp.onShift?"emp-card-active":""}`} onClick={()=>selectEmployee(emp)}
+              style={{padding:"32px 24px",borderRadius:"28px",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
+              <Avatar name={emp.name} color={emp.avatarColor} photoUrl={emp.avatarUrl} size="md" />
+              <p style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"18px",color:"#FAFAFA",marginTop:"20px",lineHeight:1.2}}>{emp.name}</p>
               {emp.onShift
-                ? <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"6px"}}>
-                    <div style={{width:"5px",height:"5px",background:"#34D399",borderRadius:"50%",animation:"pulse 2s infinite"}} />
-                    <span style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:"#34D399"}}>En turno — toca para salir</span>
+                ? <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"12px",background:"rgba(52,211,153,0.15)",padding:"6px 12px",borderRadius:"100px"}}>
+                    <div style={{width:"6px",height:"6px",background:"#34D399",borderRadius:"50%",animation:"pulse 2s infinite"}} />
+                    <span style={{fontFamily:"var(--font-inter)",fontSize:"13px",fontWeight:600,color:"#34D399"}}>En turno</span>
                   </div>
-                : <span style={{fontFamily:"var(--font-dm-sans)",fontSize:"11px",color:"rgba(255,255,255,0.25)",marginTop:"6px",display:"block"}}>Toca para fichar</span>}
+                : <span style={{fontFamily:"var(--font-inter)",fontSize:"13px",fontWeight:500,color:"rgba(255,255,255,0.3)",marginTop:"12px",display:"block"}}>Sin marcar</span>}
             </div>
           ))}
         </div>
         {filtered.length===0 && (
-          <div style={{textAlign:"center",padding:"60px 20px"}}>
-            <p style={{color:"rgba(255,255,255,0.2)",fontSize:"14px",fontFamily:"var(--font-dm-sans)"}}>No se encontraron empleados</p>
+          <div style={{textAlign:"center",padding:"100px 20px"}}>
+            <p style={{color:"rgba(255,255,255,0.3)",fontSize:"20px",fontWeight:600,fontFamily:"var(--font-inter)"}}>No se encontraron empleados</p>
           </div>
         )}
       </div>

@@ -9,12 +9,23 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get("userId");
   const days = Number(searchParams.get("days") || 7);
+  const startStr = searchParams.get("start");
+  const endStr = searchParams.get("end");
 
-  const since = new Date();
-  since.setDate(since.getDate() - days);
-  since.setHours(0, 0, 0, 0);
+  let gte = new Date();
+  let lte = new Date();
 
-  const where: any = { organizationId: orgId, clockIn: { gte: since } };
+  if (startStr && endStr) {
+    gte = new Date(startStr);
+    gte.setHours(0,0,0,0);
+    lte = new Date(endStr);
+    lte.setHours(23,59,59,999);
+  } else {
+    gte.setDate(gte.getDate() - days);
+    gte.setHours(0,0,0,0);
+  }
+
+  const where: any = { organizationId: orgId, clockIn: { gte, lte } };
   if (userId) where.userId = userId;
 
   const entries = await prisma.timeEntry.findMany({

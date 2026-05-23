@@ -17,7 +17,7 @@ export default async function SettingsPage() {
   return (
     <div style={{flex:1,overflowY:"auto",background:"#0A0A0A"}}>
       <div style={{height:"56px",borderBottom:"1px solid rgba(255,255,255,0.08)",padding:"0 24px",display:"flex",alignItems:"center"}}>
-        <h1 style={{fontFamily:"var(--font-syne)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Configuración</h1>
+        <h1 style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Configuración</h1>
       </div>
       <div style={{padding:"24px",maxWidth:"640px"}}>
         <SettingsClient org={org} user={user} />
