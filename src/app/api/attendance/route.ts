@@ -63,6 +63,8 @@ export async function GET(req: Request) {
       id: entry.id,
       userId: entry.userId,
       userName: entry.user.name,
+      avatarColor: (entry.user as any).avatarColor || null,
+      avatarUrl: entry.user.avatarUrl || null,
       clockIn: entry.clockIn.toISOString(),
       clockOut: entry.clockOut?.toISOString() || null,
       durationMin: entry.durationMin,

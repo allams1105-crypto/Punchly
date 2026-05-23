@@ -183,9 +183,13 @@ export default async function DashboardPage() {
                  ) : onShiftEmps.map(emp => (
                    <div key={emp.id} style={{padding:"16px 24px", borderBottom:"1px solid rgba(255,255,255,0.03)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                      <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                       <div style={{width:"32px",height:"32px",borderRadius:"50%",background:"rgba(59,130,246,0.1)",color:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"12px"}}>
-                         {emp.name.charAt(0)}
-                       </div>
+                       {emp.avatarUrl ? (
+                         <img src={emp.avatarUrl} alt={emp.name} style={{width:"32px",height:"32px",borderRadius:"50%",objectFit:"cover",flexShrink:0,border:"1px solid rgba(255,255,255,0.1)"}} />
+                       ) : (
+                         <div style={{width:"32px",height:"32px",borderRadius:"50%",background:((emp as any).avatarColor||"var(--accent)")+"15",color:(emp as any).avatarColor||"var(--accent)",border:"1px solid "+((emp as any).avatarColor||"var(--accent)")+"25",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"12px",flexShrink:0}}>
+                           {emp.name.charAt(0)}
+                         </div>
+                       )}
                        <span style={{fontSize:"14px", fontWeight:600, fontFamily:"var(--font-inter)", color:"#FAFAFA"}}>{emp.name}</span>
                      </div>
                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>

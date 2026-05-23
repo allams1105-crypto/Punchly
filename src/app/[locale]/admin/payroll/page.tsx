@@ -2,6 +2,22 @@
 import { useLang } from "@/lib/LangContext";
 import { useEffect, useState } from "react";
 
+const COLORS = ["var(--accent)","#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80"];
+
+function Avatar({ name, color, photoUrl }: { name: string; color?: string | null; photoUrl?: string | null }) {
+  const bg = color || COLORS[(name?.charCodeAt(0)||0) % COLORS.length];
+
+  if (photoUrl) {
+    return <img src={photoUrl} alt={name} style={{width:"36px",height:"36px",borderRadius:"12px",objectFit:"cover",flexShrink:0,border:`1px solid rgba(255,255,255,0.1)`}} />;
+  }
+
+  return (
+    <div style={{width:"36px",height:"36px",borderRadius:"12px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:700,fontFamily:"var(--font-inter)",flexShrink:0,background:`${bg}15`,border:`1px solid ${bg}25`,color:bg}}>
+      {(name||"?").charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
 export default function PayrollPage() {
   const { lang } = useLang();
   const [data, setData] = useState<any[]>([]);
@@ -265,9 +281,7 @@ export default function PayrollPage() {
                     <input type="checkbox" checked={selected.includes(e.id)} onChange={()=>toggleSelect(e.id)} style={{width:"16px",height:"16px",accentColor:primary,cursor:"pointer"}} />
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                    <div style={{width:"36px",height:"36px",borderRadius:"12px",background:e.isOverridden?"rgba(245,158,11,0.1)":primary+"15",border:"1px solid "+(e.isOverridden?"rgba(245,158,11,0.2)":primary+"25"),display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-inter)",fontWeight:700,color:e.isOverridden?"#F59E0B":primary,fontSize:"14px",flexShrink:0}}>
-                      {(e.name||"?").charAt(0)}
-                    </div>
+                    <Avatar name={e.name} color={e.avatarColor} photoUrl={e.avatarUrl} />
                     <div>
                       <p style={{fontFamily:"var(--font-inter)",fontSize:"14px",color:text,fontWeight:600}}>{e.name}</p>
                       {e.isOverridden && <span style={{fontSize:"10px",color:"#F59E0B",fontFamily:"var(--font-inter)",fontWeight:600}}>Modificado Manualmente</span>}

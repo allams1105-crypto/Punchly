@@ -2,6 +2,20 @@
 import { useLang } from "@/lib/LangContext";
 import { useEffect, useState } from "react";
 
+const COLORS = ["var(--accent)","#60A5FA","#34D399","#F87171","#A78BFA","#FB923C","#38BDF8","#4ADE80"];
+
+function Avatar({ name, color, photoUrl }: { name: string; color?: string | null; photoUrl?: string | null }) {
+  const bg = color || COLORS[(name?.charCodeAt(0)||0) % COLORS.length];
+  if (photoUrl) {
+    return <img src={photoUrl} alt={name} style={{width:"32px",height:"32px",borderRadius:"10px",objectFit:"cover",flexShrink:0,border:`1px solid rgba(255,255,255,0.1)`}} />;
+  }
+  return (
+    <div style={{width:"32px",height:"32px",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:700,fontFamily:"var(--font-inter)",flexShrink:0,background:`${bg}15`,border:`1px solid ${bg}25`,color:bg}}>
+      {(name||"?").charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
 type Entry = { id:string; userId:string; clockIn:string; clockOut:string|null; durationMin:number|null; status:string; user:{name:string} };
 type Employee = { id:string; name:string };
 type Log = { id:string; action:string; userName:string; details:string; createdAt:string };
@@ -135,9 +149,7 @@ export default function ActivityPage() {
               return (
                 <div key={e.id} className="row-hover" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                    <div style={{width:"32px",height:"32px",borderRadius:"10px",background:primary+"15",border:"1px solid "+primary+"25",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-inter)",fontWeight:700,color:primary,fontSize:"12px",flexShrink:0}}>
-                      {(e.user?.name||"?").charAt(0)}
-                    </div>
+                    <Avatar name={e.user?.name} color={(e.user as any)?.avatarColor} photoUrl={(e.user as any)?.avatarUrl} />
                     <div>
                       <p style={{fontFamily:"var(--font-inter)",fontSize:"13px",color:text,fontWeight:500}}>{e.user?.name}</p>
                       <p style={{fontFamily:"var(--font-inter)",fontSize:"11px",color:muted,marginTop:"2px"}}>

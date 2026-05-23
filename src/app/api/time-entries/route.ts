@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     const entries = await prisma.timeEntry.findMany({
       where: { organizationId: orgId },
-      include: { user: { select: { name: true, email: true } } },
+      include: { user: { select: { name: true, email: true, avatarColor: true, avatarUrl: true } } },
       orderBy: { clockIn: "desc" },
       take: 100,
     });

@@ -126,6 +126,8 @@ export async function GET(req: NextRequest) {
       totalPay: Math.round(totalPay * 100) / 100,
       isOverridden: !!override,
       period: periodString,
+      avatarUrl: emp.avatarUrl,
+      avatarColor: emp.avatarColor || null,
     };
   });
 
