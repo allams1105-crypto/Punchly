@@ -97,7 +97,7 @@ export default async function LandingPage({ params }: { params: any }) {
               {value:"100%",label:"Precisión de Nómina",color:"var(--text-primary)"},
               {value:"0",label:"Errores humanos",color:"var(--text-primary)"},
               {value:"-40%",label:"Reducción de tardanzas",color:"#10B981"},
-              {value:"$49",label:"Único pago para siempre",color:"var(--accent)"},
+              {value:"$34",label:"Suscripción mensual",color:"var(--accent)"},
             ].map(s=>(
               <div key={s.label} className="glass" style={{borderRadius:"12px",padding:"20px",textAlign:"center"}}>
                 <p style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"24px",color:s.color,lineHeight:1}}>{s.value}</p>
@@ -142,12 +142,12 @@ export default async function LandingPage({ params }: { params: any }) {
               <h2 style={{fontFamily:"var(--font-inter)",fontSize:"clamp(28px,4vw,40px)",fontWeight:700,marginBottom:"48px",color:"var(--text-primary)"}}>Justo y transparente</h2>
               
               <div style={{background:"var(--bg-card)",borderRadius:"20px",padding:"48px",border:"1px solid var(--border)",boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}}>
-                <p style={{color:"var(--text-primary)",fontSize:"14px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"16px",fontFamily:"var(--font-inter)"}}>Licencia de por vida</p>
+                <p style={{color:"var(--text-primary)",fontSize:"14px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"16px",fontFamily:"var(--font-inter)"}}>Suscripción Mensual</p>
                 <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:"8px",marginBottom:"12px"}}>
-                  <span style={{fontFamily:"var(--font-inter)",fontSize:"72px",fontWeight:800,lineHeight:1,color:"var(--text-primary)"}}>$49</span>
-                  <span style={{color:"var(--text-muted)",marginBottom:"14px",fontSize:"16px",fontFamily:"var(--font-inter)"}}>pago único</span>
+                  <span style={{fontFamily:"var(--font-inter)",fontSize:"72px",fontWeight:800,lineHeight:1,color:"var(--text-primary)"}}>$34</span>
+                  <span style={{color:"var(--text-muted)",marginBottom:"14px",fontSize:"16px",fontFamily:"var(--font-inter)"}}>al mes</span>
                 </div>
-                <p style={{color:"var(--text-muted)",fontSize:"14px",marginBottom:"32px",fontFamily:"var(--font-inter)"}}>Olvídate de pagar suscripciones mensuales que suben de precio cada año.</p>
+                <p style={{color:"var(--text-muted)",fontSize:"14px",marginBottom:"32px",fontFamily:"var(--font-inter)"}}>Sin contratos. Cancela cuando quieras.</p>
                 
                 <ul style={{listStyle:"none",padding:0,marginBottom:"40px",textAlign:"left"}}>
                   {[
@@ -156,7 +156,7 @@ export default async function LandingPage({ params }: { params: any }) {
                     "Geolocalización móvil",
                     "Alertas de tardanza",
                     "Cálculo de horas extras",
-                    "Soporte incluido"
+                    "Asistencia técnica 24/7 incluida"
                   ].map((f)=>(
                     <li key={f} style={{display:"flex",alignItems:"center",gap:"12px",padding:"12px 0",borderBottom:"1px solid var(--border)",color:"var(--text-muted)",fontSize:"14px",fontFamily:"var(--font-inter)"}}>
                       <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>

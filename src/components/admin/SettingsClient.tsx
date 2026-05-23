@@ -129,14 +129,14 @@ function PlanTab({ org }: { org: any }) {
       {org?.isPro ? (
         <div style={{background:"rgba(52,211,153,0.06)",border:"1px solid rgba(52,211,153,0.15)",borderRadius:"16px",padding:"24px",textAlign:"center"}}>
           <p style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"18px",color:"#34D399",marginBottom:"8px"}}>Licencia activa</p>
-          <p style={{fontFamily:"var(--font-inter)",fontSize:"14px",color:"rgba(255,255,255,0.5)"}}>Acceso completo para siempre. Sin cobros adicionales.</p>
+          <p style={{fontFamily:"var(--font-inter)",fontSize:"14px",color:"rgba(255,255,255,0.5)"}}>Suscripción activa. Incluye asistencia 24/7.</p>
         </div>
       ) : (
         <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
           <div style={{background:"rgba(59, 130, 246,0.06)",border:"1px solid rgba(59, 130, 246,0.15)",borderRadius:"16px",padding:"32px 24px",textAlign:"center"}}>
-            <p style={{fontFamily:"var(--font-inter)",fontSize:"13px",color:"rgba(255,255,255,0.4)",marginBottom:"12px"}}>Precio único</p>
-            <p style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"56px",color:primary,lineHeight:1}}>$49</p>
-            <p style={{fontFamily:"var(--font-inter)",fontSize:"12px",color:"rgba(255,255,255,0.3)",marginTop:"12px"}}>Un solo pago · Sin suscripciones · Para siempre</p>
+            <p style={{fontFamily:"var(--font-inter)",fontSize:"13px",color:"rgba(255,255,255,0.4)",marginBottom:"12px"}}>Suscripción mensual</p>
+            <p style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"56px",color:primary,lineHeight:1}}>$34</p>
+            <p style={{fontFamily:"var(--font-inter)",fontSize:"12px",color:"rgba(255,255,255,0.3)",marginTop:"12px"}}>Pago mensual · Cancela cuando quieras · Asistencia 24/7</p>
           </div>
           <ul style={{listStyle:"none",padding:0,display:"flex",flexDirection:"column",gap:"12px"}}>
             {["Empleados ilimitados","Kiosk con PIN","Geofencing móvil","Alertas por email","Nómina automática"].map(f=>(
@@ -147,7 +147,7 @@ function PlanTab({ org }: { org: any }) {
           </ul>
           <button onClick={checkout} disabled={loading} className="mobile-btn"
             style={{background:`linear-gradient(135deg,${primary},var(--accent-dark))`,color:"#000",padding:"18px",borderRadius:"14px",fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"15px",border:"none",cursor:"pointer",opacity:loading?0.6:1,transition:"all 0.2s",marginTop:"8px"}}>
-            {loading?"Redirigiendo...":"Activar licencia — $49"}
+            {loading?"Redirigiendo...":"Activar suscripción — $34/mes"}
           </button>
         </div>
       )}
