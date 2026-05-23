@@ -31,6 +31,7 @@ export default async function KioskPage({ params }: { params: any }) {
         id: e.id,
         name: e.name || "",
         avatarColor: (e as any).avatarColor || null,
+        avatarUrl: e.avatarUrl || null,
         onShift: activeIds.has(e.id),
         clockInTime: activeEntries.find(a => a.userId === e.id)?.clockIn?.toISOString() || null,
       }))}

@@ -31,6 +31,7 @@ export default async function EmployeesPage() {
       isActive: e.isActive,
       hourlyRate: (e as any).hourlyRate || 0,
       avatarColor: (e as any).avatarColor || null,
+      avatarUrl: e.avatarUrl || null,
       hasSchedule: !!e.schedule,
       onShift: activeIds.has(e.id),
     }))} />
