@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { HeroGeometric } from "@/components/ui/shape-landing-hero";
-
+import { MapPin, Clock, FileSpreadsheet, Check, ArrowRight } from "lucide-react";
+import InteractivePricing from "@/components/ui/InteractivePricing";
 export default async function LandingPage({ params }: { params: any }) {
   const { locale } = await params;
   const lang = locale || "es";
@@ -8,183 +8,312 @@ export default async function LandingPage({ params }: { params: any }) {
   return (
     <>
       <style>{`
-        .glass{background:rgba(15, 23, 42, 0.8);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,0.12);box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:all 0.3s ease}
-        .glass:hover{transform:translateY(-4px);border-color:rgba(59, 130, 246, 0.4);box-shadow:0 12px 40px rgba(59, 130, 246, 0.15)}
-        .glass-pro{background:rgba(59, 130, 246, 0.05);backdrop-filter:blur(20px);border:1px solid rgba(59, 130, 246, 0.15)}
-        .primary-text{background:linear-gradient(135deg,#60A5FA,#3B82F6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .card-pro{transition:transform 0.2s ease,box-shadow 0.2s ease; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.02)}
-        .card-pro:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,0.5),0 0 0 1px rgba(59, 130, 246, 0.3)}
-        .btn-primary{background:var(--accent);color:#fff;font-family:var(--font-inter);font-weight:600;transition:all 0.2s ease;text-decoration:none;display:inline-block; border:1px solid var(--accent-dark)}
-        .btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59, 130, 246, 0.25)}
-        .btn-ghost{background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);transition:all 0.2s ease;text-decoration:none;display:inline-block}
-        .btn-ghost:hover{background:rgba(255,255,255,0.08);color:white}
-        .feature-card{position:relative;overflow:hidden;transition:all 0.4s cubic-bezier(0.4, 0, 0.2, 1);border:1px solid rgba(255,255,255,0.08);background:linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);box-shadow:0 4px 20px rgba(0,0,0,0.2)}
-        .feature-card::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59, 130, 246, 0.5),transparent);opacity:0;transition:opacity 0.4s ease}
-        .feature-card:hover{transform:translateY(-8px);border-color:rgba(59, 130, 246, 0.4)!important;box-shadow:0 20px 40px rgba(0,0,0,0.5), 0 0 40px rgba(59, 130, 246, 0.1)}
-        .feature-card:hover::before{opacity:1}
-        .step-card{transition:all 0.3s ease;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
-        .step-card:hover{border-color:rgba(59, 130, 246, 0.3)!important;box-shadow:0 12px 30px rgba(0,0,0,0.4)}
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        @keyframes fade-up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.5}}
-        .float{animation:float 6s ease-in-out infinite}
-        .fade-up-1{animation:fade-up 0.8s ease 0.2s both}
-        .fade-up-2{animation:fade-up 0.8s ease 0.4s both}
-        .fade-up-3{animation:fade-up 0.8s ease 0.6s both}
-        .pulse-dot{animation:pulse-dot 2s ease-in-out infinite}
-        @media(max-width:768px){.hide-sm{display:none!important}.grid-sm-1{grid-template-columns:1fr!important}.grid-sm-2{grid-template-columns:1fr 1fr!important}}
+        .landing-override {
+          --bg-primary: #F8FAFC !important;
+          --bg-card: #FFFFFF !important;
+          --border: #E2E8F0 !important;
+          --text-primary: #1E293B !important;
+          --text-muted: #64748B !important;
+        }
+        .landing-override .glass {
+          background: #FFFFFF !important;
+          border: 1px solid #E2E8F0 !important;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
+        }
+        .landing-override .feature-card {
+          background: #FFFFFF !important;
+          border: 1px solid #E2E8F0 !important;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
+        }
+        .landing-override .feature-card:hover {
+          border-color: #1E3A8A !important;
+          box-shadow: 0 20px 40px rgba(2, 132, 199, 0.1) !important;
+        }
+        .bizneo-btn-blue {
+          background: #1E3A8A;
+          color: white;
+          border-radius: 8px;
+          padding: 14px 28px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 15px;
+        }
+        .bizneo-btn-blue:hover {
+          background: #172554;
+        }
+        .bizneo-btn-outline {
+          border: 1px solid #94A3B8;
+          color: #1E293B;
+          border-radius: 8px;
+          padding: 14px 28px;
+          font-weight: 600;
+          text-decoration: none;
+          display: inline-flex;
+          transition: all 0.2s;
+        }
+        .bizneo-btn-outline:hover {
+          background: rgba(0,0,0,0.02);
+          border-color: #1E293B;
+        }
+        .mockup-shadow {
+          box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        }
+        
+        .cool-bar-scroll::-webkit-scrollbar {
+          height: 0px;
+          background: transparent;
+        }
+        
+        @media(max-width:768px){
+          .hide-sm{display:none!important}
+          .hero-title{font-size:36px!important}
+        }
       `}</style>
 
-      <div style={{minHeight:"100vh",color:"var(--text-primary)",overflow:"hidden",fontFamily:"var(--font-inter)",background:"var(--bg-primary)"}}>
+      <div className="landing-override" style={{minHeight:"100vh",color:"var(--text-primary)",overflow:"hidden",fontFamily:"var(--font-inter)",background:"var(--bg-primary)"}}>
+        
+        {/* NEW HERO BACKGROUND */}
+        <div style={{position:"absolute", top:0, left:0, right:0, height:"600px", background:"linear-gradient(180deg, #F0F6FF 0%, #F8FAFC 100%)", zIndex:0}}></div>
 
-        {/* Ambient subtle glow */}
-        <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
-          <div style={{position:"absolute",top:"-10%",left:"20%",width:"600px",height:"600px",borderRadius:"50%",background:"radial-gradient(circle,rgba(59,130,246,0.04) 0%,transparent 70%)",filter:"blur(60px)"}} />
-        </div>
-
-        {/* Nav */}
-        <nav style={{position:"absolute",top:0,left:0,right:0,zIndex:50,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 24px",maxWidth:"1280px",margin:"0 auto",boxSizing:"border-box",width:"100%",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+        {/* NAV */}
+        <nav style={{position:"relative",zIndex:50,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"24px 40px",maxWidth:"1400px",margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-            <div style={{width:"34px",height:"34px",borderRadius:"8px",background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <span style={{color:"#fff",fontWeight:800,fontSize:"16px",fontFamily:"var(--font-inter)"}}>P</span>
-            </div>
-            <span className="hide-sm" style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"15px",letterSpacing:"-0.3px",color:"var(--text-primary)"}}>Punchly.Clock</span>
+             <div style={{width:"28px",height:"28px",background:"#1E3A8A",borderRadius:"6px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+               <span style={{color:"white",fontWeight:800,fontSize:"14px"}}>P</span>
+             </div>
+             <span style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"22px",letterSpacing:"-0.5px",color:"#1A2B4C"}}>
+               punchly
+             </span>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
-            <Link href={`/${lang}/login`} className="hide-sm" style={{fontSize:"14px",color:"var(--text-muted)",textDecoration:"none",fontWeight:500}}>Iniciar sesión</Link>
-            <Link href={`/${lang}/register`} className="btn-primary" style={{padding:"8px 16px",borderRadius:"8px",fontSize:"13px",fontFamily:"var(--font-inter)",textDecoration:"none",display:"inline-block"}}>
-              Prueba gratuita
-            </Link>
+
+          <div className="hide-sm" style={{display:"flex",alignItems:"center",gap:"24px"}}>
+             <Link href={`/${lang}/login`} style={{color:"#1A2B4C",textDecoration:"none",fontWeight:600,fontSize:"14px"}}>Iniciar sesión</Link>
+             <Link href={`/${lang}/register`} className="bizneo-btn-blue" style={{padding:"10px 20px"}}>Registrarse gratis</Link>
           </div>
         </nav>
 
-        {/* HERO */}
-        <HeroGeometric locale={locale} />
+        {/* CENTERED HERO (Clockify Style) */}
+        <section style={{textAlign: "center", paddingTop: "60px", paddingBottom: "20px", position: "relative", zIndex: 10, maxWidth: "800px", margin: "0 auto", paddingLeft: "20px", paddingRight: "20px"}}>
+          {/* Stars */}
+          <div style={{display: "flex", justifyContent: "center", alignItems: "center", gap: "4px", marginBottom: "20px"}}>
+            <div style={{display: "flex", gap: "2px", color: "#FBBF24"}}>
+              {[1,2,3,4].map(i => (
+                <svg key={i} width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              ))}
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" opacity="0.5"/></svg>
+            </div>
+            <span style={{color: "#64748B", fontSize: "14px", marginLeft: "8px", fontWeight: 500}}>4.8 (9,000+ reseñas)</span>
+          </div>
 
-        {/* FLOATING KIOSK */}
-        <section style={{position:"relative",zIndex:10,padding:"20px 20px 80px"}}>
-          <div className="float" style={{maxWidth:"700px",margin:"0 auto"}}>
-            <div style={{borderRadius:"16px",padding:"1px",background:"rgba(255,255,255,0.1)",boxShadow:"0 20px 40px rgba(0,0,0,0.4)"}}>
-              <div style={{background:"var(--bg-card)",borderRadius:"15px",overflow:"hidden"}}>
-                <div style={{padding:"16px 22px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(255,255,255,0.02)"}}>
+          <h1 className="hero-title" style={{fontFamily:"var(--font-inter)",fontSize:"clamp(40px, 6vw, 68px)",fontWeight:800,lineHeight:1.1,letterSpacing:"-1px",marginBottom:"24px",color:"#1A2B4C"}}>
+            Calcula la nómina en <br/>
+            <span style={{color:"#1E3A8A"}}>solo 30 segundos</span>
+          </h1>
+          <p style={{color:"#4A5568",fontSize:"18px",lineHeight:1.6,fontWeight:500,maxWidth:"650px",margin:"0 auto 32px"}}>
+            Tus empleados pueden ponchar desde el celular, pero solo si están en el negocio. El sistema de asistencia con validación por ubicación que evita fraudes y automatiza tu planilla.
+          </p>
+
+          <Link href={`/${lang}/register`} className="bizneo-btn-blue" style={{padding: "16px 36px", fontSize: "16px"}}>
+            Registrarse gratis
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </Link>
+          
+          <div style={{marginTop: "20px", color: "#1E3A8A", fontSize: "14px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"}}>
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Primera quincena gratis · Configuración incluida
+          </div>
+        </section>
+
+        {/* ORIGINAL APP MOCKUP */}
+        <section style={{position: "relative", zIndex: 10, maxWidth: "1000px", margin: "40px auto 0", padding: "0 20px 100px", display: "flex", flexDirection: "column", alignItems: "center"}}>
+          <div className="mockup-shadow" style={{width: "100%", background: "#F8FAFC", borderRadius: "24px", border: "1px solid #E2E8F0", overflow: "hidden", display: "flex", flexDirection: "column", position: "relative"}}>
+            {/* Window Controls */}
+            <div style={{background: "#F1F5F9", padding: "16px 24px", display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid #E2E8F0"}}>
+              <div style={{width: "12px", height: "12px", borderRadius: "50%", background: "#EF4444"}}></div>
+              <div style={{width: "12px", height: "12px", borderRadius: "50%", background: "#F59E0B"}}></div>
+              <div style={{width: "12px", height: "12px", borderRadius: "50%", background: "#10B981"}}></div>
+            </div>
+            
+            {/* Dashboard Content */}
+            <div style={{padding: "40px", display: "flex", gap: "40px", alignItems: "center", justifyContent: "center"}}>
+              {/* Mobile Phone Simulation */}
+              <div style={{width: "300px", background: "#FFFFFF", borderRadius: "32px", border: "8px solid #E2E8F0", padding: "24px", display: "flex", flexDirection: "column", gap: "24px", flexShrink: 0, boxShadow: "0 4px 20px rgba(0,0,0,0.05)"}}>
+                <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+                  <div style={{width: "48px", height: "48px", background: "#1E3A8A", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: "20px"}}>J</div>
                   <div>
-                    <p style={{fontFamily:"var(--font-inter)",fontSize:"28px",fontWeight:700,lineHeight:1,color:"var(--text-primary)"}}>09:05</p>
-                    <p style={{color:"#EF4444",fontSize:"12px",marginTop:"4px",fontFamily:"var(--font-inter)",fontWeight:600}}>⚠️ 1 Llegada tardía detectada</p>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px",background:"rgba(59, 130, 246, 0.1)",border:"1px solid rgba(59, 130, 246, 0.2)",padding:"6px 12px",borderRadius:"6px"}}>
-                    <div className="pulse-dot" style={{width:"6px",height:"6px",background:"var(--accent)",borderRadius:"50%"}} />
-                    <span style={{color:"var(--accent)",fontSize:"12px",fontWeight:600,fontFamily:"var(--font-inter)"}}>Sistema Activo</span>
+                    <div style={{color: "#1E293B", fontWeight: 700, fontSize: "18px"}}>Juan Pérez</div>
+                    <div style={{color: "#64748B", fontSize: "13px"}}>Cajero</div>
                   </div>
                 </div>
-                <div style={{padding:"16px 18px",display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:"12px"}} className="grid-sm-2">
-                  {[["A","Ana G.","#3B82F6",true],["L","Luis M.","#6366F1",true],["S","Sofia R.","#10B981",true],["C","Carlos P.","#8B5CF6",false],["M","María J.","#EF4444",false],["P","Pedro L.","#F59E0B",false]].map(([i,n,c,a])=>(
-                    <div key={String(n)} className="card-pro" style={{borderRadius:"10px",padding:"14px 8px",cursor:"pointer",textAlign:"center"}}>
-                      <div style={{width:"32px",height:"32px",borderRadius:"50%",background:String(c)+"15",display:"flex",alignItems:"center",justifyContent:"center",color:String(c),fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"12px",margin:"0 auto 8px"}}>{i}</div>
-                      <p style={{fontSize:"11px",fontWeight:600,color:"var(--text-primary)",fontFamily:"var(--font-inter)",lineHeight:1.2}}>{n}</p>
-                      {a ? <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"4px",marginTop:"6px"}}><div className="pulse-dot" style={{width:"4px",height:"4px",background:"#10B981",borderRadius:"50%"}} /><span style={{color:"#10B981",fontSize:"10px",fontWeight:500}}>A tiempo</span></div>
-                        : (n === "María J." ? <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"4px",marginTop:"6px"}}><span style={{color:"#EF4444",fontSize:"10px",fontWeight:600}}>Retraso (5m)</span></div> 
-                        : <span style={{color:"var(--text-muted)",fontSize:"10px",marginTop:"6px",display:"block"}}>Sin marcar</span>)}
+                
+                <div style={{background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.2)", borderRadius: "16px", padding: "20px", textAlign: "center"}}>
+                  <div style={{color: "#10B981", fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px"}}>Turno Activo</div>
+                  <div style={{color: "#1E293B", fontSize: "32px", fontWeight: 800, fontFamily: "var(--font-inter)", letterSpacing: "-1px"}}>04:12:35</div>
+                </div>
+                
+                <button style={{background: "#EF4444", color: "white", border: "none", padding: "16px", borderRadius: "16px", fontWeight: 700, fontSize: "16px", width: "100%", cursor: "pointer"}}>
+                  Terminar Turno
+                </button>
+                
+                <div style={{display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", color: "#64748B", fontSize: "12px"}}>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                  Ubicación validada
+                </div>
+              </div>
+
+              {/* Desktop Dashboard Elements */}
+              <div className="hide-sm" style={{flex: 1, display: "flex", flexDirection: "column", gap: "20px"}}>
+                <div style={{display: "flex", gap: "20px"}}>
+                  <div style={{flex: 1, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "24px", boxShadow: "0 4px 15px rgba(0,0,0,0.02)"}}>
+                    <div style={{color: "#64748B", fontSize: "13px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px"}}>Horas Trabajadas</div>
+                    <div style={{color: "#1E293B", fontSize: "36px", fontWeight: 800}}>42h 15m</div>
+                  </div>
+                  <div style={{flex: 1, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "24px", boxShadow: "0 4px 15px rgba(0,0,0,0.02)"}}>
+                    <div style={{color: "#64748B", fontSize: "13px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px"}}>Tardanzas</div>
+                    <div style={{color: "#10B981", fontSize: "36px", fontWeight: 800}}>0</div>
+                  </div>
+                </div>
+                
+                <div style={{background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "24px", boxShadow: "0 4px 15px rgba(0,0,0,0.02)"}}>
+                  <div style={{color: "#64748B", fontSize: "13px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px"}}>Actividad Reciente</div>
+                  {[
+                    {name: "Juan Pérez", action: "Entrada", time: "08:00 AM", status: "A tiempo"},
+                    {name: "María Gómez", action: "Salida", time: "05:00 PM", status: "Turno completo"},
+                    {name: "Carlos Ruiz", action: "Entrada", time: "08:15 AM", status: "Tarde"}
+                  ].map((log, i) => (
+                    <div key={i} style={{display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: i !== 2 ? "1px solid #F1F5F9" : "none"}}>
+                      <div style={{color: "#1E293B", fontWeight: 600, fontSize: "14px"}}>{log.name}</div>
+                      <div style={{color: "#64748B", fontSize: "14px"}}>{log.action} a las {log.time}</div>
+                      <div style={{color: log.status === "Tarde" ? "#EF4444" : "#10B981", fontSize: "12px", fontWeight: 700, background: log.status === "Tarde" ? "rgba(239,68,68,0.1)" : "rgba(16,185,129,0.1)", padding: "4px 8px", borderRadius: "6px"}}>{log.status}</div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           </div>
+        </section>
 
-          {/* Stats */}
-          <div className="fade-up-1 grid-sm-2" style={{maxWidth:"800px",margin:"40px auto 0",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"16px"}}>
+        {/* STATS */}
+        <section style={{position:"relative",zIndex:10,padding:"40px 20px",marginTop:"0",background:"transparent"}}>
+          <div className="grid-sm-2" style={{maxWidth:"1000px",margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"16px"}}>
             {[
               {value:"100%",label:"Precisión de Nómina",color:"var(--text-primary)"},
               {value:"0",label:"Errores humanos",color:"var(--text-primary)"},
               {value:"-40%",label:"Reducción de tardanzas",color:"#10B981"},
-              {value:"$34",label:"Suscripción mensual",color:"var(--accent)"},
+              {value:"RD$299",label:"Suscripción desde",color:"#1E3A8A"},
             ].map(s=>(
-              <div key={s.label} className="glass" style={{borderRadius:"12px",padding:"20px",textAlign:"center"}}>
-                <p style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"24px",color:s.color,lineHeight:1}}>{s.value}</p>
-                <p style={{fontFamily:"var(--font-inter)",fontSize:"12px",color:"var(--text-muted)",marginTop:"8px"}}>{s.label}</p>
+              <div key={s.label} className="glass" style={{borderRadius:"12px",padding:"24px 20px",textAlign:"center"}}>
+                <p style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"28px",color:s.color,lineHeight:1}}>{s.value}</p>
+                <p style={{fontFamily:"var(--font-inter)",fontSize:"13px",fontWeight:600,color:"var(--text-muted)",marginTop:"12px"}}>{s.label}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* FEATURES - PROBLEM VS SOLUTION */}
-        <section style={{padding:"80px 20px",background:"var(--bg-card)",borderTop:"1px solid var(--border)",borderBottom:"1px solid var(--border)"}}>
-          <div style={{maxWidth:"1100px",margin:"0 auto"}}>
-            <div className="fade-up-2" style={{textAlign:"center",marginBottom:"64px"}}>
-              <p style={{color:"var(--accent)",fontSize:"12px",fontWeight:600,letterSpacing:"1px",textTransform:"uppercase",fontFamily:"var(--font-inter)",marginBottom:"16px"}}>Diseñado para Restaurantes, Tiendas y Oficinas</p>
-              <h2 style={{fontFamily:"var(--font-inter)",fontSize:"clamp(28px,4vw,40px)",fontWeight:700,marginBottom:"16px",color:"var(--text-primary)"}}>Resolviendo problemas reales</h2>
-              <p style={{color:"var(--text-muted)",fontSize:"16px",maxWidth:"600px",margin:"0 auto",fontFamily:"var(--font-inter)"}}>Deja de perder tiempo calculando horas a mano o lidiando con empleados que "se cubren" entre ellos.</p>
-            </div>
-            
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"24px"}} className="grid-sm-1">
-              {[
-                {t:"IA en Cálculo de Nómina",d:"El sistema procesa automáticamente horas regulares y horas extras. Exporta el reporte quincenal en 1 clic listo para pagar.",icon:"M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",c:"#3B82F6"},
-                {t:"Alertas Inteligentes",d:"¿Alguien no llegó a su turno? Punchly te enviará un email al instante para que no tengas sorpresas al abrir tu negocio.",icon:"M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9",c:"#EF4444"},
-                {t:"Prevención de Fraude",d:"Con Kiosko de PIN único o Geolocalización Móvil estricta. Nadie puede marcar asistencia por un compañero ausente.",icon:"M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",c:"#10B981"},
-              ].map(f=>(
-                <div key={f.t} className="feature-card" style={{borderRadius:"16px",padding:"32px"}}>
-                  <div style={{width:"48px",height:"48px",borderRadius:"12px",background:f.c+"15",color:f.c,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:"20px"}}>
-                    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={f.icon}/></svg>
-                  </div>
-                  <h3 style={{fontFamily:"var(--font-inter)",fontWeight:600,fontSize:"18px",marginBottom:"12px",color:"var(--text-primary)"}}>{f.t}</h3>
-                  <p style={{color:"var(--text-muted)",fontSize:"14px",lineHeight:1.6,fontFamily:"var(--font-inter)"}}>{f.d}</p>
+        {/* BEFORE & AFTER */}
+        <section style={{padding:"60px 20px", background:"transparent", position:"relative", zIndex:10}}>
+          <div style={{maxWidth:"900px", margin:"0 auto"}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:"32px"}}>
+              {/* Before */}
+              <div style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:"20px",padding:"40px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"24px",color:"var(--text-primary)"}}>
+                  <svg width="28" height="28" fill="none" stroke="#EF4444" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <h3 style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"22px"}}>Sin Punchly</h3>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* PRICING */}
-        <section style={{padding:"80px 20px 100px",borderTop:"1px solid var(--border)"}}>
-          <div style={{maxWidth:"480px",margin:"0 auto",textAlign:"center"}}>
-            <div className="fade-up-3">
-              <p style={{color:"var(--accent)",fontSize:"12px",fontWeight:600,letterSpacing:"1px",textTransform:"uppercase",fontFamily:"var(--font-inter)",marginBottom:"16px"}}>Precio</p>
-              <h2 style={{fontFamily:"var(--font-inter)",fontSize:"clamp(28px,4vw,40px)",fontWeight:700,marginBottom:"48px",color:"var(--text-primary)"}}>Justo y transparente</h2>
-              
-              <div style={{background:"var(--bg-card)",borderRadius:"20px",padding:"48px",border:"1px solid var(--border)",boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}}>
-                <p style={{color:"var(--text-primary)",fontSize:"14px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"16px",fontFamily:"var(--font-inter)"}}>Suscripción Mensual</p>
-                <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:"8px",marginBottom:"12px"}}>
-                  <span style={{fontFamily:"var(--font-inter)",fontSize:"72px",fontWeight:800,lineHeight:1,color:"var(--text-primary)"}}>$34</span>
-                  <span style={{color:"var(--text-muted)",marginBottom:"14px",fontSize:"16px",fontFamily:"var(--font-inter)"}}>al mes</span>
-                </div>
-                <p style={{color:"var(--text-muted)",fontSize:"14px",marginBottom:"32px",fontFamily:"var(--font-inter)"}}>Sin contratos. Cancela cuando quieras.</p>
-                
-                <ul style={{listStyle:"none",padding:0,marginBottom:"40px",textAlign:"left"}}>
-                  {[
-                    "Empleados ilimitados",
-                    "Kiosko web inteligente",
-                    "Geolocalización móvil",
-                    "Alertas de tardanza",
-                    "Cálculo de horas extras",
-                    "Asistencia técnica 24/7 incluida"
-                  ].map((f)=>(
-                    <li key={f} style={{display:"flex",alignItems:"center",gap:"12px",padding:"12px 0",borderBottom:"1px solid var(--border)",color:"var(--text-muted)",fontSize:"14px",fontFamily:"var(--font-inter)"}}>
-                      <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                      {f}
-                    </li>
-                  ))}
+                <ul style={{listStyle:"none",padding:0,color:"var(--text-muted)",fontSize:"16px",fontFamily:"var(--font-inter)",lineHeight:1.6}}>
+                  <li style={{marginBottom:"16px",display:"flex",gap:"12px"}}><span><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#EF4444" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></span> Llaman al supervisor</li>
+                  <li style={{marginBottom:"16px",display:"flex",gap:"12px"}}><span><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#EF4444" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></span> Firman una hoja de papel</li>
+                  <li style={{marginBottom:"16px",display:"flex",gap:"12px"}}><span><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#EF4444" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></span> Envían mensajes por WhatsApp</li>
+                  <li style={{marginBottom:"16px",display:"flex",gap:"12px"}}><span><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#EF4444" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></span> O simplemente dicen "ya llegué"</li>
                 </ul>
-                <Link href={`/${lang}/register`} className="btn-primary" style={{display:"block",padding:"16px",borderRadius:"10px",fontFamily:"var(--font-inter)",fontSize:"16px",textDecoration:"none",textAlign:"center",width:"100%",boxSizing:"border-box"}}>
-                  Comenzar 7 días gratis
-                </Link>
+              </div>
 
+              {/* After */}
+              <div style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:"20px",padding:"40px",boxShadow:"0 12px 40px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"24px",color:"var(--text-primary)"}}>
+                  <svg width="28" height="28" fill="none" stroke="#10B981" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <h3 style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"22px"}}>Con Punchly</h3>
+                </div>
+                <ul style={{listStyle:"none",padding:0,color:"var(--text-muted)",fontSize:"16px",fontFamily:"var(--font-inter)",lineHeight:1.6,fontWeight:500}}>
+                  <li style={{marginBottom:"16px",display:"flex",gap:"12px"}}><span><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#10B981" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg></span> Abren la app desde el celular</li>
+                  <li style={{marginBottom:"16px",display:"flex",gap:"12px"}}><span><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#10B981" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg></span> Presionan "Entrar"</li>
+                  <li style={{marginBottom:"16px",display:"flex",gap:"12px"}}><span><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#10B981" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg></span> El sistema verifica la ubicación GPS</li>
+                  <li style={{marginBottom:"16px",display:"flex",gap:"12px"}}><span><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#10B981" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg></span> Registra la hora automáticamente</li>
+                </ul>
               </div>
             </div>
           </div>
         </section>
 
-        {/* FOOTER */}
-        <footer style={{background:"var(--bg-card)",borderTop:"1px solid var(--border)",padding:"32px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"16px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-            <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <span style={{color:"#fff",fontWeight:800,fontSize:"12px",fontFamily:"var(--font-inter)"}}>P</span>
+        {/* FEATURES */}
+        <section style={{padding:"80px 20px",background:"var(--bg-card)",borderTop:"1px solid var(--border)",borderBottom:"1px solid var(--border)",position:"relative",zIndex:10}}>
+          <div style={{maxWidth:"1100px",margin:"0 auto"}}>
+            <div style={{textAlign:"center",marginBottom:"64px"}}>
+              <p style={{color:"#1E3A8A",fontSize:"13px",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",fontFamily:"var(--font-inter)",marginBottom:"16px"}}>Diseñado para Restaurantes, Tiendas y Oficinas</p>
+              <h2 style={{fontFamily:"var(--font-inter)",fontSize:"clamp(28px,4vw,40px)",fontWeight:800,marginBottom:"16px",color:"var(--text-primary)"}}>Resolviendo problemas reales</h2>
+              <p style={{color:"var(--text-muted)",fontSize:"16px",maxWidth:"600px",margin:"0 auto",fontFamily:"var(--font-inter)"}}>Deja de perder tiempo calculando horas a mano o lidiando con empleados que "se cubren" entre ellos.</p>
             </div>
-            <span style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"14px",color:"var(--text-primary)"}}>Punchly.Clock</span>
+            
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"24px"}} className="grid-sm-1">
+              <div className="feature-card" style={{borderRadius:"16px",padding:"32px"}}>
+                <div style={{width:"48px",height:"48px",borderRadius:"12px",background:"#F1F5F9",border:"1px solid var(--border)",color:"var(--text-primary)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:"20px",boxShadow:"0 2px 10px rgba(0,0,0,0.02)"}}>
+                  <MapPin size={24} />
+                </div>
+                <h3 style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"18px",marginBottom:"12px",color:"var(--text-primary)"}}>Asistencia Inteligente</h3>
+                <p style={{color:"var(--text-muted)",fontSize:"15px",lineHeight:1.6,fontFamily:"var(--font-inter)"}}>Registro de entrada y salida desde el celular con validación por geolocalización estricta.</p>
+              </div>
+
+              <div className="feature-card" style={{borderRadius:"16px",padding:"32px"}}>
+                <div style={{width:"48px",height:"48px",borderRadius:"12px",background:"#F1F5F9",border:"1px solid var(--border)",color:"var(--text-primary)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:"20px",boxShadow:"0 2px 10px rgba(0,0,0,0.02)"}}>
+                  <Clock size={24} />
+                </div>
+                <h3 style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"18px",marginBottom:"12px",color:"var(--text-primary)"}}>Control Automático</h3>
+                <p style={{color:"var(--text-muted)",fontSize:"15px",lineHeight:1.6,fontFamily:"var(--font-inter)"}}>Control automático de tardanzas y cálculo exacto de horas trabajadas sin intervención humana.</p>
+              </div>
+
+              <div className="feature-card" style={{borderRadius:"16px",padding:"32px"}}>
+                <div style={{width:"48px",height:"48px",borderRadius:"12px",background:"#F1F5F9",border:"1px solid var(--border)",color:"var(--text-primary)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:"20px",boxShadow:"0 2px 10px rgba(0,0,0,0.02)"}}>
+                  <FileSpreadsheet size={24} />
+                </div>
+                <h3 style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"18px",marginBottom:"12px",color:"var(--text-primary)"}}>Reportes Exportables</h3>
+                <p style={{color:"var(--text-muted)",fontSize:"15px",lineHeight:1.6,fontFamily:"var(--font-inter)"}}>Exporta los datos a Excel para la nómina y mantén un historial de asistencia por empleado.</p>
+              </div>
+            </div>
           </div>
-          <p style={{color:"var(--text-muted)",fontSize:"13px",fontFamily:"var(--font-inter)"}}>Sistema Inteligente para Negocios · 2026</p>
+        </section>
+
+        {/* PRICING */}
+        <section style={{padding:"80px 20px 100px",borderTop:"1px solid var(--border)",position:"relative",zIndex:10,background:"var(--bg-primary)"}}>
+          <div style={{maxWidth:"1000px",margin:"0 auto",textAlign:"center"}}>
+            <p style={{color:"#1E3A8A",fontSize:"13px",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",fontFamily:"var(--font-inter)",marginBottom:"16px"}}>Precios Accesibles</p>
+            <h2 style={{fontFamily:"var(--font-inter)",fontSize:"clamp(28px,4vw,40px)",fontWeight:800,marginBottom:"16px",color:"var(--text-primary)"}}>La barrera de entrada es casi cero</h2>
+            <p style={{color:"var(--text-muted)",fontSize:"16px",maxWidth:"600px",margin:"0 auto 48px",fontFamily:"var(--font-inter)"}}>No pagues licencias caras. Paga solo por el tamaño de tu equipo.</p>
+            
+            <InteractivePricing />
+            
+            <div style={{marginTop: "40px", display: "inline-block"}}>
+              <p style={{color: "var(--text-primary)", fontSize: "16px", fontWeight: 700, margin: 0, textAlign: "center"}}>
+                Oferta de lanzamiento: Primera quincena gratis + Configuración gratuita
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer style={{background:"var(--bg-card)",borderTop:"1px solid var(--border)",padding:"32px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"16px",position:"relative",zIndex:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+             <span style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"18px",color:"#1A2B4C"}}>
+               punchly
+             </span>
+          </div>
+          <p style={{color:"var(--text-muted)",fontSize:"13px",fontFamily:"var(--font-inter)",fontWeight:500}}>Sistema Inteligente para Negocios · 2026</p>
           <div style={{display:"flex",gap:"24px"}}>
-            <Link href={`/${lang}/login`} style={{color:"var(--text-muted)",fontSize:"13px",textDecoration:"none",fontFamily:"var(--font-inter)"}}>Iniciar sesión</Link>
-            <Link href={`/${lang}/register`} style={{color:"var(--text-muted)",fontSize:"13px",textDecoration:"none",fontFamily:"var(--font-inter)"}}>Registro</Link>
+            <Link href={`/${lang}/login`} style={{color:"var(--text-muted)",fontSize:"13px",textDecoration:"none",fontFamily:"var(--font-inter)",fontWeight:500}}>Iniciar sesión</Link>
+            <Link href={`/${lang}/register`} style={{color:"var(--text-muted)",fontSize:"13px",textDecoration:"none",fontFamily:"var(--font-inter)",fontWeight:500}}>Registro</Link>
           </div>
         </footer>
       </div>

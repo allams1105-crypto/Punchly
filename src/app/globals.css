@@ -3,19 +3,19 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Professional SaaS Palette */
-  --bg-primary: #020617; /* Slate 950 */
-  --bg-card: #0F172A; /* Slate 900 */
-  --border: rgba(255, 255, 255, 0.08);
-  --text-primary: #F8FAFC; /* Slate 50 */
-  --text-muted: #94A3B8; /* Slate 400 */
-  --accent: #3B82F6; /* Professional Blue */
-  --accent-dark: #2563EB;
+  /* Professional Light SaaS Palette */
+  --bg-primary: #F8FAFC; 
+  --bg-card: #FFFFFF; 
+  --border: #E2E8F0;
+  --text-primary: #1E293B; 
+  --text-muted: #64748B; 
+  --accent: #1E3A8A; /* Navy Blue */
+  --accent-dark: #172554;
   
   --font-heading: var(--font-inter), sans-serif;
   --font-body: var(--font-inter), sans-serif;
   
-  color-scheme: dark !important;
+  color-scheme: light !important;
 }
 
 /* --- ANIKILADOR DE CUADROS BLANCOS --- */
@@ -47,7 +47,7 @@ body {
 
 /* --- CLASES DE UTILIDAD PROFESSIONAL --- */
 .glass {
-  background: rgba(15, 23, 42, 0.6) !important;
+  background: var(--bg-card) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid var(--border) !important;

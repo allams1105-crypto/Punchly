@@ -7,7 +7,7 @@ import Link from "next/link";
 
 export default async function EmployeePage({ params }: { params: any }) {
   const session = await auth();
-  if (!session) redirect("/en/login");
+  if (!session) redirect("/es/login");
   const orgId = (session.user as any).organizationId;
   const { id } = await params;
 
@@ -32,7 +32,7 @@ export default async function EmployeePage({ params }: { params: any }) {
       `}</style>
       
       <div style={{height:"56px",borderBottom:"1px solid rgba(255,255,255,0.08)",padding:"0 24px",display:"flex",alignItems:"center",gap:"12px"}}>
-        <Link href="/en/admin/employees" className="back-link" style={{textDecoration:"none",fontSize:"13px",fontFamily:"var(--font-inter)",display:"flex",alignItems:"center",gap:"6px"}}>
+        <Link href="/es/admin/employees" className="back-link" style={{textDecoration:"none",fontSize:"13px",fontFamily:"var(--font-inter)",display:"flex",alignItems:"center",gap:"6px"}}>
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           Empleados
         </Link>

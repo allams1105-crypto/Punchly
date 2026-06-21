@@ -9,7 +9,7 @@ function Avatar({ name, color, photoUrl }: { name: string; color?: string | null
   const bg = color || COLORS[(name?.charCodeAt(0)||0) % COLORS.length];
   
   if (photoUrl) {
-    return <img src={photoUrl} alt={name} className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex-shrink-0 object-cover" style={{border:`2px solid rgba(255,255,255,0.1)`}} />;
+    return <img src={photoUrl} alt={name} className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex-shrink-0 object-cover" style={{border:`2px solid var(--border)`}} />;
   }
 
   return (
@@ -90,7 +90,7 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
   const totalH = Math.floor(weekStats.totalMin/60);
   const totalM = weekStats.totalMin%60;
 
-  const glassStyle = {background:"rgba(255,255,255,0.03)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",border:"1px solid rgba(255,255,255,0.06)"};
+  const glassStyle = {background:"var(--bg-card)",border:"1px solid var(--border)"};
 
   return (
     <div className="flex-1 overflow-y-auto relative" style={{background:"transparent"}}>
@@ -110,24 +110,24 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
 
       {/* Header */}
       <div className="px-5 sm:px-8 py-5 flex items-center justify-between relative z-10">
-        <p className="font-extrabold text-white text-lg tracking-tight" style={{fontFamily:"var(--font-inter)"}}>Panel de Empleado</p>
+        <p className="font-extrabold text-lg tracking-tight" style={{color:"var(--text-primary)",fontFamily:"var(--font-inter)"}}>Panel de Empleado</p>
         <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
           <div className="text-right">
-            <p className="text-white font-bold text-sm" style={{fontFamily:"var(--font-inter)"}}>
+            <p className="font-bold text-sm" style={{color:"var(--text-primary)",fontFamily:"var(--font-inter)"}}>
               {time.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
             </p>
-            <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold" style={{fontFamily:"var(--font-inter)"}}>Hora Actual</p>
+            <p className="text-[10px] uppercase tracking-widest font-bold" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>Hora Actual</p>
           </div>
           <button onClick={async () => {
             try {
-              await signOut({ callbackUrl: "/en" });
+              await signOut({ callbackUrl: "/es" });
             } catch (e) {
               window.location.href = "/api/auth/signout?callbackUrl=/en";
             }
           }}
-            style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"8px 12px",color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:600,fontFamily:"var(--font-inter)",cursor:"pointer",transition:"all 0.2s",position:"relative",zIndex:50}}
+            style={{background:"var(--bg-primary)",border:"1px solid var(--border)",borderRadius:"12px",padding:"8px 12px",color:"var(--text-muted)",fontSize:"12px",fontWeight:600,fontFamily:"var(--font-inter)",cursor:"pointer",transition:"all 0.2s",position:"relative",zIndex:50}}
             onMouseEnter={e=>(e.currentTarget.style.color="#F87171")}
-            onMouseLeave={e=>(e.currentTarget.style.color="rgba(255,255,255,0.6)")}>
+            onMouseLeave={e=>(e.currentTarget.style.color="var(--text-muted)")}>
             <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           </button>
         </div>
@@ -140,12 +140,12 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
           <div className="flex items-center gap-4 mb-6">
             <Avatar name={user.name} color={user.avatarColor} photoUrl={user.avatarUrl} />
             <div className="flex-1">
-              <p className="text-xl sm:text-2xl font-extrabold text-white leading-tight" style={{fontFamily:"var(--font-inter)",letterSpacing:"-0.5px"}}>{user.name}</p>
-              <p className="text-sm text-white/40 mt-0.5 font-medium" style={{fontFamily:"var(--font-inter)"}}>{user.email}</p>
+              <p className="text-xl sm:text-2xl font-extrabold leading-tight" style={{color:"var(--text-primary)",fontFamily:"var(--font-inter)",letterSpacing:"-0.5px"}}>{user.name}</p>
+              <p className="text-sm mt-0.5 font-medium" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>{user.email}</p>
               <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-full text-[11px] uppercase tracking-widest font-bold"
                 style={onShift
                   ? {background:"rgba(52,211,153,0.1)", color:"#34D399", border:"1px solid rgba(52,211,153,0.2)"}
-                  : {background:"rgba(255,255,255,0.05)", color:"rgba(255,255,255,0.4)", border:"1px solid rgba(255,255,255,0.08)"}}>
+                  : {background:"var(--bg-primary)", color:"var(--text-muted)", border:"1px solid var(--border)"}}>
                 {onShift && <span className="w-2 h-2 bg-green-400 rounded-full" style={{animation:"pulse 2s infinite"}} />}
                 <span style={{fontFamily:"var(--font-inter)"}}>{onShift?"Turno Activo":"Fuera de turno"}</span>
               </div>
@@ -154,18 +154,18 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
 
           {todayEntry && (
             <div className="rounded-2xl p-4 mb-5 flex items-center gap-4"
-              style={{background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.04)"}}>
+              style={{background:"var(--bg-primary)", border:"1px solid var(--border)"}}>
               <div className="w-1.5 h-10 rounded-full" style={{background:PRIMARY}} />
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-white/30 mb-1" style={{fontFamily:"var(--font-inter)"}}>Registro de hoy</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>Registro de hoy</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-base font-bold text-white" style={{fontFamily:"var(--font-inter)"}}>
+                  <p className="text-base font-bold" style={{color:"var(--text-primary)",fontFamily:"var(--font-inter)"}}>
                     {new Date(todayEntry.clockIn).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
                   </p>
                   {todayEntry.clockOut && (
                     <>
-                      <span className="text-white/20">—</span>
-                      <p className="text-base font-bold text-white" style={{fontFamily:"var(--font-inter)"}}>
+                      <span style={{color:"var(--text-muted)"}}>—</span>
+                      <p className="text-base font-bold" style={{color:"var(--text-primary)",fontFamily:"var(--font-inter)"}}>
                         {new Date(todayEntry.clockOut).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
                       </p>
                     </>
@@ -191,7 +191,7 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
             className={`w-full py-5 rounded-[20px] font-extrabold text-lg sm:text-xl transition-all duration-300 disabled:opacity-40 clock-btn flex items-center justify-center gap-3 ${!onShift ? 'is-active' : ''}`}
             style={onShift
               ? {background:"rgba(248,113,113,0.1)", color:"#F87171", border:"1px solid rgba(248,113,113,0.2)", fontFamily:"var(--font-inter)"}
-              : {background:`linear-gradient(135deg,${PRIMARY},var(--accent-dark))`, color:"#000", fontFamily:"var(--font-inter)",
+              : {background:`linear-gradient(135deg,${PRIMARY},var(--accent-dark))`, color:"white", fontFamily:"var(--font-inter)",
                  boxShadow:`0 8px 30px ${PRIMARY}40`}}>
             {locating?"Localizando...":loading?"Procesando...":onShift?"Terminar Turno":"Iniciar Turno"}
             {!locating && !loading && (
@@ -200,7 +200,7 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
           </button>
 
           {geoEnabled && (
-            <div className="flex items-center justify-center gap-2 mt-4 text-[11px] font-bold uppercase tracking-widest text-white/20" style={{fontFamily:"var(--font-inter)"}}>
+            <div className="flex items-center justify-center gap-2 mt-4 text-[11px] font-bold uppercase tracking-widest" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               Verificación GPS activa ({geoRadius}m)
             </div>
@@ -214,8 +214,8 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
               <p className="text-[11px] font-extrabold uppercase tracking-widest" style={{color:PRIMARY, fontFamily:"var(--font-inter)"}}>Mi Horario Asignado</p>
               
               <div className="flex gap-2">
-                <button onClick={() => setScheduleWeek("current")} className="px-2 py-1 rounded text-[10px] font-bold uppercase transition-all" style={{background:scheduleWeek==="current"?"rgba(255,255,255,0.1)":"transparent", color:scheduleWeek==="current"?"#FFF":"rgba(255,255,255,0.3)", border:"none"}}>Actual</button>
-                <button onClick={() => setScheduleWeek("next")} className="px-2 py-1 rounded text-[10px] font-bold uppercase transition-all" style={{background:scheduleWeek==="next"?"rgba(255,255,255,0.1)":"transparent", color:scheduleWeek==="next"?"#FFF":"rgba(255,255,255,0.3)", border:"none"}}>Próxima</button>
+                <button onClick={() => setScheduleWeek("current")} className="px-2 py-1 rounded text-[10px] font-bold uppercase transition-all" style={{background:scheduleWeek==="current"?"var(--bg-primary)":"transparent", color:scheduleWeek==="current"?"var(--text-primary)":"var(--text-muted)", border:"none"}}>Actual</button>
+                <button onClick={() => setScheduleWeek("next")} className="px-2 py-1 rounded text-[10px] font-bold uppercase transition-all" style={{background:scheduleWeek==="next"?"var(--bg-primary)":"transparent", color:scheduleWeek==="next"?"var(--text-primary)":"var(--text-muted)", border:"none"}}>Próxima</button>
               </div>
             </div>
             
@@ -223,7 +223,7 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
               {isWorkingToday && scheduleWeek === "current" ? (
                 <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase" style={{background:"rgba(52,211,153,0.1)", color:"#34D399", fontFamily:"var(--font-inter)"}}>Hoy te toca</span>
               ) : !isWorkingToday && scheduleWeek === "current" ? (
-                <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase" style={{background:"rgba(255,255,255,0.05)", color:"rgba(255,255,255,0.4)", fontFamily:"var(--font-inter)"}}>Hoy es libre</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase" style={{background:"var(--bg-primary)", color:"var(--text-muted)", fontFamily:"var(--font-inter)"}}>Hoy es libre</span>
               ) : null}
             </div>
             
@@ -232,10 +232,10 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
                 <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
               <div>
-                <p className="text-2xl font-extrabold text-white" style={{fontFamily:"var(--font-inter)", letterSpacing:"-0.5px"}}>
-                  {schedule.startTime} <span className="text-white/20 text-lg font-medium mx-1">a</span> {schedule.endTime}
+                <p className="text-2xl font-extrabold" style={{color:"var(--text-primary)",fontFamily:"var(--font-inter)", letterSpacing:"-0.5px"}}>
+                  {schedule.startTime} <span style={{color:"var(--text-muted)"}} className="text-lg font-medium mx-1">a</span> {schedule.endTime}
                 </p>
-                <p className="text-xs text-white/40 font-medium mt-0.5" style={{fontFamily:"var(--font-inter)"}}>Rango de horas laborales</p>
+                <p className="text-xs font-medium mt-0.5" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>Rango de horas laborales</p>
               </div>
             </div>
 
@@ -246,12 +246,12 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
                 return (
                   <div key={d} className="flex-1 flex flex-col items-center justify-center py-3 rounded-[14px] transition-all"
                     style={isToday&&active
-                      ? {background:`linear-gradient(135deg,${PRIMARY},var(--accent-dark))`, color:"#000", fontFamily:"var(--font-inter)", transform:"scale(1.05)", boxShadow:`0 4px 15px ${PRIMARY}40`}
+                      ? {background:`linear-gradient(135deg,${PRIMARY},var(--accent-dark))`, color:"white", fontFamily:"var(--font-inter)", transform:"scale(1.05)", boxShadow:`0 4px 15px ${PRIMARY}40`}
                       : active
-                      ? {background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.8)", fontFamily:"var(--font-inter)"}
-                      : {background:"rgba(255,255,255,0.02)", color:"rgba(255,255,255,0.2)", fontFamily:"var(--font-inter)"}}>
+                      ? {background:"var(--bg-primary)", color:"var(--text-primary)", fontFamily:"var(--font-inter)"}
+                      : {background:"transparent", color:"var(--text-muted)", fontFamily:"var(--font-inter)"}}>
                     <span className="text-[10px] uppercase font-bold mb-1 opacity-60">{d}</span>
-                    <div className="w-1.5 h-1.5 rounded-full" style={{background:active?(isToday?"#000":PRIMARY):"transparent"}} />
+                    <div className="w-1.5 h-1.5 rounded-full" style={{background:active?(isToday?"white":PRIMARY):"transparent"}} />
                   </div>
                 );
               })}
@@ -263,7 +263,7 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mobile-grid">
           {[
             {value:`${totalH}h${totalM>0?` ${totalM}m`:""}`, label:"Trabajado en semana", color:PRIMARY, icon:"M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"},
-            {value:weekStats.daysWorked, label:"Días de asistencia", color:"#FFF", icon:"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"},
+            {value:weekStats.daysWorked, label:"Días de asistencia", color:"var(--text-primary)", icon:"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"},
             {value:weekStats.lateCount, label:"Llegadas Tarde", color:weekStats.lateCount>0?"#F87171":"#34D399", icon:"M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"},
           ].map(s=>(
             <div key={s.label} className="stat-box rounded-2xl p-5" style={glassStyle}>
@@ -273,7 +273,7 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
                 </div>
                 <p className="text-2xl font-extrabold" style={{color:s.color, fontFamily:"var(--font-inter)", letterSpacing:"-0.5px"}}>{s.value}</p>
               </div>
-              <p className="text-[11px] font-bold uppercase tracking-widest" style={{color:"rgba(255,255,255,0.3)", fontFamily:"var(--font-inter)"}}>{s.label}</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest" style={{color:"var(--text-muted)", fontFamily:"var(--font-inter)"}}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -281,9 +281,9 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
         {/* Recent entries */}
         {recentEntries.length>0 && (
           <div className="mobile-card !p-0 overflow-hidden" style={glassStyle}>
-            <div className="px-6 py-5 flex items-center justify-between" style={{borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-              <p className="text-[11px] font-extrabold uppercase tracking-widest text-white/40" style={{fontFamily:"var(--font-inter)"}}>Historial de Entradas</p>
-              <div className="px-2 py-1 rounded bg-white/5 text-white/40 text-[10px] font-bold">Últimos {Math.min(10, recentEntries.length)}</div>
+            <div className="px-6 py-5 flex items-center justify-between" style={{borderBottom:"1px solid var(--border)"}}>
+              <p className="text-[11px] font-extrabold uppercase tracking-widest" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>Historial de Entradas</p>
+              <div className="px-2 py-1 rounded text-[10px] font-bold" style={{background:"var(--bg-primary)",color:"var(--text-muted)"}}>Últimos {Math.min(10, recentEntries.length)}</div>
             </div>
             <div className="flex flex-col">
               {recentEntries.slice(0,10).map((e, idx)=>{
@@ -292,23 +292,23 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
                 const m = (e.durationMin||0)%60;
                 const isLast = idx === recentEntries.length - 1 || idx === 9;
                 return (
-                  <div key={e.id} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 gap-3 transition-colors hover:bg-white/5" style={{borderBottom:isLast?"none":"1px solid rgba(255,255,255,0.04)"}}>
+                  <div key={e.id} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 gap-3 transition-colors" style={{borderBottom:isLast?"none":"1px solid var(--border)"}}>
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center">
-                        <span className="text-[10px] text-white/40 font-bold uppercase" style={{fontFamily:"var(--font-inter)"}}>{ci.toLocaleDateString("es",{month:"short"})}</span>
-                        <span className="text-sm font-extrabold text-white" style={{fontFamily:"var(--font-inter)", lineHeight:1}}>{ci.getDate()}</span>
+                      <div className="w-10 h-10 rounded-xl flex flex-col items-center justify-center" style={{background:"var(--bg-primary)", border:"1px solid var(--border)"}}>
+                        <span className="text-[10px] font-bold uppercase" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>{ci.toLocaleDateString("es",{month:"short"})}</span>
+                        <span className="text-sm font-extrabold" style={{color:"var(--text-primary)",fontFamily:"var(--font-inter)", lineHeight:1}}>{ci.getDate()}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white mb-0.5" style={{fontFamily:"var(--font-inter)"}}>
+                        <p className="text-sm font-bold mb-0.5" style={{color:"var(--text-primary)",fontFamily:"var(--font-inter)"}}>
                           {ci.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
                           {e.clockOut && (
                             <>
-                              <span className="text-white/20 mx-2">→</span>
+                              <span style={{color:"var(--text-muted)"}} className="mx-2">→</span>
                               {new Date(e.clockOut).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}
                             </>
                           )}
                         </p>
-                        <p className="text-[11px] font-semibold text-white/30 uppercase tracking-wider" style={{fontFamily:"var(--font-inter)"}}>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>
                           {ci.toLocaleDateString("es",{weekday:"long"})}
                         </p>
                       </div>
@@ -320,7 +320,7 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
                           {h}h {m}m
                         </div>
                       ) : (
-                        <div className="px-3 py-1.5 rounded-lg font-bold text-xs bg-white/5 text-white/30" style={{fontFamily:"var(--font-inter)"}}>
+                        <div className="px-3 py-1.5 rounded-lg font-bold text-xs" style={{background:"var(--bg-primary)",color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>
                           En progreso
                         </div>
                       )}
@@ -334,23 +334,23 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
         {/* Vouchers / Bauchers */}
         {vouchers && vouchers.length > 0 && (
           <div className="mobile-card !p-0 overflow-hidden mt-6" style={glassStyle}>
-            <div className="px-6 py-5 flex items-center justify-between" style={{borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-              <p className="text-[11px] font-extrabold uppercase tracking-widest text-white/40" style={{fontFamily:"var(--font-inter)"}}>Mis Bauchers de Pago</p>
+            <div className="px-6 py-5 flex items-center justify-between" style={{borderBottom:"1px solid var(--border)"}}>
+              <p className="text-[11px] font-extrabold uppercase tracking-widest" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>Mis Bauchers de Pago</p>
             </div>
             <div className="flex flex-col">
               {vouchers.map((v, idx) => {
                 const isLast = idx === vouchers.length - 1;
                 return (
-                  <div key={v.id} onClick={() => setSelectedVoucher(v)} className="flex items-center justify-between px-6 py-4 gap-3 cursor-pointer transition-colors hover:bg-white/5" style={{borderBottom:isLast?"none":"1px solid rgba(255,255,255,0.04)"}}>
+                  <div key={v.id} onClick={() => setSelectedVoucher(v)} className="flex items-center justify-between px-6 py-4 gap-3 cursor-pointer transition-colors" style={{borderBottom:isLast?"none":"1px solid var(--border)"}}>
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 flex flex-col items-center justify-center text-white" style={{color:PRIMARY}}>
+                      <div className="w-10 h-10 rounded-xl flex flex-col items-center justify-center" style={{color:PRIMARY,background:"var(--bg-primary)"}}>
                         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white mb-0.5" style={{fontFamily:"var(--font-inter)"}}>
+                        <p className="text-sm font-bold mb-0.5" style={{color:"var(--text-primary)",fontFamily:"var(--font-inter)"}}>
                           Período: {v.period === "current" ? "Actual" : v.period}
                         </p>
-                        <p className="text-[11px] font-semibold text-white/30 uppercase tracking-wider" style={{fontFamily:"var(--font-inter)"}}>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>
                           {new Date(v.createdAt).toLocaleDateString("es")}
                         </p>
                       </div>
@@ -368,29 +368,29 @@ export default function EmployeeDashboardClient({ user, onShift:initialOnShift, 
 
       {/* Voucher Detail Modal */}
       {selectedVoucher && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(10px)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn 0.2s ease-out"}}>
-          <div className="mobile-card w-full max-w-sm" style={{background:"#111",border:"1px solid rgba(255,255,255,0.1)",position:"relative"}}>
-            <button onClick={()=>setSelectedVoucher(null)} style={{position:"absolute",top:"20px",right:"20px",color:"rgba(255,255,255,0.4)"}}><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
-            <h3 className="text-xl font-extrabold mb-1" style={{fontFamily:"var(--font-inter)",color:"white"}}>Baucher de Pago</h3>
-            <p className="text-xs text-white/40 uppercase tracking-widest font-bold mb-6" style={{fontFamily:"var(--font-inter)"}}>Período: {selectedVoucher.period}</p>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",backdropFilter:"blur(10px)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn 0.2s ease-out"}}>
+          <div className="mobile-card w-full max-w-sm" style={{background:"var(--bg-card)",border:"1px solid var(--border)",position:"relative"}}>
+            <button onClick={()=>setSelectedVoucher(null)} style={{position:"absolute",top:"20px",right:"20px",color:"var(--text-muted)"}}><svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            <h3 className="text-xl font-extrabold mb-1" style={{fontFamily:"var(--font-inter)",color:"var(--text-primary)"}}>Baucher de Pago</h3>
+            <p className="text-xs uppercase tracking-widest font-bold mb-6" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>Período: {selectedVoucher.period}</p>
             
             <div className="space-y-4 mb-6">
-              <div className="flex justify-between items-center" style={{fontFamily:"var(--font-inter)",fontSize:"14px",color:"white"}}>
-                <span className="text-white/60">Horas Trabajadas</span>
+              <div className="flex justify-between items-center" style={{fontFamily:"var(--font-inter)",fontSize:"14px",color:"var(--text-primary)"}}>
+                <span style={{color:"var(--text-muted)"}}>Horas Trabajadas</span>
                 <span className="font-bold">{selectedVoucher.totalHours.toFixed(1)}h</span>
               </div>
-              <div className="flex justify-between items-center" style={{fontFamily:"var(--font-inter)",fontSize:"14px",color:"white"}}>
-                <span className="text-white/60">Horas Extra</span>
+              <div className="flex justify-between items-center" style={{fontFamily:"var(--font-inter)",fontSize:"14px",color:"var(--text-primary)"}}>
+                <span style={{color:"var(--text-muted)"}}>Horas Extra</span>
                 <span className="font-bold text-orange-400">{selectedVoucher.overtimeHours.toFixed(1)}h</span>
               </div>
-              <div className="flex justify-between items-center" style={{fontFamily:"var(--font-inter)",fontSize:"14px",color:"white"}}>
-                <span className="text-white/60">Tarifa por Hora</span>
+              <div className="flex justify-between items-center" style={{fontFamily:"var(--font-inter)",fontSize:"14px",color:"var(--text-primary)"}}>
+                <span style={{color:"var(--text-muted)"}}>Tarifa por Hora</span>
                 <span className="font-bold">${selectedVoucher.hourlyRate}/h</span>
               </div>
             </div>
             
-            <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-              <span className="text-sm font-extrabold uppercase tracking-widest text-white/40" style={{fontFamily:"var(--font-inter)"}}>Total Pagado</span>
+            <div className="pt-4 flex justify-between items-center" style={{borderTop:"1px solid var(--border)"}}>
+              <span className="text-sm font-extrabold uppercase tracking-widest" style={{color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>Total Pagado</span>
               <span className="text-3xl font-extrabold" style={{fontFamily:"var(--font-inter)",color:PRIMARY}}>${selectedVoucher.totalPay.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
           </div>

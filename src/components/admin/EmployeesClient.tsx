@@ -8,7 +8,7 @@ function Avatar({ name, color, photoUrl }: { name: string; color?: string | null
   const bg = color || COLORS[(name?.charCodeAt(0)||0) % COLORS.length];
 
   if (photoUrl) {
-    return <img src={photoUrl} alt={name} style={{width:"40px",height:"40px",borderRadius:"12px",objectFit:"cover",flexShrink:0,border:`1px solid rgba(255,255,255,0.1)`}} />;
+    return <img src={photoUrl} alt={name} style={{width:"40px",height:"40px",borderRadius:"12px",objectFit:"cover",flexShrink:0,border:`1px solid var(--border)`}} />;
   }
   
   return (
@@ -23,11 +23,11 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
   const [filter, setFilter] = useState("all");
 
   // Colores para TypeScript
-  const bg = "var(--bg-primary, #0A0A0A)";
-  const card = "var(--bg-card, #111111)";
-  const border = "var(--border, rgba(255,255,255,0.08))";
-  const text = "var(--text-primary, #FAFAFA)";
-  const muted = "var(--text-muted, #A1A1AA)";
+  const bg = "var(--bg-primary)";
+  const card = "var(--bg-card)";
+  const border = "var(--border)";
+  const text = "var(--text-primary)";
+  const muted = "var(--text-muted)";
   const primary = "var(--accent)";
 
   const filtered = (employees||[]).filter(e => {
@@ -45,17 +45,17 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
   ];
 
   return (
-    <div style={{flex:1,overflowY:"auto",background:bg,backgroundImage:"radial-gradient(ellipse at 20% 0%, rgba(59, 130, 246,0.04) 0%, transparent 50%)"}}>
+    <div style={{flex:1,overflowY:"auto",background:bg}}>
       <style>{`
-  .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
-  .glass-pro{background:rgba(59, 130, 246, 0.05);backdrop-filter:blur(20px);border:1px solid rgba(59, 130, 246, 0.15)}
+  .glass{background:var(--bg-card);border:1px solid var(--border)}
+  .glass-pro{background:var(--bg-primary);border:1px solid var(--border)}
   .primary-text{background:var(--accent);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
   .btn-primary{background:var(--accent);color:#fff;font-family:var(--font-inter);font-weight:600;transition:all 0.2s ease;text-decoration:none;display:inline-block;border:1px solid var(--accent-dark);border-radius:12px}
   .btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59, 130, 246, 0.25)}
   .row-hover{transition:background 0.15s ease}
-  .row-hover:hover{background:rgba(255,255,255,0.04)!important}
+  .row-hover:hover{background:var(--bg-primary)!important}
   .card-hover{transition:all 0.25s ease}
-  .card-hover:hover{transform:translateY(-2px);border-color:rgba(59, 130, 246,0.2)!important}
+  .card-hover:hover{transform:translateY(-2px);border-color:var(--accent)!important}
   input,select{color-scheme:dark}
   input:focus,select:focus{border:1px solid rgba(59, 130, 246,0.4)!important;outline:none}
   @media(max-width:768px){.hide-mobile{display:none!important}.stack-mobile{flex-direction:column!important}.full-mobile{width:100%!important}.grid-mobile-1{grid-template-columns:1fr!important}.grid-mobile-2{grid-template-columns:1fr 1fr!important}}
@@ -65,7 +65,7 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
           <h1 style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"14px",color:text}}>Empleados</h1>
           <p style={{fontFamily:"var(--font-inter)",fontSize:"11px",color:muted}}>{(employees||[]).length} en total</p>
         </div>
-        <Link href="/en/admin/employees/new" className="btn-primary" style={{padding:"8px 16px",borderRadius:"12px",fontSize:"12px",textDecoration:"none",display:"inline-block"}}>+ Nuevo</Link>
+        <Link href="/es/admin/employees/new" className="btn-primary" style={{padding:"8px 16px",borderRadius:"12px",fontSize:"12px",textDecoration:"none",display:"inline-block"}}>+ Nuevo</Link>
       </div>
 
       <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:"16px"}}>
@@ -87,7 +87,7 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
             {[["all","Todos"],["active","Activos"],["inactive","Inactivos"],["onshift","En turno"]].map(([k,l])=>(
               <button key={k} onClick={()=>setFilter(k)}
                 style={{padding:"9px 14px",fontSize:"12px",fontFamily:"var(--font-inter)",fontWeight:filter===k?600:400,border:"none",cursor:"pointer",transition:"all 0.15s",
-                  background:filter===k?"var(--accent)":"transparent",color:filter===k?"#000":muted}}>
+                  background:filter===k?"var(--accent)":"transparent",color:filter===k?"white":muted}}>
                 {l}
               </button>
             ))}
@@ -98,12 +98,12 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
         {filtered.length===0 ? (
           <div className="glass" style={{borderRadius:"20px",padding:"48px",textAlign:"center"}}>
             <p style={{color:muted,fontSize:"13px",fontFamily:"var(--font-inter)"}}>No hay empleados</p>
-            <Link href="/en/admin/employees/new" className="btn-primary" style={{display:"inline-block",padding:"10px 20px",borderRadius:"12px",fontSize:"13px",textDecoration:"none",marginTop:"16px"}}>+ Agregar primero</Link>
+            <Link href="/es/admin/employees/new" className="btn-primary" style={{display:"inline-block",padding:"10px 20px",borderRadius:"12px",fontSize:"13px",textDecoration:"none",marginTop:"16px"}}>+ Agregar primero</Link>
           </div>
         ) : (
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px"}} className="grid-mobile-1">
             {filtered.map(emp=>(
-              <Link key={emp.id} href={"/en/admin/employees/"+emp.id} style={{textDecoration:"none"}}>
+              <Link key={emp.id} href={"/es/admin/employees/"+emp.id} style={{textDecoration:"none"}}>
                 <div className="glass card-hover" style={{borderRadius:"20px",padding:"20px",cursor:"pointer"}}>
                   <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:"14px"}}>
                     <Avatar name={emp.name} color={emp.avatarColor} photoUrl={emp.avatarUrl} />
@@ -114,7 +114,7 @@ export default function EmployeesClient({ employees }: { employees: any[] }) {
                   </div>
                   <p style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"14px",color:text}}>{emp.name}</p>
                   <p style={{fontFamily:"var(--font-inter)",fontSize:"12px",color:muted,marginTop:"2px"}}>{emp.email}</p>
-                  <p style={{fontFamily:"var(--font-inter)",fontSize:"11px",color:"rgba(59, 130, 246,0.6)",marginTop:"8px"}}>${emp.hourlyRate||0}/h</p>
+                  <p style={{fontFamily:"var(--font-inter)",fontSize:"11px",color:"var(--accent)",marginTop:"8px"}}>${emp.hourlyRate||0}/h</p>
                 </div>
               </Link>
             ))}

@@ -86,7 +86,7 @@ export default function EmployeeEditClient({ employee }: { employee: any }) {
     if (!confirm("¿Eliminar este empleado? Esta acción no se puede deshacer.")) return;
     setDeleting(true);
     await fetch("/api/employees/"+employee.id, { method:"DELETE" });
-    router.push("/en/admin/employees");
+    router.push("/es/admin/employees");
   }
 
   const initials = name.split(" ").map((n:string)=>n.charAt(0)).join("").substring(0,2).toUpperCase();

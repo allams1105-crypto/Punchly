@@ -45,7 +45,7 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
       {filtered.length === 0 ? (
         <div className="p-8 text-center">
           <p className="text-sm text-[var(--text-muted)]">No hay empleados</p>
-          <Link href="/en/admin/employees/new" className="inline-block mt-3 bg-[#E8B84B] text-black px-4 py-2 rounded-xl text-xs font-black">
+          <Link href="/es/admin/employees/new" className="inline-block mt-3 bg-[#E8B84B] text-black px-4 py-2 rounded-xl text-xs font-black">
             + Agregar primero
           </Link>
         </div>

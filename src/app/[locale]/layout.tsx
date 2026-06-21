@@ -28,8 +28,6 @@ export default async function RootLayout(props: {
   return (
     <html 
       lang={locale} 
-      className="dark" 
-      style={{ colorScheme: 'dark' }} 
       suppressHydrationWarning
     >
       <head>

@@ -78,41 +78,41 @@ export default function NewEmployeePage() {
   }
 
   const inputS: React.CSSProperties = {
-    width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
-    borderRadius:"12px", padding:"10px 14px", color:"#FAFAFA", fontSize:"13px",
+    width:"100%", background:"var(--bg-primary)", border:"1px solid var(--border)",
+    borderRadius:"12px", padding:"10px 14px", color:"var(--text-primary)", fontSize:"13px",
     fontFamily:"var(--font-inter)", outline:"none", transition:"border 0.2s", boxSizing:"border-box"
   };
   const labelS: React.CSSProperties = {
-    display:"block", fontSize:"11px", fontWeight:600, color:"rgba(255,255,255,0.3)",
+    display:"block", fontSize:"11px", fontWeight:600, color:"var(--text-muted)",
     textTransform:"uppercase", letterSpacing:"1px", marginBottom:"8px", fontFamily:"var(--font-inter)"
   };
 
   return (
-    <div style={{flex:1,overflowY:"auto",background:"#0A0A0A"}}>
+    <div style={{flex:1,overflowY:"auto",background:"var(--bg-primary)"}}>
       <style>{`input:focus{border-color:rgba(59, 130, 246,0.4)!important}`}</style>
-      <div style={{height:"56px",borderBottom:"1px solid rgba(255,255,255,0.08)",padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <h1 style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Nuevo Empleado</h1>
+      <div style={{height:"56px",borderBottom:"1px solid var(--border)",padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <h1 style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"14px",color:"var(--text-primary)"}}>Nuevo Empleado</h1>
       </div>
       <div style={{maxWidth:"520px",margin:"0 auto",padding:"24px"}}>
-        <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"20px",overflow:"hidden"}}>
-          <div style={{padding:"16px 20px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-            <h2 style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"14px",color:"#FAFAFA"}}>Datos del empleado</h2>
+        <div style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:"20px",overflow:"hidden"}}>
+          <div style={{padding:"16px 20px",borderBottom:"1px solid var(--border)"}}>
+            <h2 style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"14px",color:"var(--text-primary)"}}>Datos del empleado</h2>
           </div>
           <div style={{padding:"20px",display:"flex",flexDirection:"column",gap:"14px"}}>
             
             {/* Foto de Perfil */}
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"12px",marginBottom:"8px"}}>
-              <div style={{position:"relative",width:"100px",height:"100px",borderRadius:"50%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div style={{position:"relative",width:"100px",height:"100px",borderRadius:"50%",background:"var(--bg-primary)",border:"1px solid var(--border)",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
                 {photo ? (
                   <img src={photo} alt="Empleado" style={{width:"100%",height:"100%",objectFit:"cover"}} />
                 ) : (
-                  <svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  <svg width="32" height="32" fill="none" stroke="var(--text-muted)" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 )}
               </div>
               
               <div style={{display:"flex",gap:"8px"}}>
                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} style={{display:"none"}} />
-                <button onClick={() => fileInputRef.current?.click()} style={{background:"rgba(255,255,255,0.05)",color:"#FFF",border:"1px solid rgba(255,255,255,0.1)",padding:"6px 16px",borderRadius:"100px",fontSize:"12px",fontWeight:600,fontFamily:"var(--font-inter)",cursor:"pointer",display:"flex",alignItems:"center",gap:"6px"}}>
+                <button onClick={() => fileInputRef.current?.click()} style={{background:"var(--bg-primary)",color:"var(--text-primary)",border:"1px solid var(--border)",padding:"6px 16px",borderRadius:"100px",fontSize:"12px",fontWeight:600,fontFamily:"var(--font-inter)",cursor:"pointer",display:"flex",alignItems:"center",gap:"6px"}}>
                   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                   {photo ? "Cambiar foto" : "Subir foto"}
                 </button>
@@ -132,12 +132,12 @@ export default function NewEmployeePage() {
               <div>
                 <label style={labelS}>Contraseña (para login)</label>
                 <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={inputS} />
-                <p style={{fontSize:"10px",color:"rgba(255,255,255,0.2)",marginTop:"4px",fontFamily:"var(--font-inter)"}}>El empleado usará esto para iniciar sesión</p>
+                <p style={{fontSize:"10px",color:"var(--text-muted)",marginTop:"4px",fontFamily:"var(--font-inter)"}}>El empleado usará esto para iniciar sesión</p>
               </div>
               <div>
                 <label style={labelS}>PIN del Kiosk (4 dígitos)</label>
-                <input type="password" value={kioskPin} onChange={e=>setKioskPin(e.target.value.replace(/D/g,"").substring(0,4))} placeholder="1234" maxLength={4} style={inputS} />
-                <p style={{fontSize:"10px",color:"rgba(255,255,255,0.2)",marginTop:"4px",fontFamily:"var(--font-inter)"}}>PIN para fichar en el kiosk</p>
+                <input type="password" value={kioskPin} onChange={e=>setKioskPin(e.target.value.replace(/\D/g,"").substring(0,4))} placeholder="1234" maxLength={4} style={inputS} />
+                <p style={{fontSize:"10px",color:"var(--text-muted)",marginTop:"4px",fontFamily:"var(--font-inter)"}}>PIN para fichar en el kiosk</p>
               </div>
             </div>
             <div>
@@ -146,11 +146,11 @@ export default function NewEmployeePage() {
             </div>
             {error && <p style={{color:"#F87171",fontSize:"13px",fontFamily:"var(--font-inter)"}}>{error}</p>}
             <div style={{display:"flex",gap:"10px",paddingTop:"8px"}}>
-              <button onClick={()=>router.back()} style={{flex:1,padding:"12px",borderRadius:"12px",border:"1px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.4)",fontSize:"13px",fontFamily:"var(--font-inter)",cursor:"pointer"}}>
+              <button onClick={()=>router.back()} style={{flex:1,padding:"12px",borderRadius:"12px",border:"1px solid var(--border)",background:"var(--bg-primary)",color:"var(--text-primary)",fontSize:"13px",fontFamily:"var(--font-inter)",cursor:"pointer"}}>
                 Cancelar
               </button>
               <button onClick={save} disabled={saving}
-                style={{flex:1,padding:"12px",borderRadius:"12px",background:"var(--accent)",color:"#000",fontSize:"13px",fontFamily:"var(--font-inter)",fontWeight:700,border:"none",cursor:"pointer",opacity:saving?0.6:1}}>
+                style={{flex:1,padding:"12px",borderRadius:"12px",background:"var(--accent)",color:"white",fontSize:"13px",fontFamily:"var(--font-inter)",fontWeight:700,border:"none",cursor:"pointer",opacity:saving?0.6:1}}>
                 {saving?"Guardando...":"Crear empleado"}
               </button>
             </div>

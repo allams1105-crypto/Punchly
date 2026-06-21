@@ -57,7 +57,7 @@ export default function AttendanceChart() {
                     <div className="w-full bg-[var(--border)] rounded-sm" style={{ height: "4px" }}></div>
                   )}
                 </div>
-                <p className={`text-xs font-semibold capitalize ${isToday ? "text-[#E8B84B]" : "text-[var(--text-muted)]"}`}>{d.day}</p>
+                <p className={`text-xs font-semibold capitalize ${isToday ? "text-[var(--accent)]" : "text-[var(--text-muted)]"}`}>{d.day}</p>
               </div>
             );
           })}

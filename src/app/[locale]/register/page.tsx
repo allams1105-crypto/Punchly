@@ -12,8 +12,7 @@ const t = {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const params = useParams();
-  const locale = (params?.locale as string) === "es" ? "es" : "en";
+  const locale = "es";
   const tx = t[locale];
   const [form, setForm] = useState({ name:"", orgName:"", email:"", password:"" });
   const [loading, setLoading] = useState(false);
@@ -33,13 +32,13 @@ export default function RegisterPage() {
   }
 
   const inputStyle: React.CSSProperties = {
-    width:"100%", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)",
-    borderRadius:"12px", padding:"12px 16px", color:"#FAFAFA", fontSize:"14px",
+    width:"100%", background:"var(--bg-primary)", border:"1px solid var(--border)",
+    borderRadius:"12px", padding:"12px 16px", color:"var(--text-primary)", fontSize:"14px",
     outline:"none", fontFamily:"var(--font-inter)", transition:"border 0.2s", boxSizing:"border-box"
   };
 
   return (
-    <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246,0.08) 0%, transparent 60%), var(--bg-primary)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+    <div className="landing-override" style={{minHeight:"100vh",background:"var(--bg-primary)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
       <style>{`
         .btn-primary{background:var(--accent);color:#fff;font-family:var(--font-inter);font-weight:600;transition:all 0.2s ease;text-decoration:none;display:inline-block;border:1px solid var(--accent-dark);border-radius:12px}
         .btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59, 130, 246, 0.25)}
@@ -49,21 +48,15 @@ export default function RegisterPage() {
         .lang-switch a.active{color:var(--accent);font-weight:700}
       `}</style>
       <div style={{width:"100%",maxWidth:"420px"}}>
-        <div className="lang-switch" style={{display:"flex",justifyContent:"center",gap:"4px",marginBottom:"24px"}}>
-          <a href="/en/register" className={locale==="en"?"active":""}>EN</a>
-          <span style={{color:"rgba(255,255,255,0.1)",lineHeight:"26px"}}>·</span>
-          <a href="/es/register" className={locale==="es"?"active":""}>ES</a>
-        </div>
-
         <div style={{textAlign:"center",marginBottom:"32px"}}>
-          <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 0 30px rgba(59, 130, 246,0.3)"}}>
-            <span style={{color:"#000",fontWeight:900,fontSize:"18px",fontFamily:"var(--font-inter)"}}>P</span>
+          <div style={{width:"44px",height:"44px",borderRadius:"14px",background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 0 30px rgba(30, 58, 138, 0.15)"}}>
+            <span style={{color:"white",fontWeight:900,fontSize:"18px",fontFamily:"var(--font-inter)"}}>P</span>
           </div>
-          <h1 style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"24px",color:"#FAFAFA",marginBottom:"6px"}}>{tx.title}</h1>
-          <p style={{color:"rgba(255,255,255,0.3)",fontSize:"13px",fontFamily:"var(--font-inter)"}}>{tx.sub}</p>
+          <h1 style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"24px",color:"var(--text-primary)",marginBottom:"6px"}}>{tx.title}</h1>
+          <p style={{color:"var(--text-muted)",fontSize:"13px",fontFamily:"var(--font-inter)"}}>{tx.sub}</p>
         </div>
 
-        <div style={{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"24px",padding:"32px"}}>
+        <div style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:"24px",padding:"32px",boxShadow:"0 12px 40px rgba(0,0,0,0.05)"}}>
           <form onSubmit={handleSubmit} style={{display:"flex",flexDirection:"column",gap:"14px"}}>
             {[
               {key:"name",label:tx.name,ph:tx.namePh,type:"text"},
@@ -72,7 +65,7 @@ export default function RegisterPage() {
               {key:"password",label:tx.password,ph:"••••••",type:"password"},
             ].map(f=>(
               <div key={f.key}>
-                <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-inter)"}}>{f.label}</label>
+                <label style={{display:"block",fontSize:"11px",fontWeight:600,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"8px",fontFamily:"var(--font-inter)"}}>{f.label}</label>
                 <input type={f.type} value={form[f.key as keyof typeof form]} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))} placeholder={f.ph} required style={inputStyle} />
               </div>
             ))}
@@ -83,7 +76,7 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        <p style={{textAlign:"center",marginTop:"20px",fontSize:"13px",color:"rgba(255,255,255,0.25)",fontFamily:"var(--font-inter)"}}>
+        <p style={{textAlign:"center",marginTop:"20px",fontSize:"13px",color:"var(--text-muted)",fontFamily:"var(--font-inter)"}}>
           {tx.login}{" "}
           <Link href={"/"+locale+"/login"} style={{color:"var(--accent)",textDecoration:"none",fontWeight:600}}>{tx.loginLink}</Link>
         </p>

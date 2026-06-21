@@ -4,12 +4,8 @@ import { useState } from "react";
 export default function PaywallPage() {
   const [loading, setLoading] = useState(false);
 
-  async function handleCheckout() {
-    setLoading(true);
-    const res = await fetch("/api/stripe/checkout", { method:"POST" });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-    else setLoading(false);
+  function handleCheckout() {
+    window.location.href = "https://wa.me/18098686257?text=Hola,%20mi%20prueba%20ha%20terminado%20y%20quiero%20activar%20mi%20licencia";
   }
 
   return (
@@ -30,10 +26,10 @@ export default function PaywallPage() {
 
         <div className="glass" style={{borderRadius:"24px",padding:"36px",marginBottom:"20px"}}>
           <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:"8px",marginBottom:"6px"}}>
-            <span className="primary-text" style={{fontFamily:"var(--font-inter)",fontSize:"72px",fontWeight:800,lineHeight:1}}>$49</span>
-            <span style={{color:"rgba(255,255,255,0.2)",marginBottom:"10px",fontSize:"14px",fontFamily:"var(--font-inter)"}}>pago único</span>
+            <span className="primary-text" style={{fontFamily:"var(--font-inter)",fontSize:"48px",fontWeight:800,lineHeight:1}}>Planes desde RD$500</span>
+            <span style={{color:"rgba(255,255,255,0.2)",marginBottom:"10px",fontSize:"14px",fontFamily:"var(--font-inter)"}}>/mes</span>
           </div>
-          <p style={{color:"rgba(255,255,255,0.2)",fontSize:"12px",marginBottom:"24px",fontFamily:"var(--font-inter)"}}>Sin mensualidades. Sin sorpresas.</p>
+          <p style={{color:"rgba(255,255,255,0.2)",fontSize:"12px",marginBottom:"24px",fontFamily:"var(--font-inter)"}}>Renovación mensual. Facturación local.</p>
           <ul style={{listStyle:"none",padding:0,marginBottom:"28px",textAlign:"left"}}>
             {["Empleados ilimitados","Kiosk con PIN","Geofencing móvil","Alertas por email","Nómina automática","Soporte incluido"].map(f=>(
               <li key={f} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",color:"rgba(255,255,255,0.5)",fontSize:"13px",fontFamily:"var(--font-inter)"}}>
@@ -42,9 +38,9 @@ export default function PaywallPage() {
               </li>
             ))}
           </ul>
-          <button onClick={handleCheckout} disabled={loading} className="btn-primary"
-            style={{width:"100%",padding:"16px",borderRadius:"14px",fontSize:"15px",border:"none",cursor:"pointer",opacity:loading?0.7:1}}>
-            {loading?"Redirigiendo...":"Activar licencia — $49"}
+          <button onClick={handleCheckout} className="btn-primary"
+            style={{width:"100%",padding:"16px",borderRadius:"14px",fontSize:"15px",border:"none",cursor:"pointer"}}>
+            Hablar con un asesor
           </button>
         </div>
       </div>

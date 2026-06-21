@@ -18,11 +18,11 @@ export default function NotFound() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link href="/en"
+          <Link href="/es"
             className="bg-[#E8B84B] text-black px-6 py-3 rounded-xl font-black text-sm hover:bg-[#d4a43a] transition">
             Ir al inicio
           </Link>
-          <Link href="/en/admin/dashboard"
+          <Link href="/es/admin/dashboard"
             className="border border-white/15 text-white/70 px-6 py-3 rounded-xl font-semibold text-sm hover:border-white/30 hover:text-white transition">
             Mi dashboard
           </Link>

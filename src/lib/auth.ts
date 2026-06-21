@@ -61,7 +61,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   pages: {
-    signIn: "/en/login",
+    signIn: "/es/login",
   },
   session: {
     strategy: "jwt",
