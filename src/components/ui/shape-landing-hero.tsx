@@ -63,7 +63,7 @@ export function HeroGeometric({ locale }: { locale: string }) {
           `}</style>
           <div className="loader-container">
             <div className="loader-hand" />
-            <img src="/logo.png" alt="Punchly" style={{width:"40px",height:"40px",objectFit:"contain",borderRadius:"12px"}} />
+            <img src="/logo.png" alt="Punchly" style={{width:"40px",height:"40px",objectFit:"contain",borderRadius:"50%"}} />
           </div>
         </div>
       )}
@@ -84,7 +84,7 @@ export function HeroGeometric({ locale }: { locale: string }) {
           
           <h1 className="hf1" style={{fontFamily:"var(--font-inter)",fontSize:"clamp(42px,8vw,80px)",fontWeight:800,lineHeight:1.1,letterSpacing:"-2px",marginBottom:"24px",color:"var(--text-primary)",display:"flex",flexDirection:"column",alignItems:"center"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <img src="/logo.png" alt="Punchly" style={{width:"1em",height:"1em",borderRadius:"0.2em",marginRight:"4px",objectFit:"contain"}} />
+            <img src="/logo.png" alt="Punchly" style={{width:"1em",height:"1em",borderRadius:"50%",marginRight:"4px",objectFit:"contain"}} />
             <span style={{marginLeft:"-2px"}}>unchly.Clock</span>
           </div>
           <span style={{display:"block", color:"var(--text-muted)", fontSize:"clamp(24px, 5vw, 48px)", marginTop:"16px", fontWeight:600, letterSpacing:"-1px"}}>El fin de las tardanzas y el caos en tu nómina</span>

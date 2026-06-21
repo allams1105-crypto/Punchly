@@ -45,7 +45,7 @@ export default function LoginPage() {
       `}</style>
       <div style={{width:"100%",maxWidth:"400px"}}>
         <div style={{textAlign:"center",marginBottom:"32px"}}>
-          <img src="/logo.png" alt="Punchly" style={{width:"44px",height:"44px",borderRadius:"14px",margin:"0 auto 24px",objectFit:"contain"}} />
+          <img src="/logo.png" alt="Punchly" style={{width:"44px",height:"44px",borderRadius:"50%",margin:"0 auto 24px",objectFit:"contain"}} />
           <h1 style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"24px",color:"var(--text-primary)",marginBottom:"6px"}}>{tx.title}</h1>
           <p style={{color:"var(--text-muted)",fontSize:"13px",fontFamily:"var(--font-inter)"}}>{tx.sub}</p>
         </div>

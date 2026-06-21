@@ -63,7 +63,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         {trialExpired && !isPro ? (
           <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(255,255,255,0.97)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",backdropFilter:"blur(20px)"}}>
             <div style={{textAlign:"center",maxWidth:"400px",padding:"40px",background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:"24px",boxShadow:"0 10px 40px rgba(0,0,0,0.05)"}}>
-              <img src="/logo.png" alt="Punchly" style={{width:"56px",height:"56px",borderRadius:"16px",margin:"0 auto 24px",objectFit:"contain"}} />
+              <img src="/logo.png" alt="Punchly" style={{width:"56px",height:"56px",borderRadius:"50%",margin:"0 auto 24px",objectFit:"contain"}} />
               <h2 style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"24px",color:"var(--text-primary)",marginBottom:"12px"}}>Tu prueba ha terminado</h2>
               <p style={{color:"var(--text-muted)",fontSize:"14px",lineHeight:1.7,fontFamily:"var(--font-inter)",marginBottom:"28px"}}>
                 Tu periodo de prueba de 14 días ha finalizado. Por favor contacta a un asesor para activar tu plan y continuar utilizando la plataforma sin interrupciones.
