@@ -18,9 +18,7 @@ export default function PaywallPage() {
         .btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59, 130, 246, 0.25)}
       `}</style>
       <div style={{width:"100%",maxWidth:"440px",textAlign:"center"}}>
-        <div style={{width:"56px",height:"56px",borderRadius:"16px",background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",boxShadow:"0 0 30px rgba(59, 130, 246,0.3)"}}>
-          <span style={{color:"white",fontWeight:900,fontSize:"22px",fontFamily:"var(--font-inter)"}}>P</span>
-        </div>
+        <img src="/logo.png" alt="Punchly" style={{width:"56px",height:"56px",borderRadius:"16px",margin:"0 auto 24px",objectFit:"contain"}} />
         <h1 style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"32px",color:"var(--text-primary)",marginBottom:"12px"}}>Tu prueba ha terminado</h1>
         <p style={{color:"var(--text-muted)",fontSize:"15px",marginBottom:"32px",fontFamily:"var(--font-inter)",lineHeight:1.6}}>Tu periodo de prueba de 14 días ha finalizado. Por favor contacta a un asesor para activar tu plan y continuar utilizando la plataforma sin interrupciones.</p>
 

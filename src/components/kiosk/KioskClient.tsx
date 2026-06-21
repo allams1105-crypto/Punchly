@@ -175,9 +175,7 @@ export default function KioskClient({ employees, token }: { employees:Employee[]
           <p style={{fontFamily:"var(--font-inter)",color:"var(--text-muted)",fontSize:"18px",marginTop:"12px",textTransform:"capitalize",fontWeight:500}}>{dateStr}</p>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:"8px",background:"var(--bg-card)",padding:"12px 20px",borderRadius:"100px",border:"1px solid var(--border)"}}>
-          <div style={{width:"32px",height:"32px",borderRadius:"10px",background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px rgba(59,130,246,0.2)"}}>
-            <span style={{color:"white",fontWeight:900,fontSize:"14px",fontFamily:"var(--font-inter)"}}>P</span>
-          </div>
+          <img src="/logo.png" alt="Punchly" style={{width:"44px",height:"44px",borderRadius:"14px",margin:"0 auto 24px",objectFit:"contain"}} />
           <span style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"16px",color:"var(--text-primary)"}}>Punchly.Clock</span>
         </div>
       </div>

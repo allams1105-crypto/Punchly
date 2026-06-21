@@ -82,9 +82,7 @@ export default async function LandingPage({ params }: { params: any }) {
         {/* NAV */}
         <nav style={{position:"relative",zIndex:50,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"24px 40px",maxWidth:"1400px",margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-             <div style={{width:"28px",height:"28px",background:"#1E3A8A",borderRadius:"6px",display:"flex",alignItems:"center",justifyContent:"center"}}>
-               <span style={{color:"white",fontWeight:800,fontSize:"14px"}}>P</span>
-             </div>
+             <img src="/logo.png" alt="Punchly" style={{width:"28px",height:"28px",borderRadius:"8px",objectFit:"contain"}} />
              <span style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"22px",letterSpacing:"-0.5px",color:"#1A2B4C"}}>
                punchly
              </span>

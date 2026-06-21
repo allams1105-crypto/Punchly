@@ -35,9 +35,7 @@ export default function Sidebar({ orgName }: { orgName?: string }) {
       {/* Logo */}
       <div style={{padding:"20px 16px 16px",borderBottom:"1px solid var(--border)"}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>
-          <div style={{width:"32px",height:"32px",borderRadius:"10px",background:`linear-gradient(135deg, ${primary}, var(--accent-dark))`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0, boxShadow: `0 0 15px ${primary}33`}}>
-            <span style={{color:"white",fontWeight:900,fontSize:"14px",fontFamily:"var(--font-inter)"}}>P</span>
-          </div>
+          <img src="/logo.png" alt="Punchly" style={{width:"44px",height:"44px",borderRadius:"14px",margin:"0 auto 24px",objectFit:"contain"}} />
           <span style={{fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"14px",color:"var(--text-primary)"}}>Punchly.Clock</span>
         </div>
         {orgName && <p style={{fontFamily:"var(--font-inter)",fontSize:"11px",color:"var(--text-muted)",paddingLeft:"42px"}}>{orgName}</p>}
