@@ -39,7 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // 4. Lógica de Trial (Protegida contra nulos)
   const createdAt = org.createdAt ? new Date(org.createdAt) : new Date();
   const daysSince = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-  const trialDays = 15;
+  const trialDays = 14;
   const daysLeft = Math.max(0, trialDays - daysSince);
   const trialExpired = daysSince >= trialDays;
   const isPro = !!(org as any).isPro;
@@ -68,12 +68,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </div>
               <h2 style={{fontFamily:"var(--font-inter)",fontWeight:800,fontSize:"24px",color:"var(--text-primary)",marginBottom:"12px"}}>Tu prueba ha terminado</h2>
               <p style={{color:"var(--text-muted)",fontSize:"14px",lineHeight:1.7,fontFamily:"var(--font-inter)",marginBottom:"28px"}}>
-                Activa tu licencia por un pago único de $49 para seguir usando Punchly.Clock sin límites.
+                Tu periodo de prueba de 14 días ha finalizado. Por favor contacta a un asesor para activar tu plan y continuar utilizando la plataforma sin interrupciones.
               </p>
-              <a href="/es/paywall" style={{display:"block",background:"var(--accent)",color:"white",padding:"16px 32px",borderRadius:"16px",fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"15px",textDecoration:"none",boxShadow:"0 0 40px rgba(59, 130, 246,0.3)"}}>
-                Activar licencia — $49
+              <a href="https://wa.me/18098686257?text=Hola,%20mi%20cuenta%20de%20Punchly%20ha%20expirado%20y%20me%20gustar%C3%ADa%20activarla" target="_blank" rel="noopener noreferrer" style={{display:"block",background:"var(--accent)",color:"white",padding:"16px 32px",borderRadius:"16px",fontFamily:"var(--font-inter)",fontWeight:700,fontSize:"15px",textDecoration:"none",boxShadow:"0 0 40px rgba(59, 130, 246,0.3)"}}>
+                Contactar a un agente
               </a>
-              <p style={{color:"var(--text-muted)",fontSize:"11px",marginTop:"12px",fontFamily:"var(--font-inter)"}}>Pago único · Sin mensualidades · Acceso permanente</p>
+              <p style={{color:"var(--text-muted)",fontSize:"11px",marginTop:"12px",fontFamily:"var(--font-inter)"}}>Renovación mensual · Facturación local</p>
             </div>
           </div>
         ) : children}
