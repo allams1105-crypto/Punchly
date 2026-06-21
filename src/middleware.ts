@@ -8,8 +8,7 @@ const WINDOW_MS = 60 * 1000; // 1 minuto (60,000 ms)
 
 export function middleware(request: NextRequest) {
   // 1. Obtener la IP del cliente (priorizando x-forwarded-for para producción)
-  let ip = request.ip || 
-           request.headers.get("x-forwarded-for") || 
+  let ip = request.headers.get("x-forwarded-for") || 
            request.headers.get("x-real-ip") || 
            "unknown";
 
